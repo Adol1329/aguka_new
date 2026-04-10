@@ -1,2 +1,0 @@
-# Aguka
-AGUKA SMART FARMING KIT
