@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px}
+    .card{background:white;border-radius:12px;max-width:500px;margin:0 auto;overflow:hidden}
+    .header{background:#2E7D32;padding:32px;text-align:center}
+    .header h1{color:white;margin:0;font-size:22px}
+    .body{padding:32px}
+    .body h2{color:#2E7D32;margin-top:0}
+    .body p{color:#444;line-height:1.6;font-size:15px}
+    .success-box{background:#E8F5E9;border-radius:8px;
+                 padding:20px;margin:20px 0;text-align:center}
+    .success-box p{color:#2E7D32;font-size:16px;
+                   font-weight:bold;margin:0}
+    .cta{display:block;background:#2E7D32;color:white;
+         text-decoration:none;padding:14px 28px;
+         border-radius:8px;text-align:center;
+         font-size:16px;font-weight:bold;margin:24px 0}
+    .footer{padding:20px 32px;border-top:1px solid #eee;
+            color:#999;font-size:12px;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>🌱 Aguka Smart Farming</h1>
+    </div>
+    <div class="body">
+      <h2>✅ Account Approved! / Konti Yemejwe!</h2>
+      <p>Hello <strong>{{fullName}}</strong>,</p>
+      <p>
+        Great news! Your account has been
+        <strong>approved</strong>. You can now
+        access your full dashboard.<br>
+        <em>Amakuru meza! Konti yawe yemejwe.
+        Ubu ushobora kwinjira mu dashboard yawe.</em>
+      </p>
+      <div class="success-box">
+        <p>🎉 Welcome to Aguka Smart Farming!</p>
+      </div>
+      <p>Sign in with your phone number:</p>
+      <p style="font-size:18px;font-weight:bold;color:#2E7D32">
+        📱 {{phone}}
+      </p>
+      <a href="#" class="cta">Open Aguka App →</a>
+      <p>
+        Questions?/Ikibazo?
+        <a href="mailto:{{supportEmail}}"
+           style="color:#2E7D32">{{supportEmail}}</a>
+      </p>
+    </div>
+    <div class="footer">
+      © 2026 Aguka Smart Farming Kit· Rwanda
+    </div>
+  </div>
+</body>
+</html>

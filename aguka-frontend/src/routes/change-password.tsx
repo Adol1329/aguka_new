@@ -1,0 +1,278 @@
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { useState } from "react";
+import { useAuth, ROLE_HOME, getStoredUser, mapBackendUserToAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Leaf, ShieldCheck, Key, Eye, EyeOff, CheckCircle2, AlertCircle, LogOut } from "lucide-react";
+import { toast } from "sonner";
+import { authApi } from "@/api/auth";
+
+export const Route = createFileRoute("/change-password")({
+  beforeLoad: () => {
+    const user = getStoredUser();
+    if (!user) {
+      throw redirect({ to: "/auth", search: { mode: "signin" } });
+    }
+  },
+  component: ForceChangePasswordPage,
+});
+
+function ForceChangePasswordPage() {
+  const { user, signIn, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { label: "", color: "bg-slate-200", width: "w-0", textColor: "text-slate-400" };
+    if (pwd.length < 6) return { label: "Weak / Intege", color: "bg-red-500", width: "w-1/3", textColor: "text-red-500" };
+    
+    const hasLetters = /[a-zA-Z]/.test(pwd);
+    const hasNumbers = /[0-9]/.test(pwd);
+    const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
+    
+    if (pwd.length >= 8 && hasLetters && hasNumbers && hasSpecial) {
+      return { label: "Strong / Gukomeza", color: "bg-emerald-500", width: "w-full", textColor: "text-emerald-500" };
+    }
+    return { label: "Medium / Ringaniye", color: "bg-amber-500", width: "w-2/3", textColor: "text-amber-500" };
+  };
+
+  const strength = getPasswordStrength(password);
+  const passwordsMatch = confirmPassword && password === confirmPassword;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters");
+      return;
+    }
+    if (!passwordsMatch) {
+      setErrorMsg("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMsg("");
+
+    try {
+      await authApi.forceChangePassword(password);
+      
+      // Update local storage user details to mark requiresPasswordChange as false
+      if (user) {
+        const updatedUser = {
+          ...user,
+          requiresPasswordChange: false,
+        };
+        signIn(updatedUser);
+      }
+
+      toast.success("Password updated successfully! Welcome to Aguka.");
+      if (user) {
+        navigate({ to: ROLE_HOME[user.role] as any });
+      } else {
+        navigate({ to: "/" });
+      }
+    } catch (err: any) {
+      const msg = err.message || "Failed to update password. Please try again.";
+      setErrorMsg(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setIsLoading(true);
+    try {
+      await signOut();
+      toast.info("Logged out successfully");
+      navigate({ to: "/auth", search: { mode: "signin" } });
+    } catch (err) {
+      toast.error("Logout failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      {/* LEFT BRAND PANEL */}
+      <div className="relative hidden w-1/2 flex-col justify-between bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 p-12 text-white lg:flex overflow-hidden">
+        <div className="absolute -left-1/4 -top-1/4 h-[80%] w-[80%] rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="absolute -bottom-1/4 -right-1/4 h-[80%] w-[80%] rounded-full bg-teal-500/20 blur-3xl" />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md ring-1 ring-white/20">
+            <Leaf className="h-6 w-6 text-emerald-300" />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Aguka</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Smart Farming Kit</p>
+          </div>
+        </div>
+
+        <div className="relative z-10 my-auto max-w-md space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-emerald-200 backdrop-blur-md ring-1 ring-white/10">
+            <ShieldCheck className="h-4 w-4" />
+            <span>Update Required</span>
+          </div>
+          <h2 className="text-4xl font-extrabold leading-tight tracking-tight">
+            Security Update Required
+          </h2>
+          <p className="text-lg text-emerald-100/90 leading-relaxed">
+            Your account was registered or reset with a temporary password. For safety, you must set a new private password before proceeding to the dashboard.
+          </p>
+        </div>
+
+        <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-8">
+          <button
+            onClick={handleSignOut}
+            disabled={isLoading}
+            className="group inline-flex items-center gap-2 text-sm font-semibold text-emerald-100 transition-colors hover:text-white cursor-pointer"
+          >
+            <LogOut className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Sign Out
+          </button>
+          <span className="text-xs text-emerald-200/60">Powered by Imbaraga</span>
+        </div>
+      </div>
+
+      {/* RIGHT CONTENT PANEL */}
+      <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 sm:px-12 xl:px-20 bg-slate-50/50">
+        <div className="mx-auto w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2 lg:hidden mb-8">
+            <Leaf className="h-8 w-8 text-emerald-600" />
+            <div>
+              <span className="text-xl font-bold text-slate-900">Aguka</span>
+              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">Smart Farming</span>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 mb-2">
+                <Key className="h-6 w-6" />
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+                Update password
+              </h2>
+              <p className="text-sm text-slate-500">
+                Please set your private password to unlock access to the Aguka dashboard.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* New Password */}
+              <div className="space-y-2">
+                <Label htmlFor="password font-semibold text-slate-700">New Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="h-12 w-full rounded-xl border-slate-200 bg-white pr-10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+
+                {/* Password Strength Indicator */}
+                {password && (
+                  <div className="space-y-1.5 pt-1 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="text-slate-500">Password Strength:</span>
+                      <span className={strength.textColor}>{strength.label}</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className={`h-full ${strength.color} ${strength.width} transition-all duration-300`} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword font-semibold text-slate-700">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="h-12 w-full rounded-xl border-slate-200 bg-white pr-10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+
+                {/* Match indicator */}
+                {confirmPassword && (
+                  <div className="flex items-center gap-1.5 text-xs font-semibold animate-in fade-in duration-200">
+                    {passwordsMatch ? (
+                      <span className="text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="h-4 w-4 fill-emerald-50 text-emerald-600" /> Passwords match
+                      </span>
+                    ) : (
+                      <span className="text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" /> Passwords do not match
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {errorMsg ? (
+                <div className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-600 border border-red-100">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
+                </div>
+              ) : null}
+
+              <Button
+                type="submit"
+                disabled={isLoading || password.length < 8 || !passwordsMatch}
+                className="group relative flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-600/10 hover:bg-emerald-700 hover:shadow-emerald-700/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {isLoading ? "Updating password..." : "Complete Password Setup"}
+                <CheckCircle2 className="h-4 w-4" />
+              </Button>
+            </form>
+
+            <div className="mt-8 border-t border-slate-100 pt-6 text-center lg:hidden">
+              <button
+                onClick={handleSignOut}
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out from Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,180 @@
+{
+  "login": "Connexion",
+  "register": "S'inscrire",
+  "full_name": "Nom Complet",
+  "phone": "Numéro de Téléphone",
+  "password": "Mot de passe",
+  "location": "Localisation",
+  "district": "District",
+  "sector": "Secteur",
+  "province": "Province",
+  "cell": "Cellule",
+  "village": "Village",
+  "select_province": "Sélectionner la Province",
+  "select_district": "Sélectionner le District",
+  "select_sector": "Sélectionner le Secteur",
+  "select_cell": "Sélectionner la Cellule",
+  "select_village": "Sélectionner le Village",
+  "don_t_have_an_account?": "Vous n'avez pas de compte ?",
+  "already_have_an_account?": "Vous avez déjà un compte ?",
+  "register_title": "Créez votre compte agriculteur",
+  "welcome_back": "Bon retour",
+  "aguka_smart_farming": "Aguka Smart Farming",
+  "create_account": "Créer un compte",
+  "join_smart_farming": "Rejoindre Smart Farming",
+  "login_failed": "Échec de la connexion. Veuillez vérifier vos identifiants.",
+  "registration_failed": "Échec de l'inscription. Veuillez réessayer.",
+  "role_selection": {
+    "title": "Qui êtes-vous ?",
+    "continue": "CONTINUER",
+    "farmer": {
+      "name": "Agriculteur",
+      "desc": "Gérez votre ferme, obtenez des conseils et prix du marché"
+    },
+    "extension_officer": {
+      "name": "Agent de Vulgarisation",
+      "desc": "Suivez les agriculteurs, envoyez des conseils, gérez les visites"
+    },
+    "cooperative_manager": {
+      "name": "Directeur de Coopérative",
+      "desc": "Gérez les membres, collectes, paiements et rapports"
+    }
+  },
+  "register_farmer": "Inscription Agriculteur",
+  "register_officer": "Inscription Agent de Vulgarisation",
+  "register_manager": "Inscription Directeur de Coopérative",
+  "farmer_fields": {
+    "farm_size": "Taille de la ferme (Hectares)",
+    "what_do_you_grow": "Que cultivez-vous ?",
+    "cooperative": "Coopérative (Optionnel)"
+  },
+  "officer_fields": {
+    "employee_id": "ID Employé / Numéro de badge",
+    "organization": "Organisation",
+    "covered_sectors": "Zone de couverture (Secteurs)",
+    "specialization": "Spécialisation",
+    "upload_id": "Télécharger une photo du badge"
+  },
+  "manager_fields": {
+    "cooperative_name": "Nom de la coopérative",
+    "rca_number": "Numéro RCA",
+    "cooperative_type": "Type de coopérative",
+    "member_count": "Nombre de membres",
+    "upload_cert": "Télécharger le certificat de la coopérative"
+  },
+  "approval": {
+    "pending_title": "Compte en cours d'examen",
+    "pending_message": "Votre compte est en cours d'examen. Nous vous informerons dans les 24 heures."
+  },
+  "dashboard": {
+    "title": "Ferme Aguka",
+    "weather": "Météo",
+    "soil_health": "Santé du sol",
+    "irrigation": "Irrigation",
+    "community": "Communauté",
+    "water_now": "Arroser maintenant",
+    "critical_alert": "Niveau d'humidité critique",
+    "optimal_status": "Santé du sol optimale",
+    "no_action": "Aucune action requise",
+    "current_weather": "Météo actuelle",
+    "farm_conditions": "Conditions de la ferme"
+  },
+  "soil": {
+    "title": "Santé du sol",
+    "moisture": "Humidité actuelle",
+    "optimal": "Optimal",
+    "low": "Faible",
+    "high": "Élevé",
+    "nitrogen": "Azote",
+    "phosphorus": "Phosphore",
+    "potassium": "Potassium",
+    "trend_7day": "Tendance sur 7 jours"
+  },
+  "weather": {
+    "title": "Météo locale",
+    "current_farm": "Météo de la ferme",
+    "humidity": "Humidité",
+    "wind": "Vent",
+    "rain": "Pluie",
+    "today": "Aujourd'hui",
+    "weekly": "Prévisions hebdomadaires",
+    "optimal_cond": "Conditions optimales"
+  },
+  "market": {
+    "title": "Prix du marché",
+    "current_prices": "Prix actuels du marché",
+    "price_alerts": "Alertes de prix",
+    "add_alert": "Ajouter une alerte",
+    "crop_name": "Nom de la culture",
+    "target_price": "Prix cible (RWF)",
+    "no_alerts": "Aucune alerte de prix définie",
+    "triggered": "Déclenché !",
+    "active": "Actif",
+    "trend": {
+      "up": "Hausse",
+      "down": "Baisse",
+      "stable": "Stable"
+    }
+  },
+  "irrigation": {
+    "title": "Contrôle d'irrigation",
+    "status": "État de la pompe",
+    "active": "ACTIVE",
+    "idle": "ARRÊTÉ",
+    "start_pump": "DÉMARRER LA POMPE",
+    "stop_pump": "ARRÊTER LA POMPE",
+    "water_used": "Eau utilisée",
+    "saved": "Économisé",
+    "manual_override": "Commande manuelle",
+    "smart_schedule": "Programme intelligent",
+    "command_queued": "Commande de pompe mise en file d'attente."
+  },
+  "profile": {
+    "title": "Profil",
+    "language": "Langue",
+    "logout": "Déconnexion",
+    "sync_status": "État de synchronisation",
+    "logout_confirm": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "message": {
+      "updated_successfully": "Profil mis à jour avec succès"
+    },
+    "error": {
+      "failed_to_load": "Échec du chargement du profil"
+    },
+    "field": {
+      "first_name": "Prénom",
+      "last_name": "Nom",
+      "district": "District",
+      "sector": "Secteur",
+      "cell": "Cellule",
+      "village": "Village",
+      "farm_size": "Taille de la ferme (hectares)",
+      "primary_crop": "Culture principale"
+    }
+  },
+  "community": {
+    "title": "Coopérative",
+    "announcements": "Annonces",
+    "market_prices": "Prix du Marché",
+    "urgent": "URGENT",
+    "contact_support": "Contacter le support"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "refresh": "Actualiser",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "add": "Ajouter",
+    "success": "Succès",
+    "error": "Erreur",
+    "basic_info": "Informations de base"
+  },
+  "auth": {
+    "validation": {
+      "phone_required": "Veuillez saisir le numéro de téléphone",
+      "phone_invalid": "Format du numéro invalide",
+      "password_required": "Veuillez saisir le mot de passe",
+      "password_short": "Mot de passe trop court"
+    }
+  }
+}

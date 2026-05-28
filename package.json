@@ -1,0 +1,18 @@
+{
+  "name": "aguka-smart-farming-kit",
+  "version": "1.0.0",
+  "description": "Smart Farming Kit for Smallholder Farmers in Rwanda — AUCA Final Year Project",
+  "author": "Adolphe Uwayo <25743>",
+  "private": true,
+  "scripts": {
+    "backend": "cd aguka-backend && npm run dev",
+    "frontend": "cd aguka-frontend && npm run dev",
+    "install:all": "cd aguka-backend && npm install && cd ../aguka-frontend && npm install",
+    "build:backend": "cd aguka-backend && npm run build",
+    "build:frontend": "cd aguka-frontend && npm run build"
+  },
+  "workspaces": [
+    "aguka-backend",
+    "aguka-frontend"
+  ]
+}

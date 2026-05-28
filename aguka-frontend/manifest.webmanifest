@@ -1,0 +1,27 @@
+{
+  "name": "Aguka Smart Farming",
+  "short_name": "Aguka",
+  "description": "Smart farming for Rwandan farmers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/imbaraga logo.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/imbaraga logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["agriculture", "business"],
+  "lang": "en-RW",
+  "prefer_related_applications": false
+}

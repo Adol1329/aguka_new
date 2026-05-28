@@ -1,0 +1,236 @@
+{
+  "login": "Injira",
+  "register": "Iyandikishe",
+  "full_name": "Amazina yose",
+  "phone": "Telefoni",
+  "password": "Ijambo ry'ibanga",
+  "location": "Aho uherereye",
+  "district": "Akarere",
+  "sector": "Umurenge",
+  "province": "Intara",
+  "cell": "Akagali",
+  "village": "Umudugudu",
+  "select_province": "Hitamo Intara",
+  "select_district": "Hitamo Akarere",
+  "select_sector": "Hitamo Umurenge",
+  "select_cell": "Hitamo Akagali",
+  "select_village": "Hitamo Umudugudu",
+  "don_t_have_an_account?": "Ntabwo ufite konti?",
+  "already_have_an_account?": "Usanzwe ufite konti?",
+  "register_title": "Fungura konti y'umuhinzi",
+  "welcome_back": "Murakaza neza",
+  "aguka_smart_farming": "Aguka Smart Farming",
+  "create_account": "Fungura konti",
+  "join_smart_farming": "Ba Smart Farmer",
+  "login_failed": "Kwinjira byanze . Reba telefoni n'ijambo ry'ibanga.",
+  "registration_failed": "Kwiyandikisha byanze. Ongera ugerageze.",
+  "role_selection": {
+    "title": "Ni nde uri we?",
+    "continue": "KOMEZA",
+    "farmer": {
+      "name": "Umuhinzi",
+      "desc": "Gucunga umurima wawe, kubona inama n'ibiciro"
+    },
+    "extension_officer": {
+      "name": "Umujyanama w'Ubuhinzi",
+      "desc": "Gukurikirana abahinzi no gutanga inama"
+    },
+    "cooperative_manager": {
+      "name": "Umuyobozi w'Amashiramwe",
+      "desc": "Gucunga abagize ishiramwe n'ubufatanye"
+    }
+  },
+  "register_farmer": "Kwiyandikisha nk'Umuhinzi",
+  "register_officer": "Kwiyandikisha nk'Umujyanama",
+  "register_manager": "Kwiyandikisha nk'Umuyobozi",
+  "farmer_fields": {
+    "farm_size": "Uburebure bw'umurima (Hectares)",
+    "what_do_you_grow": "Ese uhinga iki?",
+    "cooperative": "Koperative (Niba uyirimo)"
+  },
+  "officer_fields": {
+    "employee_id": "Inomero y'akazi",
+    "organization": "Ikigo ukorera",
+    "covered_sectors": "Akarere ukoreramo (Imirenge)",
+    "specialization": "Icyo wize",
+    "upload_id": "Shyiraho ifoto y'ikarita y'akazi"
+  },
+  "manager_fields": {
+    "cooperative_name": "Izina rya Koperative",
+    "rca_number": "Inomero ya RCA",
+    "cooperative_type": "Ubwoko bwa Koperative",
+    "member_count": "Umubare w'abanyamuryango",
+    "upload_cert": "Shyiraho icyemezo cya koperative"
+  },
+  "approval": {
+    "pending_title": "Konti iri gusuzumwa",
+    "pending_message": "Konti yawe iri gusuzumwa. Tuzakumenyesha mu masaha 24."
+  },
+  "dashboard": {
+    "title": "Aguka Muhinzi",
+    "weather": "Iteganyagihe",
+    "soil_health": "Ubutaka",
+    "irrigation": "Kuhira",
+    "community": "Koperative",
+    "water_now": "Uhira Nonaha",
+    "critical_alert": "Ubutaka Bwumye Cyane",
+    "optimal_status": "Ubutaka ni Buzima",
+    "no_action": "Nta gikenewe gukorwa",
+    "current_weather": "Iteganyagihe nonaha",
+    "farm_conditions": "Imiterere y'umurima"
+  },
+  "soil": {
+    "title": "Ubuzima bw'ubutaka",
+    "moisture": "Ubuhehere bw'ubutaka",
+    "status_optimal": "Buhagije",
+    "status_low": "Buke",
+    "status_high": "Bwinshi",
+    "optimal": "Buhagije",
+    "low": "Buke",
+    "high": "Bwinshi",
+    "nitrogen": "Nitrogene",
+    "phosphorus": "Fosiforo",
+    "potassium": "Potasiyumu",
+    "trend_7day": "Imiterere mu minsi 7"
+  },
+  "weather": {
+    "title": "Iteganyagihe",
+    "current_farm": "Iteganyagihe mu murima",
+    "humidity": "Ubuhehere",
+    "temp": "Ubushyuhe",
+    "wind": "Umuyaga",
+    "rain": "Imvura",
+    "today": "Uyu munsi",
+    "weekly": "Iteganyagihe ry'icyumweru",
+    "optimal_cond": "Imiterere Myiza"
+  },
+  "market": {
+    "title": "Ibiciro ku isoko",
+    "current_prices": "Ibiciro by'uyu munsi",
+    "price_alerts": "Induha y'ibiciro",
+    "add_alert": "Ongeramo induha",
+    "crop_name": "Izina ry'igihingwa",
+    "target_price": "Igiciro wifuza (RWF)",
+    "no_alerts": "Nta nduha y'ibiciro washyizeho",
+    "triggered": "Byagezeho!",
+    "active": "Birakora",
+    "trend": {
+      "up": "Byazamutse",
+      "down": "Byamanutse",
+      "stable": "Bihagaze neza"
+    }
+  },
+  "irrigation": {
+    "title": "Gucunga Kuhira",
+    "status": "Imiterere ya Pompo",
+    "active": "IRAKORA",
+    "idle": "IHAGAZE",
+    "start_pump": "FUNGURA POMPO",
+    "stop_pump": "FUNGA POMPO",
+    "water_used": "Amazi Yakoreshejwe",
+    "saved": "Yazigamye",
+    "manual_override": "Gufungura n'intoki",
+    "smart_schedule": "Gahunda y'ubwenge",
+    "command_queued": "Ubusabe bwo gufungura pompo bwagezeho."
+  },
+  "profile": {
+    "title": "Umwirondoro",
+    "language": "Ururimi",
+    "logout": "Sohoka",
+    "sync_status": "Ihuza ry'amakuru",
+    "logout_confirm": "Uremeza ko ushaka gusohoka?",
+    "message": {
+      "updated_successfully": "Umwirondoro wavuguruwe neza"
+    },
+    "error": {
+      "failed_to_load": "Kuzana umwirondoro byanze"
+    },
+    "field": {
+      "first_name": "Izina rya mbere",
+      "last_name": "Izina rya nyuma",
+      "district": "Akarere",
+      "sector": "Umurenge",
+      "cell": "Akagali",
+      "village": "Umudugudu",
+      "farm_size": "Ubunini bw'umurima (hegitari)",
+      "primary_crop": "Igihingwa nyamukuru"
+    }
+  },
+  "settings": {
+    "title": "Igenamiterere",
+    "account": "Igenamiterere rya konti",
+    "edit_profile": "Hindura umwirondoro",
+    "change_password": "Hindura ijambo ry'ibanga",
+    "notifications": "Imenyekanisha",
+    "push_notifications": "Imenyekanisha kuri telefoni",
+    "sms_alerts": "Ubutumwa bugufi (SMS)",
+    "app": "Igenamiterere rya Porogaramu",
+    "dark_mode": "Uburyo bw'ijimye",
+    "about": "Ibyerekeye Aguka"
+  },
+  "language": {
+    "title": "Ururimi",
+    "select": "Hitamo ururimi"
+  },
+  "help": {
+    "title": "Ubufasha",
+    "how_can_we_help": "Twagufasha ute?",
+    "guides": "Inyoborabuhinga",
+    "guides_subtitle": "Soma uko wakoresha neza Aguka",
+    "live_chat": "Kuganira nonaha",
+    "live_chat_subtitle": "Vugana natwe nonaha",
+    "call_support": "Hamagara ubufasha",
+    "email_support": "Twandikire kuri imeyili",
+    "faq1_q": "Nafungura nte pompo?",
+    "faq1_a": "Kanda kuri buto 'Uhira nonaha' kuri dashboard cyangwa ujye muri menu ya kuhira.",
+    "faq2_q": "Amakuru y'ubutaka ava he?",
+    "faq2_a": "Ava mu byuma (sensors) biba biri mu murima wawe."
+  },
+  "logout": "Sohoka",
+  "notifications": {
+    "title": "Imenyekanisha"
+  },
+  "filter": {
+    "title": "Muyunguruzi",
+    "location": "Aho uherereye",
+    "province": "Intara",
+    "district": "Akarere",
+    "date_range": "Igihe",
+    "today": "Uyu munsi",
+    "last_7_days": "Iminsi 7 ishize",
+    "last_30_days": "Iminsi 30 ishize",
+    "custom_range": "Hitamo igihe",
+    "crop_type": "Ubwoko bw'igihingwa",
+    "select_crop": "Hitamo igihingwa",
+    "sensor_data": "Amakuru y'ibyuma",
+    "rainfall": "Imvura",
+    "reset": "Subira ku ntiriranywa",
+    "apply": "Shyira mu bikorwa"
+  },
+  "community": {
+    "title": "Koperative",
+    "announcements": "Amatangazo",
+    "market_prices": "Ibiciro",
+    "urgent": "Birihutirwa",
+    "contact_support": "Gushaka ubufasha"
+  },
+  "common": {
+    "loading": "Birategurwa...",
+    "hello": "Muraho",
+    "refresh": "Vugurura",
+    "retry": "Ongera ugerageze",
+    "cancel": "Reka",
+    "add": "Ongeramo",
+    "success": "Byagenze neza",
+    "error": "Hari ikibazo",
+    "basic_info": "Amakuru y'ibanze"
+  },
+  "auth": {
+    "validation": {
+      "phone_required": "Andika nimero ya telefone",
+      "phone_invalid": "Imiterere ya nimero si yo",
+      "password_required": "Andika ijambobanga",
+      "password_short": "Ijambobanga ni rigufi cyane"
+    }
+  }
+}

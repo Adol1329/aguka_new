@@ -1,0 +1,86 @@
+name: aguka_mobile
+description: Aguka Smart Farming Kit App
+publish_to: 'none'
+
+version: 1.0.0+2
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+
+  # State Management
+  flutter_bloc: ^8.1.4
+  equatable: ^2.0.5
+  dartz: ^0.10.1
+
+  # Dependency Injection
+  get_it: ^7.6.7
+
+  # Network & API
+  dio: ^5.4.0
+  connectivity_plus: ^6.0.2
+  socket_io_client: ^2.0.3
+
+  # Offline Storage
+  sqflite: ^2.3.0
+  path_provider: ^2.1.2
+  path: ^1.9.0
+  shared_preferences: ^2.2.2
+
+  # i18n
+  easy_localization: ^3.0.3
+
+  # Firebase
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.9
+
+  # Utilities
+  intl: ^0.20.2
+  logger: ^2.2.0
+  uuid: ^4.3.3
+  fl_chart: ^0.66.2
+  image_picker: ^1.0.7
+  file_picker: ^8.1.7
+  flutter_chat_ui: ^1.6.10
+  google_maps_flutter: ^2.5.0
+  flutter_secure_storage: ^10.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.8
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+  mockito: ^5.4.4
+  bloc_test: ^9.1.7
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/branding/app_icon.png"
+  min_sdk_android: 21
+
+flutter_native_splash:
+  color: "#0B2D1D" # Deep dark green from branding
+  image: "assets/branding/app_icon.png"
+  android_12:
+    image: "assets/branding/app_icon.png"
+    icon_background_color: "#0B2D1D"
+  fullscreen: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/translations/
+    - assets/branding/app_icon.png
+    - assets/branding/splash.png

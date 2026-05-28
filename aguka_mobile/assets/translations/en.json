@@ -1,0 +1,236 @@
+{
+  "login": "Login",
+  "register": "Register",
+  "full_name": "Full Name",
+  "phone": "Phone Number",
+  "password": "Password",
+  "location": "Location",
+  "district": "District",
+  "sector": "Sector",
+  "province": "Province",
+  "cell": "Cell",
+  "village": "Village",
+  "select_province": "Select Province",
+  "select_district": "Select District",
+  "select_sector": "Select Sector",
+  "select_cell": "Select Cell",
+  "select_village": "Select Village",
+  "don_t_have_an_account?": "Don't have an account?",
+  "already_have_an_account?": "Already have an account?",
+  "register_title": "Create Your Farmer Account",
+  "welcome_back": "Welcome Back",
+  "aguka_smart_farming": "Aguka Smart Farming",
+  "create_account": "Create Account",
+  "join_smart_farming": "Join Smart Farming",
+  "login_failed": "Login failed. Please check your credentials.",
+  "registration_failed": "Registration failed. Please try again.",
+  "role_selection": {
+    "title": "Who are you?",
+    "continue": "CONTINUE",
+    "farmer": {
+      "name": "Farmer",
+      "desc": "Manage your farm, get crop advice & market prices"
+    },
+    "extension_officer": {
+      "name": "Extension Officer",
+      "desc": "Monitor farmers, send advisories, track field visits"
+    },
+    "cooperative_manager": {
+      "name": "Cooperative Manager",
+      "desc": "Manage members, collections, payments & reports"
+    }
+  },
+  "register_farmer": "Farmer Registration",
+  "register_officer": "Extension Officer Registration",
+  "register_manager": "Cooperative Manager Registration",
+  "farmer_fields": {
+    "farm_size": "Farm Size (Hectares)",
+    "what_do_you_grow": "What do you grow?",
+    "cooperative": "Cooperative (Optional)"
+  },
+  "officer_fields": {
+    "employee_id": "Employee ID / Badge Number",
+    "organization": "Organization",
+    "covered_sectors": "Zone of Coverage (Sectors)",
+    "specialization": "Specialization",
+    "upload_id": "Upload ID / Badge Photo"
+  },
+  "manager_fields": {
+    "cooperative_name": "Cooperative Name",
+    "rca_number": "RCA Number",
+    "cooperative_type": "Type of Cooperative",
+    "member_count": "Number of Members",
+    "upload_cert": "Upload Cooperative Certificate"
+  },
+  "approval": {
+    "pending_title": "Account Under Review",
+    "pending_message": "Your account is under review. We'll notify you within 24 hours."
+  },
+  "dashboard": {
+    "title": "Aguka Smart Farm",
+    "weather": "Weather",
+    "soil_health": "Soil Health",
+    "irrigation": "Irrigation",
+    "community": "Community",
+    "water_now": "Water Now",
+    "critical_alert": "Critical Moisture Level",
+    "optimal_status": "Soil Health Optimal",
+    "no_action": "No action needed",
+    "current_weather": "Current Weather",
+    "farm_conditions": "Farm Conditions"
+  },
+  "soil": {
+    "title": "Soil Health",
+    "moisture": "Current Moisture",
+    "status_optimal": "Optimal",
+    "status_low": "Low",
+    "status_high": "High",
+    "optimal": "Optimal",
+    "low": "Low",
+    "high": "High",
+    "nitrogen": "Nitrogen",
+    "phosphorus": "Phosphorus",
+    "potassium": "Potassium",
+    "trend_7day": "7-Day Trend"
+  },
+  "weather": {
+    "title": "Local Weather",
+    "current_farm": "Current Farm Weather",
+    "humidity": "Humidity",
+    "temp": "Temperature",
+    "wind": "Wind",
+    "rain": "Rain",
+    "today": "Today",
+    "weekly": "Weekly Forecast",
+    "optimal_cond": "Optimal Conditions"
+  },
+  "market": {
+    "title": "Market Prices",
+    "current_prices": "Current Market Prices",
+    "price_alerts": "Price Alerts",
+    "add_alert": "Add Alert",
+    "crop_name": "Crop Name",
+    "target_price": "Target Price (RWF)",
+    "no_alerts": "No price alerts set",
+    "triggered": "Triggered!",
+    "active": "Active",
+    "trend": {
+      "up": "Up",
+      "down": "Down",
+      "stable": "Stable"
+    }
+  },
+  "irrigation": {
+    "title": "Irrigation Control",
+    "status": "Pump Status",
+    "active": "ACTIVE",
+    "idle": "IDLE",
+    "start_pump": "START PUMP",
+    "stop_pump": "STOP PUMP",
+    "water_used": "Water Used",
+    "saved": "Saved",
+    "manual_override": "Manual Override",
+    "smart_schedule": "Smart Schedule",
+    "command_queued": "Pump command queued successfully."
+  },
+  "profile": {
+    "title": "Profile",
+    "language": "Language",
+    "logout": "Logout",
+    "sync_status": "Offline Sync Status",
+    "logout_confirm": "Are you sure you want to logout?",
+    "message": {
+      "updated_successfully": "Profile updated successfully"
+    },
+    "error": {
+      "failed_to_load": "Failed to load profile"
+    },
+    "field": {
+      "first_name": "First name",
+      "last_name": "Last name",
+      "district": "District",
+      "sector": "Sector",
+      "cell": "Cell",
+      "village": "Village",
+      "farm_size": "Farm size (hectares)",
+      "primary_crop": "Primary crop"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account Settings",
+    "edit_profile": "Edit Profile",
+    "change_password": "Change Password",
+    "notifications": "Notifications",
+    "push_notifications": "Push Notifications",
+    "sms_alerts": "SMS Alerts",
+    "app": "App Settings",
+    "dark_mode": "Dark Mode",
+    "about": "About Aguka"
+  },
+  "language": {
+    "title": "Language",
+    "select": "Select Language"
+  },
+  "help": {
+    "title": "Help & Support",
+    "how_can_we_help": "How can we help?",
+    "guides": "User Guides",
+    "guides_subtitle": "Learn how to use Aguka features",
+    "live_chat": "Live Chat",
+    "live_chat_subtitle": "Talk to us now",
+    "call_support": "Call Support",
+    "email_support": "Email Support",
+    "faq1_q": "How do I start irrigation?",
+    "faq1_a": "Tap the 'Water Now' button on the dashboard or go to the irrigation menu.",
+    "faq2_q": "Where does soil data come from?",
+    "faq2_a": "It comes from IoT sensors installed in your field."
+  },
+  "logout": "Logout",
+  "notifications": {
+    "title": "Notifications"
+  },
+  "filter": {
+    "title": "Filter",
+    "location": "Location",
+    "province": "Province",
+    "district": "District",
+    "date_range": "Date Range",
+    "today": "Today",
+    "last_7_days": "Last 7 Days",
+    "last_30_days": "Last 30 Days",
+    "custom_range": "Custom Range",
+    "crop_type": "Crop Type",
+    "select_crop": "Select Crop",
+    "sensor_data": "Sensor Data",
+    "rainfall": "Rainfall",
+    "reset": "Reset",
+    "apply": "Apply"
+  },
+  "community": {
+    "title": "Cooperative",
+    "announcements": "Announcements",
+    "market_prices": "Market Prices",
+    "urgent": "URGENT",
+    "contact_support": "Contact Support"
+  },
+  "common": {
+    "loading": "Loading...",
+    "hello": "Hello",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "add": "Add",
+    "success": "Success",
+    "error": "Error",
+    "basic_info": "Basic Information"
+  },
+  "auth": {
+    "validation": {
+      "phone_required": "Please enter phone number",
+      "phone_invalid": "Invalid phone format",
+      "password_required": "Please enter password",
+      "password_short": "Password too short"
+    }
+  }
+}
