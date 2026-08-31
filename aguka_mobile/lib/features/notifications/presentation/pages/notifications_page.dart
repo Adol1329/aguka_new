@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:aguka_mobile/widgets/aguka_app_bar.dart';
 import 'package:aguka_mobile/features/notifications/presentation/bloc/notifications_bloc.dart';
@@ -180,6 +179,7 @@ class NotificationsView extends StatelessWidget {
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
+      case 'urgent':
         return Colors.red;
       case 'normal':
         return Colors.blue;
@@ -192,12 +192,23 @@ class NotificationsView extends StatelessWidget {
 
   IconData _getIconForType(String type) {
     switch (type.toLowerCase()) {
+      case 'system':
+      case 'system_alert':
+      case 'info':
+        return Icons.info_outline;
+      case 'alert':
+      case 'warning':
+        return Icons.warning_amber;
+      case 'community':
+        return Icons.people;
+      case 'farming_recommendation':
+      case 'recommendation':
+        return Icons.agriculture;
+      case 'report_availability':
+      case 'report':
+        return Icons.description;
       case 'success':
         return Icons.check_circle;
-      case 'warning':
-        return Icons.warning;
-      case 'info':
-        return Icons.info;
       default:
         return Icons.notifications;
     }

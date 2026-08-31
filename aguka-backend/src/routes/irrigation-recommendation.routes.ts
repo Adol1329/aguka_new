@@ -8,16 +8,8 @@ import {
 
 const router = Router();
 
-router.get(
-  "/",
-  authenticate,
-  asyncHandler(getRecommendations),
-);
+router.get("/", authenticate, asyncHandler(getRecommendations));
 
-router.post(
-  "/accept",
-  authenticate,
-  asyncHandler(acceptRecommendation),
-);
+router.post("/accept", authenticate, asyncHandler(acceptRecommendation));
 
 export default router;

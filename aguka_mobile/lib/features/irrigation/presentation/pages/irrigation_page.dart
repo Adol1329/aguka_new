@@ -44,7 +44,35 @@ class IrrigationView extends StatelessWidget {
               title: 'irrigation.title'.tr(),
             ),
             Expanded(
-              child: BlocBuilder<IrrigationBloc, IrrigationState>(
+              child: BlocConsumer<IrrigationBloc, IrrigationState>(
+                listenWhen: (prev, curr) =>
+                    curr.lastAction == IrrigationActionType.toggle &&
+                    prev.status == IrrigationStateStatus.loading &&
+                    curr.status != IrrigationStateStatus.loading,
+                listener: (context, state) {
+                  final messenger = ScaffoldMessenger.of(context);
+                  if (state.status == IrrigationStateStatus.loaded && state.data != null) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(state.data!.isPumpActive
+                            ? 'irrigation.pump_started'.tr()
+                            : 'irrigation.pump_stopped'.tr()),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        backgroundColor: Colors.blue[800],
+                      ),
+                    );
+                  } else if (state.status == IrrigationStateStatus.error) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(state.errorMessage ?? 'irrigation.command_failed'.tr()),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        backgroundColor: Colors.red[800],
+                      ),
+                    );
+                  }
+                },
                 builder: (context, state) {
                   if (state.status == IrrigationStateStatus.initial || (state.status == IrrigationStateStatus.loading && state.data == null)) {
                     return const Center(child: CircularProgressIndicator());
@@ -82,7 +110,12 @@ class IrrigationView extends StatelessWidget {
                     children: [
                       _buildStatusCard(data.isPumpActive, data.waterUsed, data.percentageSaved),
                       const SizedBox(height: 16),
-                      _buildManualControl(context, data.isPumpActive),
+                      _buildManualControl(
+                        context,
+                        data.isPumpActive,
+                        isPending: state.status == IrrigationStateStatus.loading &&
+                            state.lastAction == IrrigationActionType.toggle,
+                      ),
                       const SizedBox(height: 16),
                       _buildUpcomingSchedule(),
                     ],
@@ -149,7 +182,7 @@ class IrrigationView extends StatelessWidget {
     );
   }
 
-  Widget _buildManualControl(BuildContext context, bool isPumpActive) {
+  Widget _buildManualControl(BuildContext context, bool isPumpActive, {required bool isPending}) {
     return Card(
       elevation: 2,
       color: isPumpActive ? Colors.blue[50] : Colors.white,
@@ -172,26 +205,25 @@ class IrrigationView extends StatelessWidget {
                   backgroundColor: isPumpActive ? Colors.red : Colors.blue,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  
-                  final authState = context.read<AuthBloc>().state;
-                  if (authState is AuthAuthenticated) {
-                    context.read<IrrigationBloc>().add(
-                      TogglePump(farmId: authState.user.id, isActive: !isPumpActive)
-                    );
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('irrigation.command_queued'.tr()),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        backgroundColor: Colors.blue[800],
-                      ),
-                    );
-                  }
-                },
-                icon: Icon(isPumpActive ? Icons.stop : Icons.play_arrow, color: Colors.white),
+                onPressed: isPending
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+
+                        final authState = context.read<AuthBloc>().state;
+                        if (authState is AuthAuthenticated) {
+                          context.read<IrrigationBloc>().add(
+                            TogglePump(farmId: authState.user.id, isActive: !isPumpActive),
+                          );
+                        }
+                      },
+                icon: isPending
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Icon(isPumpActive ? Icons.stop : Icons.play_arrow, color: Colors.white),
                 label: Text(
                   isPumpActive ? 'irrigation.stop_pump'.tr() : 'irrigation.start_pump'.tr(),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),

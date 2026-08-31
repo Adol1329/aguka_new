@@ -1,4 +1,4 @@
-import { apiClient, ApiResponse } from './client';
+import { apiClient, ApiResponse } from "./client";
 
 export interface Activity {
   id: string;
@@ -21,19 +21,37 @@ export interface ActivitiesResponse {
   };
 }
 
+export interface ActivityType {
+  id: string;
+  name: string;
+  icon: string;
+  category?: string;
+  fields: string[];
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export const activitiesApi = {
-  list: (params?: { page?: number; limit?: number; cropId?: string; startDate?: string; endDate?: string }) =>
-    apiClient.get<ActivitiesResponse>('/activities', params as Record<string, string>),
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    cropId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => apiClient.get<ActivitiesResponse>("/activities", params as Record<string, string>),
+
+  getTypes: () => apiClient.get<ActivityType[]>("/farmers/activity-types"),
 
   getByFarmer: (farmerId: string, params?: { page?: number; limit?: number }) =>
-    apiClient.get<ActivitiesResponse>(`/farmers/${farmerId}/activities`, params as Record<string, string>),
+    apiClient.get<ActivitiesResponse>(
+      `/farmers/${farmerId}/activities`,
+      params as Record<string, string>,
+    ),
 
-  create: (data: Partial<Activity>) =>
-    apiClient.post<Activity>('/activities', data),
+  create: (data: Partial<Activity>) => apiClient.post<Activity>("/activities", data),
 
   update: (id: string, data: Partial<Activity>) =>
     apiClient.put<Activity>(`/activities/${id}`, data),
 
-  delete: (id: string) =>
-    apiClient.delete<ApiResponse>(`/activities/${id}`),
+  delete: (id: string) => apiClient.delete<ApiResponse>(`/activities/${id}`),
 };

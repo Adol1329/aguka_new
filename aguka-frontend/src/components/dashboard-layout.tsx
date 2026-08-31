@@ -1,6 +1,6 @@
 import { Link, useRouterState, useNavigate, Outlet } from "@tanstack/react-router";
 import { BASE_URL } from "@/api/client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +21,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth, type Role, canAccessRoute } from "@/lib/auth";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -48,11 +58,21 @@ import {
   Leaf,
   LogOut,
   TrendingUp,
+  History,
   BookOpen,
   Bug,
   BrainCircuit,
+  Sparkles,
+  FileText,
+  DollarSign,
+  Receipt,
+  Activity,
+  Dog,
+  UserPlus,
 } from "lucide-react";
 import { GlobalSearch } from "@/components/global-search";
+import { NotificationDropdown } from "@/components/notification-dropdown";
+import { SocketStatus } from "@/components/socket-status";
 
 interface NavItem {
   title: TranslationKey;
@@ -70,10 +90,12 @@ const NAV: Record<Role, { label: TranslationKey; items: NavItem[] }[]> = {
       label: "nav.system",
       items: [
         { title: "nav.users", url: "/super-admin/users", icon: Users },
-        { title: "nav.roles", url: "/super-admin/roles", icon: Shield },
         { title: "nav.settings", url: "/super-admin/settings", icon: Settings },
         { title: "nav.audit", url: "/super-admin/audit", icon: ScrollText },
         { title: "nav.backups", url: "/super-admin/backups", icon: HardDrive },
+        { title: "nav.system_health", url: "/super-admin/health", icon: Activity },
+        { title: "nav.security", url: "/super-admin/security", icon: Shield },
+        { title: "nav.reports_v2", url: "/super-admin/reports-v2", icon: BarChart3 },
       ],
     },
   ],
@@ -86,9 +108,19 @@ const NAV: Record<Role, { label: TranslationKey; items: NavItem[] }[]> = {
       label: "nav.operations",
       items: [
         { title: "nav.users", url: "/admin/users", icon: Users },
+        { title: "nav.cooperatives", url: "/admin/cooperatives", icon: Building2 },
         { title: "nav.farms", url: "/admin/farms", icon: Sprout },
-        { title: "nav.reports", url: "/reports", icon: BarChart3 },
-        { title: "nav.settings", url: "/admin/settings", icon: Settings },
+        { title: "nav.reports_v2", url: "/admin/reports-v2", icon: Sparkles },
+      ],
+    },
+    {
+      label: "nav.system",
+      items: [
+        { title: "nav.settings", url: "/super-admin/settings", icon: Settings },
+        { title: "nav.audit", url: "/super-admin/audit", icon: ScrollText },
+        { title: "nav.backups", url: "/super-admin/backups", icon: HardDrive },
+        { title: "nav.system_health", url: "/super-admin/health", icon: Activity },
+        { title: "nav.security", url: "/super-admin/security", icon: Shield },
       ],
     },
   ],
@@ -100,10 +132,19 @@ const NAV: Record<Role, { label: TranslationKey; items: NavItem[] }[]> = {
     {
       label: "nav.members",
       items: [
+        { title: "nav.cooperative_profile", url: "/cooperative/profile", icon: Building2 },
         { title: "nav.farmers", url: "/cooperative/farmers", icon: Users },
+        { title: "nav.join_requests", url: "/cooperative/join-requests", icon: UserCog },
         { title: "nav.resources", url: "/cooperative/resources", icon: Package },
+        { title: "nav.distributions", url: "/cooperative/distributions", icon: History },
         { title: "nav.events", url: "/cooperative/events", icon: Calendar },
-        { title: "nav.reports", url: "/reports", icon: BarChart3 },
+        { title: "nav.analytics", url: "/cooperative/analytics", icon: BarChart3 },
+        { title: "nav.performance", url: "/cooperative/performance", icon: TrendingUp },
+        { title: "nav.ai_advisory", url: "/cooperative/ai", icon: BrainCircuit },
+        { title: "nav.dues", url: "/cooperative/dues", icon: DollarSign },
+        { title: "nav.expenses", url: "/cooperative/expenses", icon: Receipt },
+        { title: "nav.reports_v2", url: "/cooperative/reports-v2", icon: Sparkles },
+        { title: "nav.community", url: "/farmer/community", icon: MessageSquare },
       ],
     },
   ],
@@ -113,13 +154,15 @@ const NAV: Record<Role, { label: TranslationKey; items: NavItem[] }[]> = {
       items: [{ title: "nav.overview", url: "/officer", icon: LayoutDashboard }],
     },
     {
-      label: "nav.field_work",
+      label: "nav.operations",
       items: [
+        { title: "nav.field_work", url: "/officer/field-work", icon: ListChecks },
         { title: "nav.farms", url: "/officer/farms", icon: Sprout },
         { title: "nav.advisories", url: "/officer/advisories", icon: Bell },
         { title: "nav.risks", url: "/officer/risks", icon: AlertTriangle },
         { title: "nav.pest_disease", url: "/officer/pest-disease", icon: Bug },
-        { title: "nav.reports", url: "/reports", icon: BarChart3 },
+        { title: "nav.reports_v2", url: "/officer/reports-v2", icon: BarChart3 },
+        { title: "nav.community", url: "/farmer/community", icon: MessageSquare },
       ],
     },
   ],
@@ -131,17 +174,20 @@ const NAV: Record<Role, { label: TranslationKey; items: NavItem[] }[]> = {
     {
       label: "nav.my_farm",
       items: [
-        { title: "nav.profile", url: "/farmer/profile", icon: UserCog },
+        { title: "nav.my_cooperative", url: "/farmer/cooperative", icon: UserPlus },
         { title: "nav.crops", url: "/farmer/crops", icon: Sprout },
+        { title: "nav.resources", url: "/farmer/resources", icon: Package },
         { title: "nav.soil", url: "/farmer/soil", icon: BarChart3 },
         { title: "nav.weather", url: "/farmer/weather", icon: Cloud },
         { title: "nav.irrigation", url: "/farmer/irrigation", icon: Droplets },
-        { title: "nav.ai_advisory" as any, url: "/farmer/ai", icon: BrainCircuit },
+        { title: "nav.ai_advisory", url: "/farmer/ai", icon: BrainCircuit },
         { title: "nav.activities", url: "/farmer/activities", icon: ListChecks },
         { title: "nav.market", url: "/farmer/market", icon: TrendingUp },
-        { title: "nav.reports", url: "/reports", icon: ScrollText },
+        { title: "nav.reports_v2", url: "/farmer/reports-v2", icon: Sparkles },
         { title: "nav.community", url: "/farmer/community", icon: MessageSquare },
         { title: "nav.guidance", url: "/farmer/guidance", icon: BookOpen },
+        { title: "nav.pest_disease", url: "/farmer/pest-disease", icon: Bug },
+        { title: "nav.livestock", url: "/farmer/livestock", icon: Dog },
       ],
     },
   ],
@@ -161,6 +207,7 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
   const navigate = useNavigate();
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) => currentPath === url;
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -190,9 +237,7 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
             <Shield className="h-8 w-8" />
           </div>
           <h1 className="mb-2 font-display text-2xl font-bold">{t("dashboard.pending.title")}</h1>
-          <p className="mb-6 text-muted-foreground">
-            {t("dashboard.pending.description")}
-          </p>
+          <p className="mb-6 text-muted-foreground">{t("dashboard.pending.description")}</p>
           <div className="flex flex-col gap-3">
             <Button variant="outline" onClick={() => window.location.reload()}>
               {t("dashboard.pending.refresh")}
@@ -217,12 +262,12 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
           <SidebarHeader className="border-b border-sidebar-border">
             <Link to="/" className="flex items-center gap-2 px-2 py-2 group">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden">
-                <img src="/aguka-logo.png" alt="Aguka" className="h-full w-full object-contain" />
+                <img src="/imbaraga-logo.png" alt="AGUKA" className="h-full w-full object-contain" />
               </div>
               <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                <span className="font-display font-bold text-sidebar-foreground">Aguka</span>
+                <span className="font-display font-bold text-sidebar-foreground">AGUKA</span>
                 <span className="text-[10px] text-sidebar-foreground/60 flex items-center gap-1">
-                  <Badge.icon className="h-3 w-3" /> {t(Badge.label)}
+                  <Badge.icon className="h-3 w-3" /> {t(Badge.label as any, {})}
                 </span>
               </div>
             </Link>
@@ -232,7 +277,7 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
             {sections.map((section) => (
               <SidebarGroup key={section.label}>
                 <SidebarGroupLabel className="text-sidebar-foreground/50">
-                  {t(section.label)}
+                  {t(section.label as any, {})}
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
@@ -241,7 +286,7 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
                         <SidebarMenuButton asChild isActive={isActive(item.url)}>
                           <Link to={item.url} className="flex items-center gap-2">
                             <item.icon className="h-4 w-4" />
-                            <span>{t(item.title)}</span>
+                            <span>{t(item.title as any, {})}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -255,7 +300,7 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
           <SidebarFooter className="border-t border-sidebar-border">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleLogout}>
+                <SidebarMenuButton onClick={() => setShowLogoutConfirm(true)}>
                   <LogOut className="h-4 w-4" />
                   <span>{t("nav.logout")}</span>
                 </SidebarMenuButton>
@@ -264,6 +309,26 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
           </SidebarFooter>
         </Sidebar>
 
+        <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Log out?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You'll need to log back in to access your account.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleLogout}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Log out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div className="flex flex-1 flex-col">
           <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/50 bg-background/80 px-4 backdrop-blur-lg">
             <SidebarTrigger />
@@ -271,16 +336,18 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
               <GlobalSearch />
             </div>
             <div className="ml-auto flex items-center gap-2">
+              <SocketStatus />
+              <NotificationDropdown />
               <LanguageSwitcher />
-              <Link 
-                to="/profile" 
+              <Link
+                to="/profile"
                 className="flex items-center gap-2 rounded-full border border-border/50 bg-card pl-1 pr-3 py-1 hover:bg-muted/50 transition-colors"
               >
                 <Avatar className="h-7 w-7">
                   {user?.avatarUrl ? (
-                    <img 
-                      src={`${BASE_URL}${user.avatarUrl}`} 
-                      alt={user.name} 
+                    <img
+                      src={`${BASE_URL}${user.avatarUrl}`}
+                      alt={user.name}
                       className="h-full w-full object-cover"
                     />
                   ) : (
@@ -295,15 +362,15 @@ export function DashboardLayout({ role, children }: { role: Role; children?: Rea
                 </Avatar>
                 <div className="hidden text-xs sm:block">
                   <div className="font-medium leading-tight">{user?.name}</div>
-                  <div className="text-muted-foreground leading-tight">{t(Badge.label)}</div>
+                  <div className="text-muted-foreground leading-tight">
+                    {t(Badge.label as any, {})}
+                  </div>
                 </div>
               </Link>
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 lg:p-8">
-            {children || <Outlet />}
-          </main>
+          <main className="flex-1 p-4 md:p-6 lg:p-8">{children || <Outlet />}</main>
         </div>
       </div>
     </SidebarProvider>

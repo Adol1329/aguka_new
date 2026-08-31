@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -9,12 +10,15 @@ import 'package:dio/dio.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint("Handling a background message: \${message.messageId}");
+  debugPrint("Handling a background message: ${message.messageId}");
   // Here we could trigger a local SQLite update or show a local notification
 }
 
 class FirebaseService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final _messageController = StreamController<RemoteMessage>.broadcast();
+
+  Stream<RemoteMessage> get messageStream => _messageController.stream;
 
   Future<void> initialize() async {
     // Request permission for iOS/Android 13+
@@ -24,7 +28,7 @@ class FirebaseService {
       sound: true,
     );
 
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       debugPrint('User granted permission');
       
       // Get the FCM token for this device to send to the backend
@@ -51,7 +55,8 @@ class FirebaseService {
       // Handle foreground messages
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         debugPrint('Received a foreground message: ${message.notification?.title}');
-        // Display an in-app banner or dialog
+        _messageController.add(message);
+        // Display an in-app banner or dialog if needed
       });
       
       // Handle background messages
@@ -65,6 +70,10 @@ class FirebaseService {
   /// Subscribe to topics (e.g., district-wide alerts or cooperative broadcasts)
   Future<void> subscribeToTopic(String topic) async {
     await _firebaseMessaging.subscribeToTopic(topic);
-    debugPrint("Subscribed to FCM topic: \$topic");
+    debugPrint("Subscribed to FCM topic: $topic");
+  }
+
+  void dispose() {
+    _messageController.close();
   }
 }

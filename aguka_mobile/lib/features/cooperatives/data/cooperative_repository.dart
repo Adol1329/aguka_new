@@ -8,7 +8,7 @@ class CooperativeRepository {
 
   Future<Cooperative> getMyCooperative() async {
     try {
-      final response = await _dio.get('/cooperatives/my');
+      final response = await _dio.get('/cooperatives/me');
       return Cooperative.fromJson(response.data['data']);
     } catch (e) {
       rethrow;

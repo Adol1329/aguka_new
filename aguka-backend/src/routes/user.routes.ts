@@ -11,6 +11,8 @@ import {
   updateUserRole,
   updateUserStatus,
   bulkUpdateStatus,
+  updateUserByAdmin,
+  deleteUser,
   uploadAvatarController,
 } from "../controllers/user.controller.js";
 import { uploadAvatar } from "../middleware/upload.middleware.js";
@@ -24,7 +26,12 @@ router.patch("/me", authenticate, asyncHandler(updateMyProfile));
 router.post(
   "/me/avatar",
   authenticate,
-  uploadAvatar.single("avatar"),
+  (req, res, next) => {
+    uploadAvatar.single("avatar")(req, res, (err) => {
+      if (err) return next(err);
+      next();
+    });
+  },
   asyncHandler(uploadAvatarController),
 );
 
@@ -35,6 +42,20 @@ router.get(
   authenticate,
   authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   asyncHandler(getUserById),
+);
+
+router.patch(
+  "/:id",
+  authenticate,
+  authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(updateUserByAdmin),
+);
+
+router.delete(
+  "/:id",
+  authenticate,
+  authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  asyncHandler(deleteUser),
 );
 
 router.get(

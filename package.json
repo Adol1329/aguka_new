@@ -14,5 +14,8 @@
   "workspaces": [
     "aguka-backend",
     "aguka-frontend"
-  ]
+  ],
+  "dependencies": {
+    "@esbuild/win32-x64": "^0.28.0"
+  }
 }

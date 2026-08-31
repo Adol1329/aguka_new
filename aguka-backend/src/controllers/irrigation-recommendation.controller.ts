@@ -9,7 +9,8 @@ export const getRecommendations = async (
 ) => {
   try {
     const farmerId = req.user!.sub;
-    const recommendation = await irrigationRecommendationService.generateRecommendations(farmerId);
+    const recommendation =
+      await irrigationRecommendationService.generateRecommendations(farmerId);
     return res.json({ success: true, data: recommendation });
   } catch (error) {
     return next(error);
@@ -25,7 +26,7 @@ export const acceptRecommendation = async (
     const farmerId = req.user!.sub;
     const result = await irrigationRecommendationService.acceptRecommendation(
       farmerId,
-      req.body
+      req.body,
     );
     return res.json({ success: true, data: result });
   } catch (error) {

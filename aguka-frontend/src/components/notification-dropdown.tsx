@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Bell, Check, Info, AlertTriangle, AlertCircle, Inbox } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,12 +16,41 @@ import { notificationApi, Notification } from "@/api/notifications";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { socket } from "@/lib/socket";
 
 export function NotificationDropdown() {
   const { t } = useI18n();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const handleNewNotification = (notification: any) => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+
+      toast.info(notification.title, {
+        description: notification.message,
+      });
+    };
+
+    const handleRead = () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+    };
+
+    socket.on("notification:new", handleNewNotification);
+    socket.on("notification:read", handleRead);
+    socket.on("notification:bulk-read", handleRead);
+    return () => {
+      socket.off("notification:new", handleNewNotification);
+      socket.off("notification:read", handleRead);
+      socket.off("notification:bulk-read", handleRead);
+    };
+  }, [user, queryClient]);
 
   const { data: notificationsRes, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -75,12 +106,15 @@ export function NotificationDropdown() {
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-in zoom-in">
-              {unreadCount > 9 ? "9+" : unreadCount}
+              {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[380px] p-0 overflow-hidden bg-card/95 backdrop-blur-md border-border/50 shadow-2xl">
+      <DropdownMenuContent
+        align="end"
+        className="w-[380px] p-0 overflow-hidden bg-card/95 backdrop-blur-md border-border/50 shadow-2xl"
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-muted/30">
           <h3 className="font-semibold text-sm tracking-tight">{t("notifications.title")}</h3>
           {unreadCount > 0 && (
@@ -95,7 +129,7 @@ export function NotificationDropdown() {
             </Button>
           )}
         </div>
-        
+
         <ScrollArea className="h-[400px]">
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
@@ -116,26 +150,36 @@ export function NotificationDropdown() {
                   key={notification.id}
                   className={cn(
                     "flex gap-4 p-4 transition-colors hover:bg-muted/50 cursor-pointer group relative",
-                    notification.status === "pending" && "bg-primary/5"
+                    notification.status === "pending" && "bg-primary/5",
                   )}
                   onClick={() => {
                     if (notification.status === "pending") {
                       markAsReadMutation.mutate([notification.id]);
                     }
+                    const meta = notification.metadata;
+                    if (meta?.postId) {
+                      navigate({ to: "/farmer/community", search: { postId: meta.postId } });
+                    }
                   }}
                 >
-                  <div className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                    notification.status === "pending" ? "bg-primary/10 shadow-sm" : "bg-muted"
-                  )}>
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                      notification.status === "pending" ? "bg-primary/10 shadow-sm" : "bg-muted",
+                    )}
+                  >
                     {getIcon(notification.type)}
                   </div>
                   <div className="flex flex-1 flex-col gap-1 pr-4">
                     <div className="flex items-center justify-between">
-                      <span className={cn(
-                        "text-xs font-semibold leading-none",
-                        notification.status === "pending" ? "text-primary" : "text-muted-foreground"
-                      )}>
+                      <span
+                        className={cn(
+                          "text-xs font-semibold leading-none",
+                          notification.status === "pending"
+                            ? "text-primary"
+                            : "text-muted-foreground",
+                        )}
+                      >
                         {notification.title}
                       </span>
                       <span className="text-[10px] text-muted-foreground tabular-nums">
@@ -154,10 +198,15 @@ export function NotificationDropdown() {
             </div>
           )}
         </ScrollArea>
-        
+
         <div className="p-2 border-t border-border/50 bg-muted/10">
-          <Button variant="ghost" size="sm" className="w-full text-xs hover:bg-primary/5 hover:text-primary transition-all font-medium" asChild>
-            <a href="/farmer/notifications">{t("notifications.view_all")}</a>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs hover:bg-primary/5 hover:text-primary transition-all font-medium"
+            asChild
+          >
+            <a href="/notifications">{t("notifications.view_all")}</a>
           </Button>
         </div>
       </DropdownMenuContent>

@@ -159,7 +159,14 @@ export const errorTracking = (
     request: {
       method: req.method,
       url: req.originalUrl || req.url,
-      headers: req.headers as Record<string, string>,
+      headers: (() => {
+        const safe = { ...req.headers } as Record<string, string>;
+        delete safe.authorization;
+        delete safe.cookie;
+        delete safe["x-api-key"];
+        delete safe["proxy-authorization"];
+        return safe;
+      })(),
       body: req.body,
       query: req.query,
       params: req.params,

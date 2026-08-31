@@ -1,4 +1,4 @@
-const KEY = "aguka.session";
+const KEY = "imbaraga.session";
 
 export const tabSession = {
   get: () => {

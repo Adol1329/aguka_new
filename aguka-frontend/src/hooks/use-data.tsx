@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   soilApi,
   weatherApi,
@@ -12,8 +13,8 @@ import {
   activitiesApi,
   auditApi,
   superAdminApi,
+  adminApi,
   forumApi,
-  reportsApi,
   officerApi,
   authApi,
   aiApi,
@@ -23,6 +24,7 @@ import {
   FarmerListResponse,
   IrrigationSchedule,
   SensorSnapshot,
+  type KpiSummary,
 } from "@/api";
 
 export function useSoilReadings(farmerId?: string) {
@@ -90,12 +92,26 @@ export function useAICooperativeAnalysis(cooperativeId?: string) {
 }
 
 export function useFarmers(
-  params?: { page?: number; limit?: number; search?: string },
+  params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    district?: string;
+    cooperativeId?: string;
+  },
   options: Omit<UseQueryOptions<FarmerListResponse, Error>, "queryKey" | "queryFn"> = {},
 ) {
   return useQuery({
     queryKey: ["farmers", params],
-    queryFn: () => farmersApi.listFarmers(params).then((r) => (r.data as FarmerListResponse) || { data: [], pagination: { total: 0, page: 1, limit: 100, totalPages: 0 } }),
+    queryFn: () =>
+      farmersApi.listFarmers(params).then((r) => {
+        // Backend listFarmers returns { success, data: { data: [...], pagination: {...} } }
+        const actualData = (r as any).data;
+        return {
+          data: actualData?.data || [],
+          pagination: actualData?.pagination || { total: 0, page: 1, limit: 100, totalPages: 0 },
+        } as FarmerListResponse;
+      }),
     ...options,
   });
 }
@@ -106,7 +122,19 @@ export function useAssignedFarmers(
 ) {
   return useQuery({
     queryKey: ["assigned-farmers", params],
-    queryFn: () => farmersApi.getAssignedFarmers(params).then((r) => (r.data as FarmerListResponse) || { data: [], pagination: { total: 0, page: 1, limit: 100, totalPages: 0 } }),
+    queryFn: () =>
+      farmersApi.getAssignedFarmers(params).then((r) => {
+        // Backend returns { success, data: [...], pagination: {...} } spread directly
+        const body = r as unknown as {
+          success: boolean;
+          data: FarmerListResponse["data"];
+          pagination: FarmerListResponse["pagination"];
+        };
+        return {
+          data: body.data || [],
+          pagination: body.pagination || { total: 0, page: 1, limit: 100, totalPages: 0 },
+        } as FarmerListResponse;
+      }),
     ...options,
   });
 }
@@ -127,6 +155,13 @@ export function useUpdateFarmerProfile() {
   });
 }
 
+export function useMyDistributions() {
+  return useQuery({
+    queryKey: ["my-distributions"],
+    queryFn: () => farmersApi.getMyDistributions().then((r) => r.data || []),
+  });
+}
+
 export function useFarmerCrops() {
   return useQuery({
     queryKey: ["farmer-crops"],
@@ -139,6 +174,14 @@ export function useCreateFarmerCrop() {
   return useMutation({
     mutationFn: (data: Partial<FarmerCrop>) => farmersApi.createCrop(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["farmer-crops"] }),
+  });
+}
+
+export function useCropTypes() {
+  return useQuery({
+    queryKey: ["crop-types"],
+    queryFn: () => farmersApi.getCropTypes().then((r) => r.data || []),
+    staleTime: 1000 * 60 * 60,
   });
 }
 
@@ -161,8 +204,19 @@ export function useCreateActivity() {
       notes?: string;
       activityDate: string;
       farmerCropId?: string;
+      quantity?: number;
+      unit?: string;
+      costRwf?: number;
     }) => activitiesApi.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["activities"] }),
+  });
+}
+
+export function useActivityTypes() {
+  return useQuery({
+    queryKey: ["activity-types"],
+    queryFn: () => activitiesApi.getTypes().then((r) => r.data || []),
+    staleTime: 1000 * 60 * 60,
   });
 }
 
@@ -184,6 +238,30 @@ export function useUpdateUserStatus() {
   return useMutation({
     mutationFn: ({ id, status, isActive }: { id: string; status?: string; isActive?: boolean }) =>
       usersApi.updateStatus(id, status!, isActive),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: ["farmers"] });
+      qc.invalidateQueries({ queryKey: ["superadmin-users"] });
+    },
+  });
+}
+
+export function useUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => usersApi.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      qc.invalidateQueries({ queryKey: ["farmers"] });
+      qc.invalidateQueries({ queryKey: ["superadmin-users"] });
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => usersApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
       qc.invalidateQueries({ queryKey: ["farmers"] });
@@ -453,6 +531,7 @@ export function useCreatePriceAlert() {
       targetPrice: number;
       alertType: string;
       marketId?: string;
+      smsEnabled?: boolean;
     }) => marketApi.createAlert(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["market-alerts"] }),
   });
@@ -460,6 +539,79 @@ export function useCreatePriceAlert() {
 
 export function useMarketAlerts() {
   return usePriceAlerts();
+}
+
+export function useDeletePriceAlert() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => marketApi.deleteAlert(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["market-alerts"] }),
+  });
+}
+
+export function useMarketInsights() {
+  return useQuery({
+    queryKey: ["market-insights"],
+    queryFn: () => marketApi.getInsights().then((r) => r.data || []),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useRecommendedMarkets(cropId: string | null) {
+  return useQuery({
+    queryKey: ["market-recommendations", cropId],
+    queryFn: () => marketApi.getRecommendedMarkets({ cropId: cropId! }).then((r) => r.data || []),
+    enabled: !!cropId,
+  });
+}
+
+export function useCooperatives(
+  params?: { districtId?: string; district?: string },
+  options: Omit<UseQueryOptions<any[], Error>, "queryKey" | "queryFn"> = {},
+) {
+  return useQuery({
+    queryKey: ["cooperatives", params],
+    queryFn: () => cooperativeApi.listCooperatives(params).then((r) => r.data || []),
+    ...options,
+  });
+}
+
+export function useCreateCooperative() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      district: string;
+      sector: string;
+      contactPhone?: string;
+      description?: string;
+    }) => cooperativeApi.createCooperative(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cooperatives"] }),
+  });
+}
+
+export function useAssignCooperativeManager() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, userId }: { id: string; userId: string }) =>
+      cooperativeApi.assignManager(id, { userId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cooperatives"] });
+      qc.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useImportFarmers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, file }: { coopId: string; file: File }) =>
+      cooperativeApi.importFarmers(coopId, file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["farmers"] });
+      qc.invalidateQueries({ queryKey: ["cooperative-members"] });
+    },
+  });
 }
 
 export function useCooperativeMembers(coopId: string) {
@@ -475,6 +627,33 @@ export function useAddCooperativeMember() {
   return useMutation({
     mutationFn: ({ coopId, data }: { coopId: string; data: { userId: string; role?: string } }) =>
       cooperativeApi.addMember(coopId, data),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-members", coopId] }),
+  });
+}
+
+export function useUpdateMemberStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      coopId,
+      memberId,
+      status,
+    }: {
+      coopId: string;
+      memberId: string;
+      status: string;
+    }) => cooperativeApi.updateMemberStatus(coopId, memberId, status),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-members", coopId] }),
+  });
+}
+
+export function useRemoveCooperativeMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, memberId }: { coopId: string; memberId: string }) =>
+      cooperativeApi.removeMember(coopId, memberId),
     onSuccess: (_, { coopId }) =>
       qc.invalidateQueries({ queryKey: ["cooperative-members", coopId] }),
   });
@@ -514,6 +693,57 @@ export function useCreateCooperativeActivity() {
   });
 }
 
+export function useUpdateCooperativeActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, activityId, data }: { coopId: string; activityId: string; data: any }) =>
+      cooperativeApi.updateActivity(coopId, activityId, data),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-activities", coopId] }),
+  });
+}
+
+export function useDeleteCooperativeActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, activityId }: { coopId: string; activityId: string }) =>
+      cooperativeApi.deleteActivity(coopId, activityId),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-activities", coopId] }),
+  });
+}
+
+export function useMyCooperative() {
+  return useQuery({
+    queryKey: ["cooperative-me"],
+    queryFn: () => cooperativeApi.getMy().then((r) => r.data),
+  });
+}
+
+export function useUpdateCooperative() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      cooperativeApi.updateCooperative(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cooperative-me"] }),
+  });
+}
+
+export function useMyJoinRequest() {
+  return useQuery({
+    queryKey: ["my-join-request"],
+    queryFn: () => cooperativeApi.getMyJoinRequest().then((r) => r.data),
+  });
+}
+
+export function useSubmitJoinRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (cooperativeId: string) => cooperativeApi.submitJoinRequest(cooperativeId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-join-request"] }),
+  });
+}
+
 export function useAddCooperativeResource() {
   const qc = useQueryClient();
   return useMutation({
@@ -524,15 +754,30 @@ export function useAddCooperativeResource() {
   });
 }
 
-export function useBookResource() {
+export function useDistributeResource() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ coopId, resourceId, data }: { coopId: string; resourceId: string; data: any }) =>
-      cooperativeApi.bookResource(coopId, resourceId, data),
+    mutationFn: ({
+      coopId,
+      resourceId,
+      data,
+    }: {
+      coopId: string;
+      resourceId: string;
+      data: { farmerId: string; quantity?: number; notes?: string };
+    }) => cooperativeApi.distributeResource(coopId, resourceId, data),
     onSuccess: (_, { coopId }) => {
       qc.invalidateQueries({ queryKey: ["cooperative-resources", coopId] });
-      qc.invalidateQueries({ queryKey: ["resource-bookings", coopId] });
+      qc.invalidateQueries({ queryKey: ["resource-distributions", coopId] });
     },
+  });
+}
+
+export function useResourceDistributions(coopId: string, params?: any) {
+  return useQuery({
+    queryKey: ["resource-distributions", coopId, params],
+    queryFn: () => cooperativeApi.getDistributions(coopId, params).then((r) => r.data || []),
+    enabled: !!coopId,
   });
 }
 
@@ -556,7 +801,176 @@ export function useDeleteCooperativeResource() {
   });
 }
 
-export function useCommunityPosts(params?: { category?: string; page?: number; limit?: number }) {
+export function useCooperativeAnalytics(coopId: string) {
+  return useQuery({
+    queryKey: ["cooperative-analytics", coopId],
+    queryFn: () => cooperativeApi.getAnalytics(coopId).then((r) => r.data),
+    enabled: !!coopId,
+  });
+}
+
+export function useCooperativeFarmerDetail(coopId: string, farmerId: string) {
+  return useQuery({
+    queryKey: ["cooperative-farmer-detail", coopId, farmerId],
+    queryFn: () => cooperativeApi.getFarmerDetail(coopId, farmerId).then((r) => r.data),
+    enabled: !!coopId && !!farmerId,
+  });
+}
+
+export function useCooperativeJoinRequests(coopId: string) {
+  return useQuery({
+    queryKey: ["cooperative-join-requests", coopId],
+    queryFn: () => cooperativeApi.getJoinRequests(coopId).then((r) => r.data || []),
+    enabled: !!coopId,
+  });
+}
+
+export function useCooperativeEventAttendees(coopId: string, activityId: string) {
+  return useQuery({
+    queryKey: ["cooperative-event-attendees", coopId, activityId],
+    queryFn: () => cooperativeApi.getEventAttendees(coopId, activityId).then((r) => r.data),
+    enabled: !!coopId && !!activityId,
+  });
+}
+
+export function useApproveJoinRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, requestId }: { coopId: string; requestId: string }) =>
+      cooperativeApi.approveJoinRequest(coopId, requestId),
+    onSuccess: (_, { coopId }) => {
+      qc.invalidateQueries({ queryKey: ["cooperative-join-requests", coopId] });
+      qc.invalidateQueries({ queryKey: ["cooperative-members", coopId] });
+    },
+  });
+}
+
+export function useRejectJoinRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, requestId }: { coopId: string; requestId: string }) =>
+      cooperativeApi.rejectJoinRequest(coopId, requestId),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-join-requests", coopId] }),
+  });
+}
+
+export function useMarkAttendance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      coopId,
+      activityId,
+      data,
+    }: {
+      coopId: string;
+      activityId: string;
+      data: { userId: string; status: string };
+    }) => cooperativeApi.markAttendance(coopId, activityId, data),
+    onSuccess: (_, { coopId, activityId }) => {
+      qc.invalidateQueries({ queryKey: ["cooperative-event-attendees", coopId, activityId] });
+      qc.invalidateQueries({ queryKey: ["cooperative-activities", coopId] });
+    },
+  });
+}
+
+export function useUpdateBookingDelivery() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      coopId,
+      bookingId,
+      data,
+    }: {
+      coopId: string;
+      bookingId: string;
+      data: { deliveryStatus: string; deliveryDate?: string };
+    }) => cooperativeApi.updateBookingDelivery(coopId, bookingId, data),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-resources", coopId] }),
+  });
+}
+
+export function useCooperativeDues(coopId: string) {
+  return useQuery({
+    queryKey: ["cooperative-dues", coopId],
+    queryFn: () => cooperativeApi.getDues(coopId).then((r) => r.data || []),
+    enabled: !!coopId,
+  });
+}
+
+export function useCreateDue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, data }: { coopId: string; data: any }) =>
+      cooperativeApi.createDue(coopId, data),
+    onSuccess: (_, { coopId }) => qc.invalidateQueries({ queryKey: ["cooperative-dues", coopId] }),
+  });
+}
+
+export function useUpdateDue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, dueId, data }: { coopId: string; dueId: string; data: any }) =>
+      cooperativeApi.updateDue(coopId, dueId, data),
+    onSuccess: (_, { coopId }) => qc.invalidateQueries({ queryKey: ["cooperative-dues", coopId] }),
+  });
+}
+
+export function useDeleteDue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, dueId }: { coopId: string; dueId: string }) =>
+      cooperativeApi.deleteDue(coopId, dueId),
+    onSuccess: (_, { coopId }) => qc.invalidateQueries({ queryKey: ["cooperative-dues", coopId] }),
+  });
+}
+
+export function useCooperativeExpenses(coopId: string) {
+  return useQuery({
+    queryKey: ["cooperative-expenses", coopId],
+    queryFn: () => cooperativeApi.getExpenses(coopId).then((r) => r.data || []),
+    enabled: !!coopId,
+  });
+}
+
+export function useCreateExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, data }: { coopId: string; data: any }) =>
+      cooperativeApi.createExpense(coopId, data),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-expenses", coopId] }),
+  });
+}
+
+export function useDeleteExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, expenseId }: { coopId: string; expenseId: string }) =>
+      cooperativeApi.deleteExpense(coopId, expenseId),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-expenses", coopId] }),
+  });
+}
+
+export function useSendEventReminder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ coopId, activityId }: { coopId: string; activityId: string }) =>
+      cooperativeApi.sendEventReminder(coopId, activityId),
+    onSuccess: (_, { coopId }) =>
+      qc.invalidateQueries({ queryKey: ["cooperative-activities", coopId] }),
+  });
+}
+
+export function useCommunityPosts(params?: {
+  category?: string;
+  page?: number;
+  limit?: number;
+  audienceType?: any;
+  audienceId?: string;
+}) {
   return useQuery({
     queryKey: ["community-posts", params],
     queryFn: () => forumApi.getPosts(params).then((r) => r.data?.posts || []),
@@ -567,8 +981,18 @@ export function useCommunityPosts(params?: { category?: string; page?: number; l
 export function useCreatePost() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string; content: string; category?: string; tags?: string[] }) =>
-      forumApi.createPost(data),
+    mutationFn: (data: {
+      title: string;
+      content: string;
+      category?: string;
+      type?: any;
+      priority?: string;
+      audienceType?: any;
+      audienceId?: string;
+      imageUrls?: string[];
+      videoUrls?: string[];
+      attachmentUrls?: string[];
+    }) => forumApi.createPost(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["community-posts"] }),
   });
 }
@@ -584,8 +1008,15 @@ export function useLikePost() {
 export function useAddComment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) =>
-      forumApi.addComment(id, content),
+    mutationFn: ({
+      id,
+      content,
+      parentCommentId,
+    }: {
+      id: string;
+      content: string;
+      parentCommentId?: string;
+    }) => forumApi.addComment(id, content, parentCommentId),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ["community-posts"] });
       qc.invalidateQueries({ queryKey: ["forum-post", id] });
@@ -593,10 +1024,57 @@ export function useAddComment() {
   });
 }
 
+export function useReportPost() {
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => forumApi.reportPost(id, reason),
+    onSuccess: () => {
+      toast.success("Post reported successfully.");
+    },
+  });
+}
+
+export function useDeletePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => forumApi.deletePost(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["community-posts"] });
+      toast.success("Post deleted.");
+    },
+  });
+}
+
+export function useVerifyAnswer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (commentId: string) => forumApi.verifyAnswer(commentId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["community-posts"] });
+      toast.success("Answer verified!");
+    },
+  });
+}
+
+export function usePinPost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isPinned }: { id: string; isPinned: boolean }) =>
+      forumApi.pinPost(id, isPinned),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["community-posts"] });
+    },
+  });
+}
+
 export function useAdvisories() {
   return useQuery({
     queryKey: ["advisories"],
-    queryFn: () => officerApi.getAdvisories().then((r) => r.data || []),
+    queryFn: () =>
+      officerApi.getAdvisories().then((r) => {
+        // Backend returns { success, data: [...] } so r is the full body
+        const body = r as unknown as { success: boolean; data: any[] };
+        return body.data || [];
+      }),
     staleTime: 1000 * 60 * 5,
   });
 }
@@ -617,8 +1095,20 @@ export function useCreateAdvisory() {
 export function useRisks() {
   return useQuery({
     queryKey: ["risks"],
-    queryFn: () => officerApi.getRisks().then((r) => r.data || []),
+    queryFn: () =>
+      officerApi.getRisks().then((r) => {
+        const body = r as unknown as { success: boolean; data: any[] };
+        return body.data || [];
+      }),
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useAdminKpiSummary() {
+  return useQuery({
+    queryKey: ["admin-kpi-summary"],
+    queryFn: () => adminApi.getKpiSummary().then((r) => r.data),
+    refetchInterval: 60_000,
   });
 }
 
@@ -765,7 +1255,7 @@ export function useDeleteSuperAdminUser() {
 export function useOfficerAnalysis() {
   return useQuery<any>({
     queryKey: ["officer-analysis"],
-    queryFn: () => officerApi.getAnalysis().then((r) => r.data),
+    queryFn: () => officerApi.getAnalysis().then((r) => (r as any).data),
     staleTime: 1000 * 60 * 5,
   });
 }
@@ -773,7 +1263,7 @@ export function useOfficerAnalysis() {
 export function useOfficerFarmerAnalysis(farmerId: string) {
   return useQuery<any>({
     queryKey: ["officer-farmer-analysis", farmerId],
-    queryFn: () => officerApi.getFarmerAnalysis(farmerId).then((r) => r.data),
+    queryFn: () => officerApi.getFarmerAnalysis(farmerId).then((r) => (r as any).data),
     enabled: !!farmerId,
     staleTime: 1000 * 60 * 5,
   });
@@ -786,8 +1276,110 @@ export function useOfficerPerformanceAnalysis(options?: {
 }) {
   return useQuery<any>({
     queryKey: ["officer-performance-analysis", options],
-    queryFn: () => 
-      officerApi.getPerformanceAnalysis(options).then((r) => r.data),
+    queryFn: () => officerApi.getPerformanceAnalysis(options).then((r) => (r as any).data),
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SUPER ADMIN — 6 NEW FEATURES
+// ═══════════════════════════════════════════════
+
+// FEATURE 1: MERGE ACCOUNTS
+export function useMergeUsers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { primaryUserId: string; secondaryUserId: string }) =>
+      superAdminApi.mergeUsers(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["superadmin-users"] });
+    },
+  });
+}
+
+// FEATURE 2: RESET PASSWORD
+export function useResetUserPassword() {
+  return useMutation({
+    mutationFn: (id: string) => superAdminApi.resetUserPassword(id),
+  });
+}
+
+// FEATURE 6: FORCE LOGOUT
+export function useForceLogoutUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => superAdminApi.forceLogoutUser(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["superadmin-users"] });
+    },
+  });
+}
+
+// FEATURE 3: FEATURE FLAGS
+export function useFeatureFlags() {
+  return useQuery({
+    queryKey: ["feature-flags"],
+    queryFn: () => superAdminApi.getFeatureFlags().then((r) => r.data || []),
+  });
+}
+
+export function useUpdateFeatureFlags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (flags: Array<{ key: string; enabled: boolean }>) =>
+      superAdminApi.updateFeatureFlags(flags),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["feature-flags"] }),
+  });
+}
+
+// FEATURE 4: PASSWORD POLICY
+export function usePasswordPolicy() {
+  return useQuery({
+    queryKey: ["password-policy"],
+    queryFn: () => superAdminApi.getPasswordPolicy().then((r) => r.data),
+  });
+}
+
+export function useUpdatePasswordPolicy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (config: {
+      minLength: number;
+      requireUppercase: boolean;
+      requireLowercase: boolean;
+      requireNumbers: boolean;
+      requireSpecial: boolean;
+      expiryDays: number;
+      preventReuse: number;
+    }) => superAdminApi.updatePasswordPolicy(config),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["password-policy"] }),
+  });
+}
+
+// FEATURE 5: AUDIT RETENTION
+export function useAuditRetention() {
+  return useQuery({
+    queryKey: ["audit-retention"],
+    queryFn: () => superAdminApi.getAuditRetention().then((r) => r.data),
+  });
+}
+
+export function useUpdateAuditRetention() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (config: { retentionDays: number; archiveBeforeCleanup: boolean }) =>
+      superAdminApi.updateAuditRetention(config),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["audit-retention"] }),
+  });
+}
+
+export function useCleanupAuditLogs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => superAdminApi.cleanupAuditLogs(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["audit-retention"] });
+      qc.invalidateQueries({ queryKey: ["superadmin-audit-logs"] });
+    },
   });
 }

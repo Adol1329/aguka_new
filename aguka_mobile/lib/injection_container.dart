@@ -7,6 +7,7 @@ import 'package:aguka_mobile/core/utils/preferences_helper.dart';
 import 'package:aguka_mobile/core/network/dio_client.dart';
 import 'package:aguka_mobile/core/network/network_info.dart';
 import 'package:aguka_mobile/core/bloc/navigation/navigation_cubit.dart';
+import 'package:aguka_mobile/core/theme/theme_cubit.dart';
 import 'package:aguka_mobile/data/datasources/remote/socket_client.dart';
 import 'package:aguka_mobile/services/firebase_service.dart';
 
@@ -31,7 +32,13 @@ import 'package:aguka_mobile/features/dashboard/data/datasources/dashboard_remot
 import 'package:aguka_mobile/features/dashboard/data/repositories/dashboard_repository_impl.dart';
 import 'package:aguka_mobile/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:aguka_mobile/features/dashboard/domain/usecases/get_dashboard_summary.dart';
+import 'package:aguka_mobile/features/dashboard/domain/usecases/get_officer_dashboard.dart';
+import 'package:aguka_mobile/features/dashboard/domain/usecases/get_cooperative_dashboard.dart';
+import 'package:aguka_mobile/features/dashboard/domain/usecases/get_farmer_dashboard.dart';
 import 'package:aguka_mobile/features/dashboard/presentation/bloc/dashboard_bloc.dart';
+import 'package:aguka_mobile/features/dashboard/presentation/bloc/officer_dashboard_bloc.dart';
+import 'package:aguka_mobile/features/dashboard/presentation/bloc/cooperative_dashboard_bloc.dart';
+import 'package:aguka_mobile/features/dashboard/presentation/bloc/farmer_dashboard_bloc.dart';
 
 // Features - Telemetry
 import 'package:aguka_mobile/features/telemetry/data/datasources/telemetry_remote_data_source.dart';
@@ -68,7 +75,14 @@ import 'package:aguka_mobile/features/reports/data/datasources/reports_remote_da
 import 'package:aguka_mobile/features/reports/data/repositories/reports_repository_impl.dart';
 import 'package:aguka_mobile/features/reports/domain/repositories/reports_repository.dart';
 import 'package:aguka_mobile/features/reports/domain/usecases/get_report_analytics_usecase.dart';
+import 'package:aguka_mobile/features/reports/domain/usecases/download_report_usecase.dart';
 import 'package:aguka_mobile/features/reports/bloc/reports_cubit.dart';
+
+// Features - Market
+import 'package:aguka_mobile/features/market/data/market_alerts_remote_data_source.dart';
+
+// Features - Crops
+import 'package:aguka_mobile/features/crops/data/crops_remote_data_source.dart';
 
 // Features - Cooperatives
 import 'package:aguka_mobile/features/cooperatives/data/datasources/cooperative_remote_data_source.dart';
@@ -90,6 +104,20 @@ import 'package:aguka_mobile/features/guidance/data/repositories/guidance_reposi
 import 'package:aguka_mobile/features/guidance/domain/repositories/guidance_repository.dart';
 import 'package:aguka_mobile/features/guidance/presentation/bloc/guidance_bloc.dart';
 
+// Features - Field Visits
+import 'package:aguka_mobile/features/field_visits/data/datasources/field_visit_remote_data_source.dart';
+import 'package:aguka_mobile/features/field_visits/data/repositories/field_visit_repository_impl.dart';
+import 'package:aguka_mobile/features/field_visits/domain/repositories/field_visit_repository.dart';
+import 'package:aguka_mobile/features/field_visits/domain/usecases/get_field_visits_usecase.dart';
+import 'package:aguka_mobile/features/field_visits/presentation/bloc/field_visit_bloc.dart';
+
+// Features - Risks
+import 'package:aguka_mobile/features/risks/data/datasources/risk_remote_data_source.dart';
+import 'package:aguka_mobile/features/risks/data/repositories/risk_repository_impl.dart';
+import 'package:aguka_mobile/features/risks/domain/repositories/risk_repository.dart';
+import 'package:aguka_mobile/features/risks/domain/usecases/get_active_risks_usecase.dart';
+import 'package:aguka_mobile/features/risks/presentation/bloc/risk_bloc.dart';
+
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -98,6 +126,8 @@ Future<void> init() async {
   final prefsHelper = PreferencesHelper(sharedPreferences);
   await prefsHelper.loadSecureValues();
   sl.registerLazySingleton(() => prefsHelper);
+
+  sl.registerLazySingleton(() => ThemeCubit(preferencesHelper: prefsHelper));
 
   final dioClient = DioClient(prefsHelper);
   sl.registerLazySingleton(() => dioClient.dio);
@@ -135,6 +165,7 @@ Future<void> init() async {
         getCurrentUserUseCase: sl(),
         checkAuthStatusUseCase: sl(),
         onboardingUseCase: sl(),
+        authRepository: sl(),
       ));
 
   //! Features - Dashboard
@@ -144,8 +175,14 @@ Future<void> init() async {
   sl.registerLazySingleton<DashboardRepository>(() => DashboardRepositoryImpl(remoteDataSource: sl()));
   // Use cases
   sl.registerLazySingleton(() => GetDashboardSummaryUseCase(sl()));
+  sl.registerLazySingleton(() => GetOfficerDashboardUseCase(sl()));
+  sl.registerLazySingleton(() => GetCooperativeDashboardUseCase(sl()));
+  sl.registerLazySingleton(() => GetFarmerDashboardUseCase(sl()));
   // Bloc
   sl.registerFactory(() => DashboardBloc(getDashboardSummary: sl()));
+  sl.registerFactory(() => OfficerDashboardBloc(getOfficerDashboardUseCase: sl()));
+  sl.registerFactory(() => CooperativeDashboardBloc(getCooperativeDashboardUseCase: sl()));
+  sl.registerFactory(() => FarmerDashboardBloc(getFarmerDashboardUseCase: sl()));
 
   //! Features - Telemetry
   // Data sources
@@ -204,13 +241,29 @@ Future<void> init() async {
     getNotificationsUseCase: sl(),
     markNotificationReadUseCase: sl(),
     markAllNotificationsReadUseCase: sl(),
+    socketClient: sl(),
+    firebaseService: sl(),
   ));
 
   //! Features - Reports
   sl.registerLazySingleton<ReportsRemoteDataSource>(() => ReportsRemoteDataSourceImpl(dioClient: dioClient));
   sl.registerLazySingleton<ReportsRepository>(() => ReportsRepositoryImpl(remoteDataSource: sl()));
   sl.registerLazySingleton(() => GetReportAnalyticsUseCase(sl()));
-  sl.registerFactory(() => ReportsBloc(getAnalyticsUseCase: sl()));
+  sl.registerLazySingleton(() => DownloadReportUseCase(sl()));
+  sl.registerFactory(() => ReportsCubit(
+    getAnalyticsUseCase: sl(),
+    repository: sl(),
+  ));
+
+  //! Features - Market
+  sl.registerLazySingleton<MarketAlertsRemoteDataSource>(
+    () => MarketAlertsRemoteDataSourceImpl(dioClient: dioClient),
+  );
+
+  //! Features - Crops
+  sl.registerLazySingleton<CropsRemoteDataSource>(
+    () => CropsRemoteDataSourceImpl(dioClient: dioClient),
+  );
 
   //! Features - Cooperatives
   sl.registerLazySingleton<CooperativeRemoteDataSource>(() => CooperativeRemoteDataSourceImpl(dioClient: dioClient));
@@ -222,6 +275,7 @@ Future<void> init() async {
     getMyCooperativeUseCase: sl(),
     getMembersUseCase: sl(),
     addMemberUseCase: sl(),
+    repository: sl(),
   ));
 
   //! Features - Profile
@@ -243,7 +297,10 @@ Future<void> init() async {
   sl.registerLazySingleton<ForumRepository>(
     () => ForumRepositoryImpl(remoteDataSource: sl()),
   );
-  sl.registerFactory(() => ForumBloc(repository: sl()));
+  sl.registerFactory(() => ForumBloc(
+    repository: sl(),
+    socketClient: sl(),
+  ));
 
   //! Features - Guidance
   sl.registerLazySingleton<GuidanceRemoteDataSource>(
@@ -253,4 +310,24 @@ Future<void> init() async {
     () => GuidanceRepositoryImpl(remoteDataSource: sl()),
   );
   sl.registerFactory(() => GuidanceBloc(repository: sl()));
+
+  //! Features - Field Visits
+  sl.registerLazySingleton<FieldVisitRemoteDataSource>(
+    () => FieldVisitRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<FieldVisitRepository>(
+    () => FieldVisitRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => GetFieldVisitsUseCase(sl()));
+  sl.registerFactory(() => FieldVisitBloc(getFieldVisitsUseCase: sl()));
+
+  //! Features - Risks
+  sl.registerLazySingleton<RiskRemoteDataSource>(
+    () => RiskRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<RiskRepository>(
+    () => RiskRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => GetActiveRisksUseCase(sl()));
+  sl.registerFactory(() => RiskBloc(getActiveRisksUseCase: sl()));
 }

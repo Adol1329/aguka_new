@@ -5,6 +5,7 @@ class ReportAnalyticsModel extends ReportAnalyticsEntity {
     required super.overview,
     required super.trends,
     required super.recommendations,
+    super.executiveSummary,
   });
 
   factory ReportAnalyticsModel.fromJson(Map<String, dynamic> json) {
@@ -12,7 +13,80 @@ class ReportAnalyticsModel extends ReportAnalyticsEntity {
       overview: ReportOverviewModel.fromJson(json['overview'] ?? {}),
       trends: ReportTrendsModel.fromJson(json['trends'] ?? {}),
       recommendations: List<String>.from(json['recommendations'] ?? []),
+      executiveSummary: json['executiveSummary']?.toString() ?? '',
     );
+  }
+
+  /// Maps from the reports-v2 ReportDefinition JSON structure.
+  factory ReportAnalyticsModel.fromV2Json(Map<String, dynamic> json) {
+    final kpis = (json['kpis'] as List?) ?? [];
+    num kpi(String id) {
+      final match = kpis.firstWhere(
+        (k) => k['id'] == id,
+        orElse: () => {'value': 0},
+      );
+      final v = match['value'];
+      return v is num ? v : num.tryParse(v.toString()) ?? 0;
+    }
+
+    final charts = (json['charts'] as List?) ?? [];
+    final moistureChart = charts.firstWhere(
+      (c) => (c['heading'] as String).toLowerCase().contains('moisture'),
+      orElse: () => {'data': []},
+    );
+    final soilMoistureData =
+        (moistureChart['data'] as List?) ?? [];
+
+    final recommendations = (json['recommendations'] as List?) ?? [];
+    final recStrings = recommendations
+        .map<String>((r) =>
+            r['title']?.toString() ?? r['action']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    final insights = (json['insights'] as List?) ?? [];
+    final allRecs = [
+      ...recStrings,
+      ...insights.map((i) => i.toString()),
+    ].toSet().toList();
+
+    final score = kpi('score').toInt();
+    final avgMoisture = kpi('moisture').toDouble();
+    final compliance = kpi('compliance').toInt();
+
+    final moistureValues = soilMoistureData
+        .map<double>((p) => (p['value'] as num?)?.toDouble() ?? 0)
+        .toList();
+    final moistureStability = _computeStability(moistureValues);
+
+    return ReportAnalyticsModel(
+      overview: ReportOverviewModel(
+        score: score,
+        moistureStability: moistureStability,
+        irrigationCompliance: compliance,
+        avgMoisture: avgMoisture,
+      ),
+      trends: ReportTrendsModel(
+        soilMoisture: soilMoistureData
+            .map((p) => TrendPointModel(
+                  label: p['label']?.toString() ?? '',
+                  value: (p['value'] as num?)?.toDouble() ?? 0,
+                ))
+            .toList(),
+      ),
+      recommendations: allRecs.take(5).toList(),
+      executiveSummary: json['executiveSummary']?.toString() ?? '',
+    );
+  }
+
+  static int _computeStability(List<double> values) {
+    if (values.isEmpty) return 90;
+    final avg = values.reduce((a, b) => a + b) / values.length;
+    if (avg == 0) return 90;
+    final variance = values.map((v) => (v - avg) * (v - avg)).reduce((a, b) => a + b) / values.length;
+    final cv = (variance > 0 ? variance : 0).toDouble();
+    final stability = (100 - (cv.clamp(0, 100))).toInt();
+    return stability.clamp(0, 100);
   }
 
   /// Mock data for development when the endpoint is unavailable
@@ -38,6 +112,8 @@ class ReportAnalyticsModel extends ReportAnalyticsEntity {
         'Soil pH is optimal. No changes needed.',
         'Consider adding potassium supplement this season.',
       ],
+      executiveSummary:
+          'Your farm is performing well this season with balanced soil moisture and good irrigation compliance.',
     );
   }
 }

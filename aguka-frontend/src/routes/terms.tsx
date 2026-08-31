@@ -15,33 +15,38 @@ function TermsPage() {
     {
       id: "01",
       title: "Kwemera Amategeko / Acceptance of Terms",
-      content: "Mu gukoresha gahunda ya Aguka (aba ari kuri terefone cyangwa mudasobwa), wemeye gukurikiza amategeko n'amabwiriza yose agenga iri koranabuhanga. Niba utemera aya mategeko, ntugakoreshe iyi serivisi.",
+      content:
+        "Mu gukoresha gahunda ya AGUKA (aba ari kuri terefone cyangwa mudasobwa), wemeye gukurikiza amategeko n'amabwiriza yose agenga iri koranabuhanga. Niba utemera aya mategeko, ntugakoreshe iyi serivisi.",
     },
     {
       id: "02",
       title: "Kurinda Umutekano w'Amakuru / Data Privacy & Sensors",
-      content: "Aguka ikorana n'ibyuma bipima ubutaka (sensors) n'ikirere. Twubaha kandi tukarinda amakuru yose y'imirima yawe n'umusaruro wawe. Amakuru yawe ntashobora guhabwa abandi bantu batabifitiye uburenganzira mu buryo bw'amategeko.",
+      content:
+        "AGUKA ikorana n'ibyuma bipima ubutaka (sensors) n'ikirere. Twubaha kandi tukarinda amakuru yose y'imirima yawe n'umusaruro wawe. Amakuru yawe ntashobora guhabwa abandi bantu batabifitiye uburenganzira mu buryo bw'amategeko.",
     },
     {
       id: "03",
       title: "Imenyesha n'Inama z'Ubuhinzi / In-App Advisories Only",
-      content: "Inama zose n'imenyesha ry'ubutaka cyangwa ikirere bitangwa binyuze muri porogaramu ya Aguka (In-App notifications). Serivisi z'imenyesha rya SMS cyangwa USSD ntabwo zikoreshwa kuko zitarashyirwa mu bikorwa muri iri koranabuhanga.",
+      content:
+        "Inama zose n'imenyesha ry'ubutaka cyangwa ikirere bitangwa binyuze muri porogaramu ya AGUKA (In-App notifications). Serivisi z'imenyesha rya SMS cyangwa USSD ntabwo zikoreshwa kuko zitarashyirwa mu bikorwa muri iri koranabuhanga.",
     },
     {
       id: "04",
       title: "Inshingano z'Umuhinzi / User Obligations",
-      content: "Umuhinzi afite inshingano zo kurinda ibikoresho bya sensor mu murima we, gutanga amakuru y'ukuri mu gihe biyandikisha, no gukurikira inama z'ubuhinzi hashingiwe ku bipimo bitangwa na Aguka.",
+      content:
+        "Umuhinzi afite inshingano zo kurinda ibikoresho bya sensor mu murima we, gutanga amakuru y'ukuri mu gihe biyandikisha, no gukurikira inama z'ubuhinzi hashingiwe ku bipimo bitangwa na AGUKA.",
     },
     {
       id: "05",
       title: "Guhagarika Serivisi / Termination of Service",
-      content: "Aguka ifite uburenganzira bwo guhagarika konti y'umukoresha wese wishe amategeko n'amabwiriza, cyangwa ukoresheje nabi ibikoresho n'amakuru y'ikoranabuhanga.",
+      content:
+        "AGUKA ifite uburenganzira bwo guhagarika konti y'umukoresha wese wishe amategeko n'amabwiriza, cyangwa ukoresheje nabi ibikoresho n'amakuru y'ikoranabuhanga.",
     },
   ];
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Left Panel: Aguka Branding & Slogan */}
+      {/* Left Panel: AGUKA Branding & Slogan */}
       <div className="relative hidden flex-col justify-between bg-primary p-12 text-white lg:flex overflow-hidden">
         {/* Decorative Gradients */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 to-teal-900 opacity-[0.98]" />
@@ -52,7 +57,7 @@ function TermsPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md border border-white/20">
             <Leaf className="h-5 w-5 text-emerald-300" />
           </div>
-          <span className="font-display text-2xl font-bold tracking-tight text-white">Aguka</span>
+          <span className="font-display text-2xl font-bold tracking-tight text-white">AGUKA</span>
         </Link>
 
         <div className="relative space-y-6 z-10">
@@ -61,10 +66,11 @@ function TermsPage() {
             Umutekano n'Amategeko
           </div>
           <h2 className="font-display text-4xl font-extrabold leading-tight text-white">
-            Amategeko n'Amabwiriza Agenga Aguka
+            Amategeko n'Amabwiriza Agenga AGUKA
           </h2>
           <p className="max-w-md text-emerald-100/80 leading-relaxed text-sm">
-            Soma witonze amategeko agenga ikoreshwa rya gahunda ya Aguka, kurinda amakuru y'ubutaka n'ikirere, hamwe n'inshingano za buri muhinzi n'umufatanyabikorwa.
+            Soma witonze amategeko agenga ikoreshwa rya gahunda ya AGUKA, kurinda amakuru y'ubutaka
+            n'ikirere, hamwe n'inshingano za buri muhinzi n'umufatanyabikorwa.
           </p>
 
           <div className="space-y-4 pt-6 border-t border-white/10">
@@ -94,7 +100,7 @@ function TermsPage() {
         <div className="flex items-center justify-between p-6 border-b border-zinc-100 bg-white">
           <Link to="/" className="flex items-center gap-2 lg:hidden">
             <Leaf className="h-6 w-6 text-emerald-600" />
-            <span className="font-display font-bold text-lg">Aguka</span>
+            <span className="font-display font-bold text-lg">AGUKA</span>
           </Link>
           <div className="ml-auto">
             <LanguageSwitcher />
@@ -139,7 +145,11 @@ function TermsPage() {
 
             {/* Premium, clearly-styled Back Button */}
             <div className="flex items-center justify-between pt-6 border-t border-zinc-100">
-              <Button asChild variant="outline" className="border-emerald-600/30 text-emerald-700 hover:bg-emerald-50/50 hover:text-emerald-800 font-bold rounded-xl px-5 py-2.5 h-auto transition-all duration-200">
+              <Button
+                asChild
+                variant="outline"
+                className="border-emerald-600/30 text-emerald-700 hover:bg-emerald-50/50 hover:text-emerald-800 font-bold rounded-xl px-5 py-2.5 h-auto transition-all duration-200"
+              >
                 <Link to="/auth" search={{ mode: "signup" }}>
                   <ArrowLeft className="mr-2 h-4 w-4 stroke-[2.5]" /> Subira Inyuma / Go Back
                 </Link>

@@ -48,13 +48,15 @@ function CooperativeAIDashboard() {
         <Card>
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex justify-between items-start">
-              <span className="text-sm font-semibold text-muted-foreground uppercase">Total Farmers</span>
+              <span className="text-sm font-semibold text-muted-foreground uppercase">
+                Total Farmers
+              </span>
               <Users className="h-4 w-4 text-primary" />
             </div>
             <div className="text-3xl font-bold mt-4">{summary.totalFarmers}</div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-warning/50 bg-warning/5">
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex justify-between items-start">
@@ -62,20 +64,24 @@ function CooperativeAIDashboard() {
               <TrendingDown className="h-4 w-4 text-warning" />
             </div>
             <div className="text-3xl font-bold mt-4 text-warning">{summary.underperforming}</div>
-            <p className="text-xs text-warning/80 mt-2 font-medium">Require immediate extension support</p>
+            <p className="text-xs text-warning/80 mt-2 font-medium">
+              Require immediate extension support
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex justify-between items-start">
-              <span className="text-sm font-semibold text-muted-foreground uppercase">Avg Productivity</span>
+              <span className="text-sm font-semibold text-muted-foreground uppercase">
+                Avg Productivity
+              </span>
               <BrainCircuit className="h-4 w-4 text-success" />
             </div>
             <div className="text-3xl font-bold mt-4">{summary.avgProductivity}/100</div>
             <div className="w-full bg-muted rounded-full h-1.5 mt-3">
-              <div 
-                className="bg-success h-1.5 rounded-full" 
+              <div
+                className="bg-success h-1.5 rounded-full"
                 style={{ width: `${summary.avgProductivity}%` }}
               />
             </div>
@@ -85,7 +91,9 @@ function CooperativeAIDashboard() {
         <Card className={summary.alertCount > 0 ? "border-destructive/50 bg-destructive/5" : ""}>
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex justify-between items-start">
-              <span className="text-sm font-semibold text-destructive uppercase">Active AI Alerts</span>
+              <span className="text-sm font-semibold text-destructive uppercase">
+                Active AI Alerts
+              </span>
               <AlertCircle className="h-4 w-4 text-destructive" />
             </div>
             <div className="text-3xl font-bold mt-4 text-destructive">{summary.alertCount}</div>
@@ -100,7 +108,7 @@ function CooperativeAIDashboard() {
             Priority Interventions
             <Badge variant="secondary">{recommendations.length}</Badge>
           </h3>
-          
+
           {recommendations.length === 0 ? (
             <Card className="border-dashed bg-muted/10">
               <CardContent className="p-10 text-center text-muted-foreground">
@@ -111,11 +119,16 @@ function CooperativeAIDashboard() {
           ) : (
             <div className="grid gap-4">
               {recommendations.map((rec: AIRecommendation, i: number) => (
-                <Card key={i} className={`overflow-hidden border-l-4 ${
-                  rec.severity === "high" ? "border-l-destructive bg-destructive/5" : 
-                  rec.severity === "medium" ? "border-l-warning bg-warning/5" : 
-                  "border-l-primary bg-primary/5"
-                }`}>
+                <Card
+                  key={i}
+                  className={`overflow-hidden border-l-4 ${
+                    rec.severity === "high"
+                      ? "border-l-destructive bg-destructive/5"
+                      : rec.severity === "medium"
+                        ? "border-l-warning bg-warning/5"
+                        : "border-l-primary bg-primary/5"
+                  }`}
+                >
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -161,26 +174,38 @@ function CooperativeAIDashboard() {
                   </div>
                 ) : (
                   farmerRankings.map((farmer: any, index: number) => (
-                    <div 
-                      key={farmer.farmerId} 
+                    <div
+                      key={farmer.farmerId}
                       className={`flex items-center justify-between p-4 border-b last:border-0 hover:bg-muted/50 transition-colors ${
                         index < 3 ? "bg-primary/5" : ""
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                          index === 0 ? "bg-yellow-500/20 text-yellow-600" :
-                          index === 1 ? "bg-gray-400/20 text-gray-600" :
-                          index === 2 ? "bg-amber-600/20 text-amber-700" :
-                          "bg-muted text-muted-foreground"
-                        }`}>
+                        <div
+                          className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                            index === 0
+                              ? "bg-yellow-500/20 text-yellow-600"
+                              : index === 1
+                                ? "bg-gray-400/20 text-gray-600"
+                                : index === 2
+                                  ? "bg-amber-600/20 text-amber-700"
+                                  : "bg-muted text-muted-foreground"
+                          }`}
+                        >
                           #{farmer.rank}
                         </div>
                         <div className="font-medium text-sm">{farmer.farmerName}</div>
                       </div>
-                      <Badge variant={farmer.productivity >= 70 ? "outline" : farmer.productivity < 40 ? "destructive" : "secondary"} className={
-                        farmer.productivity >= 70 ? "border-success text-success" : ""
-                      }>
+                      <Badge
+                        variant={
+                          farmer.productivity >= 70
+                            ? "outline"
+                            : farmer.productivity < 40
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className={farmer.productivity >= 70 ? "border-success text-success" : ""}
+                      >
                         {farmer.productivity}/100
                       </Badge>
                     </div>

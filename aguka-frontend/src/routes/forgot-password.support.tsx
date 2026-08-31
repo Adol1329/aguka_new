@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Leaf, ArrowLeft, ShieldAlert, PhoneCall, FileText, CheckCircle2, ShieldCheck, Mail } from "lucide-react";
+import {
+  Leaf,
+  ArrowLeft,
+  ShieldAlert,
+  PhoneCall,
+  FileText,
+  CheckCircle2,
+  ShieldCheck,
+  Mail,
+} from "lucide-react";
 
 export const Route = createFileRoute("/forgot-password/support")({
   validateSearch: (s: Record<string, unknown>): { phone: string } => ({
@@ -20,7 +29,10 @@ function ForgotPasswordSupportPage() {
     },
     {
       title: "Provide Account Identification Details",
-      desc: "Specify your registered phone number (" + phone + ") and verify your full name with a national ID card.",
+      desc:
+        "Specify your registered phone number (" +
+        phone +
+        ") and verify your full name with a national ID card.",
       icon: FileText,
       color: "text-blue-600 bg-blue-50 border-blue-100",
     },
@@ -50,8 +62,10 @@ function ForgotPasswordSupportPage() {
             <Leaf className="h-6 w-6 text-emerald-300" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Aguka</h1>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Smart Farming Kit</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">AGUKA</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+              Smart Farming Kit
+            </p>
           </div>
         </div>
 
@@ -64,7 +78,8 @@ function ForgotPasswordSupportPage() {
             Account recovery support.
           </h2>
           <p className="text-lg text-emerald-100/90 leading-relaxed">
-            Because there is no email linked to your account, a secure admin-assisted password reset is required.
+            Because there is no email linked to your account, a secure admin-assisted password reset
+            is required.
           </p>
         </div>
 
@@ -87,8 +102,10 @@ function ForgotPasswordSupportPage() {
           <div className="flex items-center gap-2 lg:hidden mb-8">
             <Leaf className="h-8 w-8 text-emerald-600" />
             <div>
-              <span className="text-xl font-bold text-slate-900">Aguka</span>
-              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">Smart Farming</span>
+              <span className="text-xl font-bold text-slate-900">AGUKA</span>
+              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">
+                Smart Farming
+              </span>
             </div>
           </div>
 
@@ -98,7 +115,8 @@ function ForgotPasswordSupportPage() {
                 Recovery via Support
               </h2>
               <p className="text-sm text-slate-500">
-                To guarantee account privacy and safety, please follow these steps to reset your password:
+                To guarantee account privacy and safety, please follow these steps to reset your
+                password:
               </p>
             </div>
 
@@ -111,11 +129,15 @@ function ForgotPasswordSupportPage() {
                     key={idx}
                     className="flex gap-4 p-5 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300"
                   >
-                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${step.color}`}>
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${step.color}`}
+                    >
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="space-y-1">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Step {idx + 1}</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                        Step {idx + 1}
+                      </span>
                       <h4 className="text-base font-bold text-slate-800">{step.title}</h4>
                       <p className="text-sm text-slate-500 leading-relaxed">{step.desc}</p>
                     </div>
@@ -128,10 +150,10 @@ function ForgotPasswordSupportPage() {
             <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-5 space-y-3">
               <h5 className="text-sm font-bold text-emerald-800 flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                Aguka Helpdesk
+                AGUKA Helpdesk
               </h5>
               <p className="text-sm text-emerald-700 leading-relaxed font-medium">
-                Need immediate help? Contact Aguka support directly at:
+                Need immediate help? Contact AGUKA support directly at:
               </p>
               <div className="flex flex-col sm:flex-row gap-3 pt-1 text-sm text-slate-600 font-semibold">
                 <span className="flex items-center gap-1.5">
@@ -141,7 +163,7 @@ function ForgotPasswordSupportPage() {
                 <span className="hidden sm:inline text-slate-300">|</span>
                 <span className="flex items-center gap-1.5">
                   <Mail className="h-4 w-4 text-emerald-600" />
-                  support@aguka.imbaraga.org
+                  support@imbaraga.org
                 </span>
               </div>
             </div>

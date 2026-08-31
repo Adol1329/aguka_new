@@ -10,7 +10,13 @@ export const PaginationSchema = z.object({
 export const DateRangeSchema = z.object({
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
-});
+}).refine(
+  (data) => !data.startDate || !data.endDate || data.startDate <= data.endDate,
+  {
+    message: "Start date must be on or before end date",
+    path: ["endDate"],
+  },
+);
 
 export const IdParamSchema = z.object({
   id: z.string().uuid(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aguka_mobile/features/auth/presentation/login_page.dart';
 
@@ -13,22 +14,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<OnboardingItem> _items = [
+  List<OnboardingItem> get _items => [
     OnboardingItem(
-      title: 'Smart Soil Monitoring',
-      description: 'Track Nitrogen, Phosphorus, and Potassium levels in real-time to optimize your crop yield.',
+      titleKey: 'onboarding.slide1.title',
+      descKey: 'onboarding.slide1.desc',
       image: Icons.grass_rounded,
       color: Colors.green,
     ),
     OnboardingItem(
-      title: 'Precision Irrigation',
-      description: 'Control your water pump remotely and save up to 40% of water using smart sensors.',
+      titleKey: 'onboarding.slide2.title',
+      descKey: 'onboarding.slide2.desc',
       image: Icons.water_drop_rounded,
       color: Colors.blue,
     ),
     OnboardingItem(
-      title: 'Local Market Prices',
-      description: 'Get the latest prices from Kigali, Musanze, and beyond to sell your harvest at the best price.',
+      titleKey: 'onboarding.slide3.title',
+      descKey: 'onboarding.slide3.desc',
       image: Icons.store_rounded,
       color: Colors.orange,
     ),
@@ -70,7 +71,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                     const SizedBox(height: 60),
                     Text(
-                      item.title,
+                      item.titleKey.tr(),
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -80,7 +81,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      item.description,
+                      item.descKey.tr(),
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey[600],
@@ -132,7 +133,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
-                  child: Text(_currentPage == _items.length - 1 ? 'GET STARTED' : 'NEXT'),
+                  child: Text(_currentPage == _items.length - 1 ? 'onboarding.get_started'.tr() : 'onboarding.next'.tr()),
                 ),
               ],
             ),
@@ -142,7 +143,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             right: 20,
             child: TextButton(
               onPressed: _finishOnboarding,
-              child: const Text('SKIP', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              child: Text('onboarding.skip'.tr(), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -152,14 +153,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
 }
 
 class OnboardingItem {
-  final String title;
-  final String description;
+  final String titleKey;
+  final String descKey;
   final IconData image;
   final Color color;
 
   OnboardingItem({
-    required this.title,
-    required this.description,
+    required this.titleKey,
+    required this.descKey,
     required this.image,
     required this.color,
   });

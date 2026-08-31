@@ -15,6 +15,7 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_PASSWORD_RESET_SECRET: z.string().min(32).optional(),
   JWT_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
@@ -70,6 +71,8 @@ export const config = {
   jwt: {
     secret: parsed.data.JWT_SECRET,
     refreshSecret: parsed.data.JWT_REFRESH_SECRET,
+    passwordResetSecret:
+      parsed.data.JWT_PASSWORD_RESET_SECRET || parsed.data.JWT_SECRET,
     expiresIn: parsed.data.JWT_EXPIRES_IN,
     refreshExpiresIn: parsed.data.JWT_REFRESH_EXPIRES_IN,
   },

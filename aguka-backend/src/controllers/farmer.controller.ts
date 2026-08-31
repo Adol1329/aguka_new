@@ -3,6 +3,8 @@ import { farmerService } from "../services/farmer.service.js";
 import { soilService } from "../services/soil.service.js";
 import { UserRole } from "../types/index.js";
 import { RequestWithUser } from "../types/index.js";
+import { NotFoundError } from "../middleware/error.middleware.js";
+import { prisma } from "../prisma.js";
 
 export const getProfile = async (
   req: RequestWithUser,
@@ -178,6 +180,46 @@ export const getCrops = async (
   }
 };
 
+export const getCropCatalog = async (
+  _req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const crops = await farmerService.getCropCatalog();
+    return res.json({ success: true, data: crops });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getFarmerCrops = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const farmerId = req.params.id;
+    // We should ideally verify if the current user has access to this farmer's data
+    // but the authorizeFarmerOrRole middleware should handle basic role checks.
+    // For more granular check (e.g. is this officer assigned to this farmer),
+    // it could be done here or in the service.
+    const farmer = await prisma.farmerProfile.findUnique({
+      where: { id: farmerId },
+      include: { user: true },
+    });
+
+    if (!farmer) {
+      throw new NotFoundError("Farmer profile");
+    }
+
+    const crops = await farmerService.getCrops(farmer.user.id);
+    return res.json({ success: true, data: crops });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const getCropGuidance = async (
   req: RequestWithUser,
   res: Response,
@@ -216,11 +258,78 @@ export const bulkVerifyFarmers = async (
   try {
     const farmerIds = req.body.ids;
     if (!farmerIds || !Array.isArray(farmerIds) || farmerIds.length === 0) {
-      return res.status(400).json({ success: false, message: "Invalid farmer IDs provided" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid farmer IDs provided" });
     }
-    
-    const result = await farmerService.bulkVerifyFarmers(farmerIds, req.user!.sub);
+
+    const result = await farmerService.bulkVerifyFarmers(
+      farmerIds,
+      req.user!.sub,
+    );
     return res.json({ success: true, data: result });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getFarmGuidance = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.user!.sub;
+
+    const profile = await prisma.farmerProfile.findFirst({
+      where: { userId },
+    });
+
+    if (!profile) {
+      throw new NotFoundError("Farmer profile");
+    }
+
+    const crops = await farmerService.getCrops(userId);
+    const cropsWithGuidance = await Promise.all(
+      crops.map(async (crop: any) => {
+        const guidance = await farmerService.getCropGuidance(userId, crop.id);
+        return { crop, guidance };
+      }),
+    );
+
+    const livestock = await prisma.livestock.findMany({
+      where: { farmerId: profile.id },
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        crops: cropsWithGuidance,
+        livestock,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const getMyDistributions = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.user!.sub;
+
+    const distributions = await prisma.resourceDistribution.findMany({
+      where: { farmerId: userId },
+      include: {
+        resource: true,
+      },
+      orderBy: { distributedAt: "desc" },
+    });
+
+    return res.json({ success: true, data: distributions });
   } catch (error) {
     return next(error);
   }

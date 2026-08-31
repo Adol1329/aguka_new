@@ -9,7 +9,11 @@ export const getLogs = async (
 ) => {
   try {
     // Non-admin roles are restricted to viewing only their own audit logs
-    if (req.user && req.user.role !== "super_admin" && req.user.role !== "admin") {
+    if (
+      req.user &&
+      req.user.role !== "super_admin" &&
+      req.user.role !== "admin"
+    ) {
       req.query.userId = req.user.sub;
     }
     const result = await auditService.getLogs(req.query as any);

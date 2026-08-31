@@ -34,11 +34,18 @@ function GuestNotificationDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-all duration-200">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-all duration-200"
+        >
           <Bell className="h-5 w-5 text-emerald-600" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[340px] p-6 text-center bg-white/95 backdrop-blur-md border border-zinc-100 shadow-2xl rounded-2xl flex flex-col items-center">
+      <DropdownMenuContent
+        align="end"
+        className="w-[340px] p-6 text-center bg-white/95 backdrop-blur-md border border-zinc-100 shadow-2xl rounded-2xl flex flex-col items-center"
+      >
         <div className="h-12 w-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4">
           <Lock className="h-5 w-5 text-emerald-600 animate-pulse" />
         </div>
@@ -46,17 +53,28 @@ function GuestNotificationDropdown() {
           Imenyesha Nyaryo / Real Advisories
         </h3>
         <p className="text-xs text-zinc-500 leading-relaxed mb-4">
-          Yinjira muri konti yawe kugira ngo urebe imenyesha ry'ubutaka, ikirere n'inama z'ubuhinzi ritunganyijwe ku bwawe.
+          Yinjira muri konti yawe kugira ngo urebe imenyesha ry'ubutaka, ikirere n'inama z'ubuhinzi
+          ritunganyijwe ku bwawe.
         </p>
         <div className="w-full space-y-2">
-          <Button asChild size="sm" className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2 h-auto shadow-sm">
+          <Button
+            asChild
+            size="sm"
+            className="w-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2 h-auto shadow-sm"
+          >
             <Link to="/auth" search={{ mode: "signin" }}>
               Yinjira / Sign In
             </Link>
           </Button>
-          <Button asChild variant="outline" size="sm" className="w-full text-xs font-bold rounded-xl py-2 h-auto">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="w-full text-xs font-bold rounded-xl py-2 h-auto"
+          >
             <Link to="/auth" search={{ mode: "signup" }}>
-              <Sparkles className="mr-1.5 h-3.5 w-3.5 text-emerald-600" /> Fungura Konti / Start Free
+              <Sparkles className="mr-1.5 h-3.5 w-3.5 text-emerald-600" /> Fungura Konti / Start
+              Free
             </Link>
           </Button>
         </div>
@@ -124,7 +142,7 @@ function Landing() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg overflow-hidden">
-              <img src="/aguka-logo.png" alt="Aguka" className="h-full w-full object-contain" />
+              <img src="/imbaraga-logo.png" alt="AGUKA" className="h-full w-full object-contain" />
             </div>
             <span className="font-display text-xl font-bold">{t("app.name")}</span>
           </Link>
@@ -276,9 +294,7 @@ function Landing() {
                 <div className="flex items-end justify-between gap-1">
                   {[40, 55, 75, 90, 60, 35, 25].map((h, i) => (
                     <div key={i} className="flex flex-1 flex-col items-center gap-1">
-                      {i === 2 && (
-                        <div className="text-[10px]">🌧️</div>
-                      )}
+                      {i === 2 && <div className="text-[10px]">🌧️</div>}
                       <div
                         className={`w-full rounded-t ${i === 2 ? "bg-info/80" : "bg-info/60"}`}
                         style={{ height: `${h * 0.6}px` }}
@@ -298,7 +314,9 @@ function Landing() {
                   <div className="text-muted-foreground">
                     Hold off on fertilizer application until Friday.
                   </div>
-                  <div className="mt-1 text-muted-foreground">{t("notifications.unread", { count: 3 })}</div>
+                  <div className="mt-1 text-muted-foreground">
+                    {t("notifications.unread", { count: 3 })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -312,7 +330,6 @@ function Landing() {
           </div>
         </div>
       </section>
-
 
       {/* Roles
       <section id="roles" className="py-20">
@@ -349,7 +366,7 @@ function Landing() {
               Grow more. Worry less.
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-primary-foreground/80">
-              Join Imbaraga's network of smallholder farmers using Aguka Kit to make better farming
+              Join Imbaraga's network of smallholder farmers using AGUKA Kit to make better farming
               decisions.
             </p>
             <Button asChild size="lg" variant="secondary" className="mt-8">
@@ -365,7 +382,8 @@ function Landing() {
       <footer className="border-t border-border/50 py-10">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <img src="/aguka-logo.png" alt="Aguka" className="h-5 w-5 object-contain" />© 2026 Aguka · Imbaraga Farmers Organization
+            <img src="/imbaraga-logo.png" alt="AGUKA" className="h-5 w-5 object-contain" />© 2026 AGUKA
+            · Imbaraga Farmers Organization
           </div>
           <div className="text-xs text-muted-foreground">{t("app.tagline")}</div>
         </div>

@@ -37,7 +37,7 @@ async function main() {
   await prisma.farmerCrop.deleteMany();
   await prisma.sensor.deleteMany();
   await prisma.livestock.deleteMany();
-  await prisma.resourceBooking.deleteMany();
+  await prisma.resourceDistribution.deleteMany();
   await prisma.resource.deleteMany();
   await prisma.cooperativeActivity.deleteMany();
   await prisma.announcement.deleteMany();
@@ -488,8 +488,15 @@ async function main() {
           cooperativeId: coop.id,
           name: resourceNames[i].name,
           resourceType: resourceNames[i].type,
+          category: ["Machinery", "Equipment", "Infrastructure", "Machinery", "Machinery", "Infrastructure", "Infrastructure", "Logistics", "Irrigation", "Processing"][i],
           description: resourceNames[i].desc,
+          quantity: resourceNames[i].type === "inputs" ? 500 : 1,
+          availableQuantity: resourceNames[i].type === "inputs" ? 500 : 1,
+          unit: resourceNames[i].type === "inputs" ? "kg" : "unit",
+          location: `${coops[i].district} Warehouse`,
+          minStockLevel: 20,
           addedBy: coopManagers[i].id,
+          status: "available",
         },
       }),
     ),
@@ -1056,7 +1063,58 @@ async function main() {
     });
   }
 
-  // ─── 10. Farm Activities ─────────────────────────────────────────────────
+  // ─── 10. Farm Activity Types (catalog) ───────────────────────────────────
+  console.log("🏷️ Seeding farm activity types...");
+
+  const farmActivityTypes = [
+    { id: "planting", name: "Planting", icon: "Sprout", fields: [], sortOrder: 0 },
+    {
+      id: "fertilizing",
+      name: "Fertilizing",
+      icon: "Beaker",
+      fields: ["quantity", "unit", "costRwf"],
+      sortOrder: 1,
+    },
+    { id: "weeding", name: "Weeding", icon: "Scissors", fields: [], sortOrder: 2 },
+    {
+      id: "spraying",
+      name: "Spraying",
+      icon: "SprayCan",
+      fields: ["quantity", "unit", "costRwf"],
+      sortOrder: 3,
+    },
+    {
+      id: "harvesting",
+      name: "Harvesting",
+      icon: "Wheat",
+      fields: ["quantity", "unit", "costRwf"],
+      sortOrder: 4,
+    },
+    { id: "irrigation", name: "Irrigation", icon: "Droplets", fields: [], sortOrder: 5 },
+    {
+      id: "pest_control",
+      name: "Pest Control",
+      icon: "Bug",
+      fields: ["quantity", "unit", "costRwf"],
+      sortOrder: 6,
+    },
+  ];
+
+  for (const t of farmActivityTypes) {
+    await prisma.farmActivityType.upsert({
+      where: { id: t.id },
+      update: {},
+      create: {
+        id: t.id,
+        name: t.name,
+        icon: t.icon,
+        fields: t.fields,
+        sortOrder: t.sortOrder,
+      },
+    });
+  }
+
+  // ─── 11. Farm Activities ─────────────────────────────────────────────────
   console.log("📝 Seeding farm activities...");
 
   const activityPool = [
@@ -1149,6 +1207,184 @@ async function main() {
         ...a,
       })),
     });
+  }
+
+  // 12. Seed guides
+  {
+    const existingGuides = await prisma.guide.count();
+    if (existingGuides === 0) {
+      const guidesData = [
+        {
+          title: "Maize Growing Guide",
+          crop: "Maize",
+          category: "Planting",
+          summary: "Best practices for spacing, fertilization, and weeding for high-yield maize.",
+          content: `## Introduction\nMaize is a staple crop in Rwanda. Proper planting techniques can significantly increase yield.\n\n## Land Preparation\n- Plough the land to a depth of 20-25cm\n- Ensure proper drainage\n- Apply well-decomposed manure at 10 tonnes per hectare\n\n## Planting\n- Plant at the onset of rains\n- Spacing: 75cm between rows, 25cm between plants\n- Seed rate: 20-25kg per hectare\n- Planting depth: 3-5cm\n\n## Fertilization\n- Apply NPK (17-17-17) at 200kg/ha at planting\n- Top-dress with Urea at 150kg/ha after 4-6 weeks\n\n## Weed Control\n- First weeding: 2-3 weeks after planting\n- Second weeding: 5-6 weeks after planting\n\n## Harvesting\n- Maize matures in 90-120 days\n- Harvest when the husk turns brown\n- Dry to 13-14% moisture content before storage`,
+          readingTime: 8,
+          waterRequirement: "400-600mm",
+          growthPeriod: "90-120 days",
+          optimalTemp: "20-30°C",
+          soilType: "Loamy, well-drained",
+          icon: "Sprout",
+        },
+        {
+          title: "Pest Management in Beans",
+          crop: "Beans",
+          category: "Protection",
+          summary: "How to identify and treat common pests in bean plantations organically.",
+          content: `## Common Bean Pests\n\n### Bean Aphids\n- **Symptoms**: Curled leaves, stunted growth\n- **Control**: Use neem oil spray or insecticidal soap\n\n### Bean Fly\n- **Symptoms**: Wilting seedlings, swollen stem base\n- **Control**: Seed dressing with appropriate insecticide\n\n### Bean Rust\n- **Symptoms**: Rust-colored spots on leaves\n- **Control**: Remove infected plants, use resistant varieties\n\n## Preventive Measures\n- Practice crop rotation with non-legumes\n- Use certified disease-free seeds\n- Maintain proper plant spacing for air circulation\n- Remove and destroy crop residues after harvest`,
+          readingTime: 7,
+          growthPeriod: "60-90 days",
+          optimalTemp: "15-25°C",
+          soilType: "Well-drained loam",
+          icon: "Bug",
+        },
+        {
+          title: "Drip Irrigation Setup",
+          crop: "Rice",
+          category: "Water",
+          summary: "Step-by-step guide to installing and maintaining a drip irrigation system.",
+          content: `## Benefits of Drip Irrigation\n- Water savings of 40-60%\n- Reduced weed growth\n- Better nutrient absorption\n- Higher yields\n\n## Components Needed\n1. Water source (tank or tap)\n2. Main line (PVC pipe)\n3. Sub-main lines\n4. Drip tapes/emitters\n5. Filters (screen or disc)\n6. Pressure regulator\n\n## Installation Steps\n\n### Step 1: Plan the Layout\n- Measure your field dimensions\n- Mark rows for crop planting\n- Calculate water requirements\n\n### Step 2: Install Main Line\n- Lay PVC pipe from water source\n- Install filter and pressure regulator\n- Add control valves for each section\n\n### Step 3: Install Drip Tapes\n- Lay drip tapes along crop rows\n- Space emitters according to crop type\n- Connect to sub-main lines\n\n### Step 4: Test the System\n- Flush the system before first use\n- Check for leaks at connections\n- Adjust pressure to 1-2 bars\n\n## Maintenance\n- Clean filters weekly\n- Flush lines monthly\n- Replace damaged emitters promptly\n- Drain system before frost`,
+          readingTime: 12,
+          waterRequirement: "Efficient (40-60% less)",
+          optimalTemp: "All climates",
+          icon: "Droplets",
+        },
+        {
+          title: "Post-Harvest Handling",
+          crop: "Maize",
+          category: "Harvest",
+          summary: "Reducing losses during storage and transport of grains.",
+          content: `## Importance of Post-Harvest Handling\nPost-harvest losses in Rwanda can reach 30%. Proper handling preserves quality and ensures food security.\n\n## Harvesting\n- Harvest at the right maturity stage\n- Use clean harvesting tools\n- Avoid damaging grains during harvest\n\n## Drying\n- Sun-dry on clean tarpaulins (not directly on soil)\n- Stir regularly for even drying\n- Dry to 13-14% moisture content\n- Use moisture meter for accuracy\n\n## Shelling/Threshing\n- Shell when grains are properly dry\n- Use mechanical shellers to reduce damage\n- Clean grains after shelling\n\n## Storage\n- Use clean, airtight containers\n- Add natural repellents (neem leaves, chili)\n- Store in a cool, dry place\n- Inspect regularly for pests\n\n## Transportation\n- Use clean, dry sacks\n- Protect from rain and moisture\n- Avoid overfilling sacks which causes grain damage`,
+          readingTime: 6,
+          waterRequirement: "N/A (dry process)",
+          icon: "Leaf",
+        },
+        {
+          title: "Tomato Growing Guide",
+          crop: "Tomato",
+          category: "Planting",
+          summary: "Complete guide to growing healthy tomatoes from nursery to harvest.",
+          content: `## Nursery Establishment\n- Prepare a seedbed of 1m width\n- Mix soil with well-decomposed manure\n- Sow seeds in rows 10cm apart\n- Water gently twice daily\n- Transplant after 3-4 weeks\n\n## Transplanting\n- Space plants 60cm between rows, 45cm between plants\n- Transplant in the evening\n- Water immediately after planting\n\n## Staking\n- Stake plants to keep fruits off the ground\n- Use wooden stakes or trellis system\n- Tie stems loosely with soft material\n\n## Fertilization\n- Apply DAP at transplanting\n- Apply CAN at 3 and 6 weeks after transplanting\n- Side-dress with compost\n\n## Common Diseases\n- **Late blight**: Remove infected leaves, spray with fungicide\n- **Bacterial wilt**: Practice crop rotation, remove infected plants\n\n## Harvesting\n- Harvest starts 60-80 days after transplanting\n- Pick at the breaker stage (first color change)\n- Handle gently to avoid bruising`,
+          readingTime: 10,
+          waterRequirement: "500-800mm",
+          growthPeriod: "90-110 days",
+          optimalTemp: "20-27°C",
+          soilType: "Well-drained sandy loam",
+          icon: "Sprout",
+        },
+        {
+          title: "Soil Conservation Techniques",
+          crop: "Beans",
+          category: "Protection",
+          summary: "Methods to prevent soil erosion and maintain soil fertility on sloping farmland.",
+          content: `## Why Soil Conservation Matters\nSoil erosion is a major challenge in Rwanda's hilly landscape. Losing topsoil reduces crop yields significantly.\n\n## Terracing\n- Build bench terraces on slopes\n- Maintain terrace risers with grass\n- Use stones where available for reinforcement\n\n## Contour Farming\n- Plough along contour lines\n- Reduces runoff speed\n- Increases water infiltration\n\n## Cover Cropping\n- Plant legumes as ground cover\n- Reduces soil erosion between seasons\n- Adds nitrogen to the soil\n\n## Mulching\n- Apply organic mulch 5-10cm thick\n- Retains soil moisture\n- Suppresses weed growth\n- Adds organic matter when decomposed\n\n## Agroforestry\n- Plant trees on farm boundaries\n- Trees provide shade and wind breaks\n- Leaves add nutrients to soil\n- Roots hold soil together`,
+          readingTime: 8,
+          optimalTemp: "All climates",
+          icon: "Leaf",
+        },
+        {
+          title: "Dairy Cow Nutrition",
+          crop: null,
+          category: "Feeding",
+          summary: "Balanced feed formulations for maximizing milk production.",
+          content: `## Nutritional Requirements for Dairy Cows\n\n### Forage (60-70% of diet)\n- Good quality Napier grass\n- Rhodes grass or natural pasture\n- Leguminous forages (desmodium, lucerne)\n\n### Concentrates (30-40% of diet)\n- Maize germ meal\n- Rice bran\n- Cotton seed cake or soybean meal\n- Mineral supplements\n\n## Feeding Schedule\n- Morning: 6-8kg of forage + 2-3kg of concentrate\n- Mid-day: Free access to water + mineral lick\n- Evening: 6-8kg of forage + 2-3kg of concentrate\n\n## Water Requirements\n- A lactating cow needs 60-80 liters of water daily\n- Ensure clean, fresh water at all times\n\n## Mineral Supplementation\n- Provide salt lick blocks\n- Supplement with Calcium and Phosphorus\n- Add Vitamin A, D, E complex\n\n## Signs of Good Nutrition\n- Shiny coat\n- Normal manure consistency\n- High milk yield\n- Regular heat cycles\n- Healthy calves at birth`,
+          readingTime: 10,
+          icon: "Milk",
+        },
+        {
+          title: "Poultry Disease Prevention",
+          crop: null,
+          category: "Health",
+          summary: "Vaccination schedules and hygiene practices for healthy chickens.",
+          content: `## Essential Vaccinations\n\n### Day-old chicks\n- Newcastle Disease (NDV) vaccine - eye drop\n- Gumboro vaccine\n\n### Week 2\n- NDV booster\n- Fowl Pox vaccine\n\n### Week 4\n- Gumboro booster\n\n### Week 8\n- NDV (killed vaccine) - injection\n\n## Biosecurity Measures\n- Limit visitors to the poultry house\n- Use footbaths with disinfectant\n- Change clothes before entering\n- Keep different age groups separate\n\n## Hygiene Practices\n- Clean and disinfect housing regularly\n- Provide clean bedding (wood shavings)\n- Clean waterers and feeders daily\n- Remove manure frequently\n\n## Common Diseases\n- **Newcastle Disease**: Respiratory distress, green diarrhea, high mortality\n- **Gumboro**: Depression, ruffled feathers, vent picking\n- **Fowl Pox**: Wart-like lesions on comb and wattles\n- **Coccidiosis**: Bloody droppings, reduced feed intake\n\n## Prevention Tips\n- Source chicks from reliable hatcheries\n- Quarantine new birds for 2 weeks\n- Maintain proper ventilation\n- Provide balanced nutrition for immunity`,
+          readingTime: 8,
+          icon: "Bug",
+        },
+        {
+          title: "Pig Farming Basics",
+          crop: null,
+          category: "General",
+          summary: "A beginner guide to housing, breeding, and feeding pigs.",
+          content: `## Housing Requirements\n- Well-ventilated pigsty\n- Concrete floor with proper drainage\n- Separate areas for feeding, sleeping, and dunging\n- Space: 2-3 sq meters per adult pig\n- Roof to provide shade and rain protection\n\n## Choosing Breeds\n- **Landrace**: Good mothering, long body\n- **Large White**: Fast growth, good for meat\n- **Local breeds**: Hardy, disease-resistant\n- Crossbreeds often combine best traits\n\n## Feeding\n### Grower pigs (20-50kg)\n- 1.5-2kg of balanced feed per day\n- Protein content: 16-18%\n\n### Finisher pigs (50-90kg)\n- 2.5-3kg of balanced feed per day\n- Protein content: 14-16%\n\n### Breeding sows\n- Increase feed during gestation\n- Flush feeding before breeding\n- Extra nutrition during lactation\n\n## Breeding Management\n- Sow reaches breeding age at 6-8 months\n- Gestation period: 114 days (3 months, 3 weeks, 3 days)\n- Litter size: 8-12 piglets\n- Weaning at 4-6 weeks\n\n## Health Management\n- Deworm every 3 months\n- Vaccinate against swine fever\n- Trim hooves if overgrown\n- Monitor for signs of illness: fever, loss of appetite, diarrhea`,
+          readingTime: 14,
+          icon: "Dog",
+        },
+        {
+          title: "Beans Growing Guide",
+          crop: "Beans",
+          category: "Planting",
+          summary: "Best practices for planting, managing, and harvesting beans.",
+          content: `## Land Preparation\n- Plough to a depth of 15-20cm\n- Remove weeds and crop residues\n- Prepare raised beds if drainage is poor\n\n## Planting\n- Plant at the onset of rains\n- Spacing: 40cm between rows, 20cm between plants\n- Seed rate: 60-80kg per hectare\n- Planting depth: 3-5cm\n\n## Varieties\n- **Bush beans**: Mature in 60-75 days, no staking needed\n- **Climbing beans**: Mature in 90-110 days, require staking\n\n## Fertilization\n- Apply DAP at 100kg/ha at planting\n- Beans fix their own nitrogen (inoculate seeds)\n- Apply organic manure at 5 tonnes/ha\n\n## Weed Management\n- First weeding: 2-3 weeks after planting\n- Second weeding: before flowering\n- Mulch between rows to suppress weeds\n\n## Harvesting\n- Bush beans: Harvest 60-75 days after planting\n- Climbing beans: Harvest 90-110 days after planting\n- Harvest when pods turn yellow and dry\n- Thresh and clean, then dry to 14% moisture`,
+          readingTime: 7,
+          waterRequirement: "300-500mm",
+          growthPeriod: "60-110 days",
+          optimalTemp: "18-25°C",
+          soilType: "Well-drained loam",
+          icon: "Sprout",
+        },
+        {
+          title: "Rice Growing Guide",
+          crop: "Rice",
+          category: "Planting",
+          summary: "Complete guide to rice cultivation from nursery to harvest.",
+          content: `## Nursery Preparation\n- Prepare a wet nursery near water source\n- Level the seedbed carefully\n- Soak seeds for 24 hours before sowing\n- Sow pre-germinated seeds evenly\n- Maintain 2-3cm water level\n\n## Land Preparation\n- Plough and puddle the field\n- Level the field for uniform water distribution\n- Apply well-decomposed manure before transplanting\n\n## Transplanting\n- Transplant seedlings at 3-4 leaf stage (20-25 days)\n- Spacing: 20cm x 20cm\n- Transplant 2-3 seedlings per hill\n- Transplant in straight rows\n\n## Water Management\n- Maintain 5-7cm water depth after transplanting\n- Drain field 7 days before harvest\n- Use alternate wetting and drying to save water\n\n## Fertilization\n- Apply NPK at 200kg/ha before transplanting\n- Top-dress with Urea at 100kg/ha at tillering\n- Top-dress with Urea at 50kg/ha at panicle initiation\n\n## Pest Management\n- **Rice blast**: Use resistant varieties\n- **Stem borer**: Remove egg masses from leaves\n- **Rodents**: Keep field edges clean\n\n## Harvesting\n- Harvest when 80% of grains are golden\n- Cut stems 15-20cm above ground\n- Thresh immediately after harvest\n- Dry to 14% moisture content`,
+          readingTime: 10,
+          waterRequirement: "800-1200mm",
+          growthPeriod: "120-150 days",
+          optimalTemp: "20-35°C",
+          soilType: "Clay loam with good water retention",
+          icon: "Sprout",
+        },
+        {
+          title: "Irrigation Water Management",
+          crop: "Tomato",
+          category: "Water",
+          summary: "Efficient water scheduling and management techniques for vegetable farming.",
+          content: `## Water Requirements by Crop Stage\n\n### Nursery Stage\n- Light watering 2-3 times daily\n- Use fine spray to avoid seed displacement\n\n### Vegetative Stage\n- Water every 2-3 days\n- Apply 20-30mm per week\n\n### Flowering Stage\n- Regular watering critical\n- Apply 30-40mm per week\n- Moisture stress causes flower drop\n\n### Fruiting Stage\n- Apply 40-50mm per week\n- Consistent moisture for uniform fruit development\n- Mulch to reduce evaporation\n\n## Irrigation Methods\n\n### Drip Irrigation (Recommended)\n- Water efficiency: 90%\n- Apply directly to root zone\n- Use with fertigation for best results\n\n### Furrow Irrigation\n- Water efficiency: 60%\n- Simple and low-cost\n- Requires well-levelled fields\n\n### Sprinkler Irrigation\n- Water efficiency: 75%\n- Covers large areas quickly\n- Not suitable for windy areas\n\n## Water Quality\n- Test water for salinity\n- Avoid water with high sodium content\n- Filter water to remove sediment\n\n## Scheduling Tips\n- Irrigate early morning or evening\n- Check soil moisture before watering\n- Use rain gauge to track rainfall\n- Adjust schedule based on weather`,
+          readingTime: 9,
+          waterRequirement: "400-600mm",
+          optimalTemp: "All climates",
+          icon: "Droplets",
+        },
+        {
+          title: "Organic Farming Practices",
+          crop: "Maize",
+          category: "Protection",
+          summary: "Natural methods for soil fertility and pest control without synthetic chemicals.",
+          content: `## Principles of Organic Farming\n1. Work with natural systems\n2. Build soil health\n3. Promote biodiversity\n4. Use renewable resources\n5. Minimize external inputs\n\n## Building Soil Fertility\n\n### Composting\n- Layer green materials with dry materials\n- Keep pile moist\n- Turn every 2 weeks\n- Ready in 3-4 months\n\n### Green Manure\n- Plant legumes (mucuna, lablab)\n- Incorporate into soil before flowering\n- Adds nitrogen and organic matter\n\n### Animal Manure\n- Well-decomposed manure\n- Apply 10-15 tonnes per hectare\n- Incorporate into soil before planting\n\n## Natural Pest Control\n\n### Companion Planting\n- Plant marigolds near tomatoes to repel nematodes\n- Plant onions near carrots to repel carrot fly\n- Use garlic spray as general repellent\n\n### Biological Control\n- Attract beneficial insects (ladybugs, lacewings)\n- Use neem-based products\n- Introduce predatory insects\n\n### Cultural Control\n- Crop rotation\n- Intercropping\n- Proper spacing\n- Timely planting\n\n## Certification\n- Transition period: 2-3 years\n- Keep records of all practices\n- Soil tests required\n- Inspection by certifying body`,
+          readingTime: 11,
+          icon: "Leaf",
+        },
+        {
+          title: "Disease Management in Tomatoes",
+          crop: "Tomato",
+          category: "Protection",
+          summary: "Identifying and controlling common tomato diseases in Rwandan conditions.",
+          content: `## Common Tomato Diseases\n\n### Late Blight (Phytophthora infestans)\n- **Symptoms**: Dark water-soaked spots on leaves, white mold on undersides\n- **Conditions**: Cool, wet weather (15-20°C, high humidity)\n- **Control**: Remove infected leaves, copper-based fungicide\n\n### Early Blight (Alternaria solani)\n- **Symptoms**: Dark concentric rings on lower leaves\n- **Control**: Mulch around plants, avoid overhead watering\n\n### Bacterial Wilt (Ralstonia solanacearum)\n- **Symptoms**: Sudden wilting, brown vascular tissue\n- **Control**: Use resistant varieties, crop rotation (4+ years)\n\n### Tomato Yellow Leaf Curl Virus\n- **Symptoms**: Yellowing, curling leaves, stunted growth\n- **Control**: Control whiteflies, use virus-free seedlings\n\n## Integrated Disease Management\n1. Use certified disease-free seeds\n2. Practice crop rotation (3-4 years)\n3. Ensure proper spacing for airflow\n4. Remove and destroy infected plants\n5. Use resistant varieties when available\n6. Apply fungicides preventively in high-risk periods\n\n## Fungicide Application Schedule\n- Start 2 weeks after transplanting\n- Apply every 7-14 days depending on weather\n- Alternate fungicides to prevent resistance\n- Stop application 7 days before harvest`,
+          readingTime: 9,
+          growthPeriod: "90-110 days",
+          optimalTemp: "20-27°C",
+          soilType: "Well-drained sandy loam",
+          icon: "Bug",
+        },
+        {
+          title: "Harvest and Storage of Grains",
+          crop: "Maize",
+          category: "Harvest",
+          summary: "Proper techniques for harvesting, drying, and storing grain crops.",
+          content: `## Harvest Timing\n\n### Maize\n- Harvest when black layer forms at kernel tip\n- Moisture content: 25-30% for maize\n- Dry to 13-14% for storage\n\n### Beans\n- Harvest when pods turn yellow-brown\n- Dry pods in sun before shelling\n- Target moisture: 14%\n\n### Rice\n- Harvest at 80% golden color\n- Moisture content: 20-25%\n- Dry to 14% for storage\n\n## Drying Methods\n\n### Sun Drying\n- Spread grains in thin layer (5-10cm)\n- Use clean tarpaulins, not bare ground\n- Stir every 2-3 hours\n- Cover at night and during rain\n- Drying time: 2-5 days depending on weather\n\n### Mechanical Drying\n- Use forced air dryers\n- Temperature: 43-50°C for maize\n- Monitor moisture content regularly\n\n## Storage Structures\n\n### Metal Silos\n- Airtight, rodent-proof\n- Capacity: 500-3000kg\n- Fumigate before sealing\n\n### Hermetic Bags (GrainPro)\n- Airtight plastic bags\n- Capacity: 50-100kg\n- No insect infestation possible\n\n### Traditional Granaries\n- Improved with raised platform\n- Rat guards on supports\n- Regular inspection needed\n\n## Storage Best Practices\n- Clean storage area before new harvest\n- Inspect grains regularly for pests\n- Store at cool temperature\n- Use natural repellents (neem, chili)\n- First-in, first-out for older stocks`,
+          readingTime: 10,
+          waterRequirement: "N/A (post-harvest)",
+          icon: "Leaf",
+        },
+      ];
+
+      for (const guide of guidesData) {
+        await prisma.guide.create({ data: guide });
+      }
+      console.log(`   • ${guidesData.length} farming guides`);
+    }
   }
 
   console.log("✅ Seeding completed!");

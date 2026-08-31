@@ -1,4 +1,4 @@
-import { apiClient, ApiResponse } from './client';
+import { apiClient, ApiResponse } from "./client";
 
 export interface LocationItem {
   code: string;
@@ -6,8 +6,7 @@ export interface LocationItem {
 }
 
 export const locationApi = {
-  getProvinces: () =>
-    apiClient.get<LocationItem[]>('/location/provinces'),
+  getProvinces: () => apiClient.get<LocationItem[]>("/location/provinces"),
 
   getDistricts: (provinceCode: string) =>
     apiClient.get<LocationItem[]>(`/location/districts/${provinceCode}`),
@@ -15,8 +14,7 @@ export const locationApi = {
   getSectors: (districtCode: string) =>
     apiClient.get<LocationItem[]>(`/location/sectors/${districtCode}`),
 
-  getCells: (sectorCode: string) =>
-    apiClient.get<LocationItem[]>(`/location/cells/${sectorCode}`),
+  getCells: (sectorCode: string) => apiClient.get<LocationItem[]>(`/location/cells/${sectorCode}`),
 
   getVillages: (cellCode: string) =>
     apiClient.get<LocationItem[]>(`/location/villages/${cellCode}`),

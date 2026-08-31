@@ -33,9 +33,14 @@ export const prisma = basePrisma.$extends({
 
         // Handle Read Operations: Filter out deleted records
         if (
-          ["findMany", "findFirst", "findUnique", "count", "aggregate", "groupBy"].includes(
-            operation
-          )
+          [
+            "findMany",
+            "findFirst",
+            "findUnique",
+            "count",
+            "aggregate",
+            "groupBy",
+          ].includes(operation)
         ) {
           typedArgs.where = { ...(typedArgs.where || {}), deletedAt: null };
         }

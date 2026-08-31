@@ -6,6 +6,7 @@ import 'package:aguka_mobile/shared/bloc/filter/filter_event.dart';
 import 'package:aguka_mobile/shared/data/models/filter_model.dart';
 import 'package:aguka_mobile/injection_container.dart';
 import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
 
 class FilterDrawer extends StatefulWidget {
   const FilterDrawer({Key? key}) : super(key: key);
@@ -172,7 +173,13 @@ class _FilterDrawerState extends State<FilterDrawer> {
   }
 
   Widget _buildDateChip(String label, int days) {
-    bool isSelected = false; // Add logic to check if days match current range
+    final range = _tempFilter.dateRange;
+    bool isSelected = false;
+    if (range != null) {
+      final difference = range.end.difference(range.start).inDays;
+      isSelected = difference == days;
+    }
+
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
@@ -180,8 +187,9 @@ class _FilterDrawerState extends State<FilterDrawer> {
         if (selected) {
           setState(() {
             final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
             _tempFilter.dateRange = DateTimeRange(
-              start: now.subtract(Duration(days: days)),
+              start: today.subtract(Duration(days: days)),
               end: now,
             );
           });
@@ -257,7 +265,7 @@ class _FilterDrawerState extends State<FilterDrawer> {
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      initialValue: value,
+      value: value,
       items: items,
       onChanged: onChanged,
     );
@@ -278,7 +286,7 @@ class _FilterDrawerState extends State<FilterDrawer> {
           values: values,
           min: min,
           max: max,
-          divisions: (max - min).toInt(),
+          divisions: max <= 100 ? (max / 5).toInt() : (max - min).toInt(),
           activeColor: Colors.green,
           onChanged: onChanged,
         ),

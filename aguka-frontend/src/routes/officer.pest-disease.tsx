@@ -247,7 +247,7 @@ function PestDiseasePage() {
                     aria-expanded={openFarmerSelect}
                     className={cn(
                       "w-full justify-between font-normal",
-                      !formData.farmerId && "text-muted-foreground"
+                      !formData.farmerId && "text-muted-foreground",
                     )}
                   >
                     {formData.farmerId
@@ -281,7 +281,7 @@ function PestDiseasePage() {
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                formData.farmerId === farmer.id ? "opacity-100" : "opacity-0"
+                                formData.farmerId === farmer.id ? "opacity-100" : "opacity-0",
                               )}
                             />
                             {farmer.fullName || farmer.user?.phone || "Unknown farmer"} ·{" "}

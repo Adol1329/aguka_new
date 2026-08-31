@@ -20,6 +20,7 @@ export class UserService {
         farmerProfile: true,
         cooperativeMember: true,
         extensionAssignments: true,
+        officerProfile: true,
       },
     });
 
@@ -72,7 +73,13 @@ export class UserService {
       userData.avatarUrl = data.avatarUrl as string;
     }
 
-    const baseLocationFields = ["province", "district", "sector", "cell", "village"];
+    const baseLocationFields = [
+      "province",
+      "district",
+      "sector",
+      "cell",
+      "village",
+    ];
     for (const field of baseLocationFields) {
       if (data[field] !== undefined) {
         userData[field] = data[field] as string;
@@ -331,10 +338,71 @@ export class UserService {
     return { message: "Users updated successfully" };
   }
 
-  async adminResetPassword(
-    adminId: string,
-    targetUserId: string,
+  async updateUserByAdmin(
+    userId: string,
+    data: Record<string, unknown>,
+    updatedBy: string,
   ) {
+    const currentUser = await prisma.user.findFirst({
+      where: { id: updatedBy },
+    });
+
+    if (
+      currentUser?.role !== UserRole.SUPER_ADMIN &&
+      currentUser?.role !== UserRole.ADMIN
+    ) {
+      throw new ForbiddenError("Only Admin can update user details");
+    }
+
+    // Use existing updateProfile logic but with admin authorization
+    return await this.updateProfile(userId, data);
+  }
+
+  async deleteUser(userId: string, deletedBy: string) {
+    const currentUser = await prisma.user.findFirst({
+      where: { id: deletedBy },
+    });
+
+    if (
+      currentUser?.role !== UserRole.SUPER_ADMIN &&
+      currentUser?.role !== UserRole.ADMIN
+    ) {
+      throw new ForbiddenError("Only Admin can delete users");
+    }
+
+    const targetUser = await prisma.user.findFirst({
+      where: { id: userId },
+    });
+
+    if (!targetUser) {
+      throw new NotFoundError("User");
+    }
+
+    if (targetUser.role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenError("Super Admin cannot be deleted");
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isActive: false,
+        status: "suspended", // Or add a 'deleted' status if desired
+        deletedAt: new Date(),
+      },
+    });
+
+    await auditService.logAction({
+      userId: deletedBy,
+      action: "DELETE_USER",
+      module: "USER_MANAGEMENT",
+      resourceId: userId,
+      details: `Soft deleted user ${targetUser.phone}`,
+    });
+
+    return { success: true, message: "User deleted successfully" };
+  }
+
+  async adminResetPassword(adminId: string, targetUserId: string) {
     const admin = await prisma.user.findFirst({ where: { id: adminId } });
     if (!admin) throw new NotFoundError("Admin user");
 
@@ -352,13 +420,8 @@ export class UserService {
     }
 
     // Admin can only reset officer, cooperative, farmer
-    if (
-      adminRole === UserRole.ADMIN &&
-      targetRole === UserRole.ADMIN
-    ) {
-      throw new ForbiddenError(
-        "Admin cannot reset another Admin's password",
-      );
+    if (adminRole === UserRole.ADMIN && targetRole === UserRole.ADMIN) {
+      throw new ForbiddenError("Admin cannot reset another Admin's password");
     }
 
     if (!target.email) {
@@ -369,7 +432,9 @@ export class UserService {
 
     const otp = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    const passwordHash = await argon2.hash(crypto.randomBytes(48).toString("hex"));
+    const passwordHash = await argon2.hash(
+      crypto.randomBytes(48).toString("hex"),
+    );
 
     const before = this.formatUser(target);
 
@@ -433,11 +498,18 @@ export class UserService {
       language: user.language,
       status: user.status,
       isActive: user.isActive,
+      // Location fields with fallback to profile
       province: user.province,
-      district: user.district,
-      sector: user.sector,
-      cell: user.cell,
-      village: user.village,
+      district: user.district || user.farmerProfile?.district,
+      sector: user.sector || user.farmerProfile?.sector,
+      cell: user.cell || user.farmerProfile?.cell,
+      village: user.village || user.farmerProfile?.village,
+      // Include codes for frontend dropdowns
+      provinceCode: user.farmerProfile?.provinceCode,
+      districtCode: user.farmerProfile?.districtCode,
+      sectorCode: user.farmerProfile?.sectorCode,
+      cellCode: user.farmerProfile?.cellCode,
+      villageCode: user.farmerProfile?.villageCode,
       createdAt: user.createdAt?.toISOString(),
       updatedAt: user.updatedAt?.toISOString(),
       profile: user.farmerProfile
@@ -450,6 +522,11 @@ export class UserService {
             sector: user.farmerProfile.sector,
             cell: user.farmerProfile.cell,
             village: user.farmerProfile.village,
+            provinceCode: user.farmerProfile.provinceCode,
+            districtCode: user.farmerProfile.districtCode,
+            sectorCode: user.farmerProfile.sectorCode,
+            cellCode: user.farmerProfile.cellCode,
+            villageCode: user.farmerProfile.villageCode,
             farmSizeHectares: user.farmerProfile.farmSizeHectares,
             gpsLatitude: user.farmerProfile.gpsLatitude,
             gpsLongitude: user.farmerProfile.gpsLongitude,
@@ -459,12 +536,22 @@ export class UserService {
             emergencyContact: user.farmerProfile.emergencyContact,
             familyMembers: user.farmerProfile.familyMembers,
             cooperativeId: user.farmerProfile.cooperativeId,
+            farmerCode: user.farmerProfile.farmerCode,
           }
         : null,
+      farmerCode: user.farmerProfile?.farmerCode,
       cooperativeId:
         user.farmerProfile?.cooperativeId ||
         user.cooperativeMember?.cooperativeId,
       officerId: user.extensionAssignments?.[0]?.extensionOfficerId,
+      officerProfile: user.officerProfile
+        ? {
+            employeeId: user.officerProfile.employeeId,
+            organization: user.officerProfile.organization,
+            specializations: user.officerProfile.specializations,
+            coveredSectors: user.officerProfile.coveredSectors,
+          }
+        : null,
     };
   }
 }

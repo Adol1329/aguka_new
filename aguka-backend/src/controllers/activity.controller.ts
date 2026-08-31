@@ -9,7 +9,7 @@ export const getFarmerActivities = async (
   next: NextFunction,
 ) => {
   try {
-    const farmerId = req.params.farmerId;
+    const farmerId = req.params.farmerId || req.params.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const cropId = req.query.cropId as string;
@@ -92,12 +92,12 @@ export const getActivityById = async (
 };
 
 export const getActivityTypes = async (
-  req: RequestWithUser,
+  _req: RequestWithUser,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const types = await activityService.getActivityTypes(req.user!.sub);
+    const types = await activityService.getActivityTypes();
     return res.json({ success: true, data: types });
   } catch (error) {
     return next(error);

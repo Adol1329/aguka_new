@@ -10,6 +10,10 @@ router.use(authenticate);
 
 router.post("/farmer", authorize(UserRole.FARMER), controller.onboardFarmer);
 router.post("/officer", authorize(UserRole.OFFICER), controller.onboardOfficer);
-router.post("/cooperative", authorize(UserRole.COOPERATIVE), controller.onboardCooperative);
+router.post(
+  "/cooperative",
+  authorize(UserRole.COOPERATIVE),
+  controller.onboardCooperative,
+);
 
 export default router;

@@ -1,13 +1,32 @@
 {
   "project_info": {
-    "project_number": "123456789012",
+    "project_number": "182751033199",
     "project_id": "aguka-smart-farming-kit",
-    "storage_bucket": "aguka-smart-farming-kit.appspot.com"
+    "storage_bucket": "aguka-smart-farming-kit.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890",
+        "mobilesdk_app_id": "1:182751033199:android:6ea33df0fc5595d9d25a9a",
+        "android_client_info": {
+          "package_name": "com.aguka.aguka_smart_farming"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDj4EKkRyaiIUooM4AM6zrSPaohJucJqGI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182751033199:android:971f2ca3136ff50dd25a9a",
         "android_client_info": {
           "package_name": "com.example.aguka_mobile"
         }
@@ -15,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyFakeKeyHereForLocalBuildVerification"
+          "current_key": "AIzaSyDj4EKkRyaiIUooM4AM6zrSPaohJucJqGI"
         }
       ],
       "services": {

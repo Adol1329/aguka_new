@@ -1,4 +1,4 @@
-import { apiClient, ApiResponse } from './client';
+import { apiClient, ApiResponse } from "./client";
 
 export interface LoginInput {
   phone: string;
@@ -11,20 +11,7 @@ export interface RegisterInput {
   password?: string;
   role: string;
   fullName: string;
-  farmName?: string;
-  provinceCode: string;
-  districtCode: string;
-  sectorCode: string;
-  cellCode: string;
-  villageCode: string;
-  farmSizeHectares?: number;
-  gpsLatitude?: number;
-  gpsLongitude?: number;
-  waterSource?: string;
-  irrigationType?: string;
-  preferredChannel?: string;
-  emergencyContact?: string;
-  familyMembers?: number;
+  language?: string;
 }
 
 export interface AuthResponse {
@@ -39,10 +26,22 @@ export interface AuthResponse {
     status: string;
     isOnboarded: boolean;
     province?: string;
+    provinceCode?: string;
     district?: string;
+    districtCode?: string;
     sector?: string;
+    sectorCode?: string;
     cell?: string;
+    cellCode?: string;
     village?: string;
+    villageCode?: string;
+    farmerCode?: string;
+    officerProfile?: {
+      employeeId?: string;
+      organization?: string;
+      specializations?: string[];
+      coveredSectors?: string[];
+    } | null;
     createdAt: string;
     updatedAt: string;
   };
@@ -51,60 +50,69 @@ export interface AuthResponse {
 }
 
 export const authApi = {
-  login: (data: LoginInput) =>
-    apiClient.post<AuthResponse>('/auth/login', data),
+  login: (data: LoginInput) => apiClient.post<AuthResponse>("/auth/login", data),
 
-  register: (data: RegisterInput) =>
-    apiClient.post<AuthResponse>('/auth/register', data),
+  register: (data: RegisterInput) => apiClient.post<AuthResponse>("/auth/register", data),
 
   verifyFirebaseToken: (idToken: string) =>
-    apiClient.post<AuthResponse>('/auth/firebase-verify', { idToken }),
+    apiClient.post<AuthResponse>("/auth/firebase-verify", { idToken }),
 
   refreshToken: (refreshToken: string) =>
-    apiClient.post<{ accessToken: string; refreshToken: string }>('/auth/refresh-token', { refreshToken }),
+    apiClient.post<{ accessToken: string; refreshToken: string }>("/auth/refresh-token", {
+      refreshToken,
+    }),
 
-  logout: () =>
-    apiClient.post<ApiResponse>('/auth/logout'),
+  logout: () => apiClient.post<ApiResponse>("/auth/logout"),
 
-  requestOtp: (phone: string) =>
-    apiClient.post<ApiResponse>('/auth/request-otp', { phone }),
+  requestOtp: (phone: string) => apiClient.post<ApiResponse>("/auth/request-otp", { phone }),
 
   verifyOtp: (phone: string, otp: string) =>
-    apiClient.post<ApiResponse>('/auth/verify-phone', { phone, otp }),
+    apiClient.post<ApiResponse>("/auth/verify-phone", { phone, otp }),
 
   forgotPassword: (phone: string) =>
-    apiClient.post<ApiResponse>('/auth/forgot-password', { phone }),
+    apiClient.post<ApiResponse>("/auth/forgot-password", { phone }),
 
   checkForgotPassword: (phone: string) =>
-    apiClient.post<{ exists: boolean; hasEmail?: boolean; maskedEmail?: string }>('/auth/forgot-password/check', { phone }),
+    apiClient.post<{ exists: boolean; hasEmail?: boolean; maskedEmail?: string }>(
+      "/auth/forgot-password/check",
+      { phone },
+    ),
 
   verifyResetOtp: (phone: string, otp: string) =>
-    apiClient.post<{ success: boolean; error?: string }>('/auth/forgot-password/verify-otp', { phone, otp }),
+    apiClient.post<{ success: boolean; error?: string }>("/auth/forgot-password/verify-otp", {
+      phone,
+      otp,
+    }),
 
   resetPasswordWithOtp: (phone: string, otp: string, newPassword: string) =>
-    apiClient.post<{ success: boolean }>('/auth/forgot-password/reset', { phone, otp, newPassword }),
+    apiClient.post<{ success: boolean }>("/auth/forgot-password/reset", {
+      phone,
+      otp,
+      newPassword,
+    }),
 
   forceChangePassword: (newPassword: string) =>
-    apiClient.patch<{ success: boolean }>('/auth/change-password/force', { newPassword }),
+    apiClient.patch<{ success: boolean }>("/auth/change-password/force", { newPassword }),
 
   adminResetPassword: (userId: string) =>
-    apiClient.patch<{ success: boolean; delivery?: string; maskedEmail?: string }>(`/admin/users/${userId}/reset-password`, {}),
+    apiClient.patch<{ success: boolean; delivery?: string; maskedEmail?: string }>(
+      `/admin/users/${userId}/reset-password`,
+      {},
+    ),
 
   resetPassword: (token: string, newPassword: string) =>
-    apiClient.post<ApiResponse>('/auth/reset-password', { token, newPassword }),
+    apiClient.post<ApiResponse>("/auth/reset-password", { token, newPassword }),
 
   changePassword: (currentPassword: string, newPassword: string) =>
-    apiClient.post<ApiResponse>('/auth/change-password', { currentPassword, newPassword }),
+    apiClient.post<ApiResponse>("/auth/change-password", { currentPassword, newPassword }),
 
-  getMe: () =>
-    apiClient.get<AuthResponse['user']>('/users/me'),
+  getMe: () => apiClient.get<AuthResponse["user"]>("/users/me"),
 
-  updateMe: (data: any) =>
-    apiClient.patch<AuthResponse['user']>('/users/me', data),
+  updateMe: (data: any) => apiClient.patch<AuthResponse["user"]>("/users/me", data),
 
   uploadAvatar: (file: File) => {
     const formData = new FormData();
-    formData.append('avatar', file);
-    return apiClient.post<AuthResponse['user']>('/users/me/avatar', formData);
+    formData.append("avatar", file);
+    return apiClient.post<AuthResponse["user"]>("/users/me/avatar", formData);
   },
 };

@@ -1,6 +1,23 @@
 import { alertService } from "./alert.service.js";
 import { prisma } from "../prisma.js";
 
+const DEFAULT_MOISTURE_THRESHOLD = 20;
+
+async function getMoistureThreshold(): Promise<number> {
+  try {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: "moistureThreshold" },
+    });
+    if (setting?.value) {
+      const parsed = Number(setting.value);
+      return Number.isFinite(parsed) ? parsed : DEFAULT_MOISTURE_THRESHOLD;
+    }
+  } catch {
+    // fall through to default
+  }
+  return DEFAULT_MOISTURE_THRESHOLD;
+}
+
 export class SensorService {
   /**
    * Get current status of all sensors/farms
@@ -116,7 +133,8 @@ export class SensorService {
     });
 
     // 4. Trigger automated alerts if thresholds are breached
-    if (data.moisturePercent < 20) {
+    const moistureThreshold = await getMoistureThreshold();
+    if (data.moisturePercent < moistureThreshold) {
       await alertService.sendAlert({
         farmerId: sensor.farmerId,
         alertType: "soil",

@@ -24,59 +24,51 @@ export class NotificationService {
 
   /**
    * Send push notification to a specific user (all their devices)
+   * Sends per-token individually so one bad token doesn't kill all
    */
   async sendToUser(
     userId: string,
     title: string,
     body: string,
     data?: Record<string, string>,
-  ): Promise<any> {
+  ): Promise<{ successCount: number; failureCount: number }> {
     const devices = await prisma.device.findMany({
       where: { userId },
     });
 
-    if (devices.length === 0) return;
+    if (devices.length === 0) return { successCount: 0, failureCount: 0 };
 
-    const tokens = devices.map((d) => d.fcmToken);
+    let successCount = 0;
+    let failureCount = 0;
 
-    try {
-      const message = {
-        notification: { title, body },
-        data: data || {},
-        tokens: tokens,
-      };
+    for (const device of devices) {
+      try {
+        const message = {
+          notification: { title, body },
+          data: data || {},
+          token: device.fcmToken,
+        };
 
-      const response = await firebaseAdmin
-        .messaging()
-        .sendEachForMulticast(message);
-
-      // Cleanup invalid tokens
-      if (response.failureCount > 0) {
-        const invalidTokens: string[] = [];
-        response.responses.forEach((resp, idx) => {
-          if (!resp.success) {
-            const errorCode = resp.error?.code;
-            if (
-              errorCode === "messaging/invalid-registration-token" ||
-              errorCode === "messaging/registration-token-not-registered"
-            ) {
-              invalidTokens.push(tokens[idx]);
-            }
-          }
-        });
-
-        if (invalidTokens.length > 0) {
+        await firebaseAdmin.messaging().send(message);
+        successCount++;
+      } catch (error: any) {
+        const errorCode = error?.code || error?.errorInfo?.code;
+        if (
+          errorCode === "messaging/invalid-registration-token" ||
+          errorCode === "messaging/registration-token-not-registered"
+        ) {
           await prisma.device.deleteMany({
-            where: { fcmToken: { in: invalidTokens } },
+            where: { fcmToken: device.fcmToken },
           });
+          logger.warn(`Removed invalid FCM token for user ${userId}:`, errorCode);
+        } else {
+          logger.error(`FCM send error for user ${userId} token ${device.fcmToken}:`, error);
         }
+        failureCount++;
       }
-
-      return response;
-    } catch (error) {
-      logger.error("FCM Error:", error);
-      return null;
     }
+
+    return { successCount, failureCount };
   }
 
   /**

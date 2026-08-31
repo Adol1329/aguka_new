@@ -11,15 +11,15 @@
 export function normalizeRwandaPhone(raw: string): string | null {
   if (!raw) return null;
   // Remove all non-numeric characters except leading +
-  const cleaned = raw.replace(/(?!^\+)\D/g, '');
-  
+  const cleaned = raw.replace(/(?!^\+)\D/g, "");
+
   // Match the core 9 digits (7 followed by 8 digits)
   const match = cleaned.match(/(\+?250|0)?(7[2389]\d{7})$/);
-  
+
   if (match && match[2]) {
     return `+250${match[2]}`;
   }
-  
+
   return null;
 }
 

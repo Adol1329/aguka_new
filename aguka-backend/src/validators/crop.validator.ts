@@ -18,12 +18,21 @@ export const createCropSchema = z.object({
 });
 
 export const addFarmerCropSchema = z.object({
-  cropId: z.string().uuid(),
-  plantedDate: z.coerce.date(),
+  cropId: z.string().min(1),
+  plantedDate: z.coerce.date().refine((d) => d <= new Date(), {
+    message: "Planted date must be in the past",
+  }),
   expectedHarvestDate: z.coerce.date().optional(),
   plotSizeHectares: z.number().positive().optional(),
   notes: z.string().optional(),
-});
+}).refine(
+  (data) =>
+    !data.expectedHarvestDate || data.expectedHarvestDate > data.plantedDate,
+  {
+    message: "Expected harvest date must be after planted date",
+    path: ["expectedHarvestDate"],
+  },
+);
 
 export const updateFarmerCropSchema = z.object({
   expectedHarvestDate: z.coerce.date().optional(),

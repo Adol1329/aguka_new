@@ -46,4 +46,118 @@ class CooperativeRepositoryImpl implements CooperativeRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<JoinRequestEntity>>> getJoinRequests(String cooperativeId) async {
+    try {
+      final result = await remoteDataSource.getJoinRequests(cooperativeId);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> approveJoinRequest(
+      String cooperativeId, String requestId) async {
+    try {
+      await remoteDataSource.approveJoinRequest(cooperativeId, requestId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> rejectJoinRequest(
+      String cooperativeId, String requestId) async {
+    try {
+      await remoteDataSource.rejectJoinRequest(cooperativeId, requestId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<CooperativeActivityEntity>>> getActivities(
+      String cooperativeId) async {
+    try {
+      final result = await remoteDataSource.getActivities(cooperativeId);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> createActivity(
+      String cooperativeId, Map<String, dynamic> data) async {
+    try {
+      await remoteDataSource.createActivity(cooperativeId, data);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<CooperativeResourceEntity>>> getResources(
+      String cooperativeId) async {
+    try {
+      final result = await remoteDataSource.getResources(cooperativeId);
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> addResource(
+      String cooperativeId, Map<String, dynamic> data) async {
+    try {
+      await remoteDataSource.addResource(cooperativeId, data);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<CooperativeListItemEntity>>> getCooperativeList() async {
+    try {
+      final result = await remoteDataSource.getCooperativeList();
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> requestMembership(String cooperativeId) async {
+    try {
+      await remoteDataSource.requestMembership(cooperativeId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

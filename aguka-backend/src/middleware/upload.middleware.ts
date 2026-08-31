@@ -41,3 +41,24 @@ export const uploadAvatar = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter,
 });
+
+const spreadsheetFileFilter = (
+  _req: any,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
+  const allowedTypes = /xlsx|xls/;
+  const extname = allowedTypes.test(
+    path.extname(file.originalname).toLowerCase(),
+  );
+  if (extname) {
+    return cb(null, true);
+  }
+  cb(new Error("Only Excel files (.xlsx, .xls) are allowed!"));
+};
+
+export const uploadSpreadsheet = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: spreadsheetFileFilter,
+});

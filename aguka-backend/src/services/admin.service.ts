@@ -44,8 +44,41 @@ export class AdminService {
       prisma.supportTicket.count({ where: { status: "open" } }),
     ]);
 
-    // Simple growth calculation vs last week (mocked for now)
-    const farmerGrowthPct = 12.5;
+    // Growth calculation: farmers this month vs last month
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    const [farmersThisMonth, farmersLastMonth] = await Promise.all([
+      prisma.user.count({
+        where: { role: "farmer", createdAt: { gte: startOfMonth } },
+      }),
+      prisma.user.count({
+        where: {
+          role: "farmer",
+          createdAt: { gte: startOfLastMonth, lte: endOfLastMonth },
+        },
+      }),
+    ]);
+    const farmerGrowthPct =
+      farmersLastMonth > 0
+        ? Math.round(
+            ((farmersThisMonth - farmersLastMonth) / farmersLastMonth) *
+              100 *
+              10,
+          ) / 10
+        : farmersThisMonth > 0
+          ? 100
+          : 0;
 
     return {
       totalFarmers,
@@ -134,31 +167,32 @@ export class AdminService {
   async approveUser(id: string, adminId: string) {
     const user = await prisma.user.update({
       where: { id },
-      data: { status: 'active' },
+      data: { status: "active" },
       include: {
         cooperativeProfile: true,
-      }
+      },
     });
 
-    // If the approved user is a cooperative manager, automatically create the Cooperative 
+    // If the approved user is a cooperative manager, automatically create the Cooperative
     // and link them as a manager using their onboarding profile data.
-    if (user.role === 'cooperative' && user.cooperativeProfile) {
+    if (user.role === "cooperative" && user.cooperativeProfile) {
       // Check if they are already linked
       const existingMember = await prisma.cooperativeMember.findUnique({
-        where: { userId: user.id }
+        where: { userId: user.id },
       });
-      
+
       if (!existingMember) {
         // Create the actual Cooperative entity
         const newCoop = await prisma.cooperative.create({
           data: {
-            name: user.cooperativeProfile.cooperativeName || "Unnamed Cooperative",
+            name:
+              user.cooperativeProfile.cooperativeName || "Unnamed Cooperative",
             registrationNumber: user.cooperativeProfile.registrationNumber,
-            district: "Unknown", // Assuming district is not in CooperativeProfile yet, can be updated later
-            sector: "Unknown",
+            district: user.cooperativeProfile.district || "Unknown",
+            sector: user.cooperativeProfile.sector || "Unknown",
             contactPhone: user.phone,
             contactEmail: user.email,
-          }
+          },
         });
 
         // Link the user to the new cooperative
@@ -166,39 +200,39 @@ export class AdminService {
           data: {
             userId: user.id,
             cooperativeId: newCoop.id,
-            role: 'manager',
-            status: 'active'
-          }
+            role: "manager",
+            status: "active",
+          },
         });
       }
     }
 
     // Send email
     await mailService.sendAccountApproved({
-      email:    user.email,
+      email: user.email,
       fullName: user.fullName || user.phone,
-      phone:    user.phone,
+      phone: user.phone,
     });
 
     // Create in-app notification
     await prisma.notification.create({
       data: {
-        userId:  user.id,
-        title:   'Account Approved / Konti Yemejwe',
-        message: 'Your Aguka account is approved. Welcome!',
-        channel: 'app',
-        status:  'sent',
-        sentAt:  new Date(),
+        userId: user.id,
+        title: "Account Approved / Konti Yemejwe",
+        message: "Your AGUKA account is approved. Welcome!",
+        channel: "app",
+        status: "sent",
+        sentAt: new Date(),
       },
     });
 
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId:       adminId,
-        action:       'ACCOUNT_APPROVED',
-        resourceType: 'User',
-        resourceId:   id,
+        userId: adminId,
+        action: "ACCOUNT_APPROVED",
+        resourceType: "User",
+        resourceId: id,
       },
     });
 
@@ -206,43 +240,39 @@ export class AdminService {
   }
 
   // When admin rejects:
-  async rejectUser(
-    id: string,
-    adminId: string,
-    reason: string
-  ) {
+  async rejectUser(id: string, adminId: string, reason: string) {
     const user = await prisma.user.update({
       where: { id },
-      data: { status: 'suspended' },
+      data: { status: "suspended" },
     });
 
     // Send email
     await mailService.sendAccountRejected({
-      email:    user.email,
+      email: user.email,
       fullName: user.fullName || user.phone,
-      reason:   reason,
+      reason: reason,
     });
 
     // Create in-app notification
     await prisma.notification.create({
       data: {
-        userId:  user.id,
-        title:   'Account Not Approved / Konti Ntiyemejwe',
+        userId: user.id,
+        title: "Account Not Approved / Konti Ntiyemejwe",
         message: `Account not approved. Reason: ${reason}`,
-        channel: 'app',
-        status:  'sent',
-        sentAt:  new Date(),
+        channel: "app",
+        status: "sent",
+        sentAt: new Date(),
       },
     });
 
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId:       adminId,
-        action:       'ACCOUNT_REJECTED',
-        resourceType: 'User',
-        resourceId:   id,
-        newValue:     { reason },
+        userId: adminId,
+        action: "ACCOUNT_REJECTED",
+        resourceType: "User",
+        resourceId: id,
+        newValue: { reason },
       },
     });
 

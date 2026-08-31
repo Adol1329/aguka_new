@@ -13,7 +13,7 @@ import sensorRoutes from "./sensor.routes.js";
 import iotRoutes from "./iot.routes.js";
 import kpiRoutes from "./kpi.routes.js";
 import smsRoutes from "./sms.routes.js";
-import reportRoutes from "./report.routes.js";
+import reportsV2Routes from "../reports-v2/reports-v2.routes.js";
 import marketRoutes from "./market.routes.js";
 import paymentRoutes from "./payment.routes.js";
 import feedbackRoutes from "./feedback.routes.js";
@@ -32,6 +32,8 @@ import irrigationRecommendationRoutes from "./irrigation-recommendation.routes.j
 import recommendationRoutes from "./recommendation.routes.js";
 import onboardingRoutes from "./onboarding.routes.js";
 import aiRoutes from "./ai.routes.js";
+import guidesRoutes from "./guides.routes.js";
+import seasonRoutes from "./season.routes.js";
 
 import { config } from "../config/index.js";
 
@@ -42,6 +44,7 @@ router.use("/onboarding", onboardingRoutes);
 router.use("/search", searchRoutes);
 router.use("/superadmin", superAdminRoutes);
 router.use("/users", userRoutes);
+router.use("/seasons", seasonRoutes);
 
 // Farmers routes (ensuring both plural and singular aliases)
 router.use("/farmers", farmerRoutes);
@@ -56,7 +59,7 @@ router.use("/sensors", sensorRoutes);
 router.use("/sensors/ingest", iotRoutes);
 router.use("/kpi", kpiRoutes);
 router.use("/sms", smsRoutes);
-router.use("/reports", reportRoutes);
+router.use("/reports-v2", reportsV2Routes);
 router.use("/market", marketRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/feedback", feedbackRoutes);
@@ -82,19 +85,22 @@ router.use("/irrigation-recommendation", irrigationRecommendationRoutes);
 router.use("/recommendations", recommendationRoutes);
 router.use("/admin", adminRoutes);
 router.use("/ai", aiRoutes);
+router.use("/guides", guidesRoutes);
 
 import { prisma } from "../prisma.js";
 
 router.get("/stats/public", async (_req, res) => {
   try {
-    const [totalFarmers, totalCooperatives, farmerDistricts] = await Promise.all([
-      prisma.user.count({ where: { role: "farmer" } }),
-      prisma.user.count({ where: { role: "cooperative" } }),
-      prisma.farmerProfile.groupBy({
-        by: ["district"],
-      }),
-    ]);
-    const districtsCount = farmerDistricts.filter(d => d.district).length || 5;
+    const [totalFarmers, totalCooperatives, farmerDistricts] =
+      await Promise.all([
+        prisma.user.count({ where: { role: "farmer" } }),
+        prisma.user.count({ where: { role: "cooperative" } }),
+        prisma.farmerProfile.groupBy({
+          by: ["district"],
+        }),
+      ]);
+    const districtsCount =
+      farmerDistricts.filter((d) => d.district).length || 5;
 
     return res.json({
       totalFarmers,
@@ -102,29 +108,13 @@ router.get("/stats/public", async (_req, res) => {
       districtsCount,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, error: "Failed to fetch stats" });
+    return res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch stats" });
   }
 });
 
 router.get("/health", (_req, res) => {
-  // #region agent log
-  fetch("http://127.0.0.1:7646/ingest/8e7223a1-1e67-4704-b579-50d84bc12fc1", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "8574fc",
-    },
-    body: JSON.stringify({
-      sessionId: "8574fc",
-      runId: "pre-fix",
-      hypothesisId: "H2",
-      location: "routes/index.ts:/health",
-      message: "v1 health handler executed",
-      data: { version: config.apiVersion },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   res.json({
     success: true,
     data: {

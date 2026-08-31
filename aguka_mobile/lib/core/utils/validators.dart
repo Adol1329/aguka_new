@@ -2,24 +2,38 @@ class Validators {
   Validators._();
 
   static String? validatePhone(String? value) {
-    if (value == null || value.isEmpty) return 'Phone number is required';
-    // Rwanda phone: +250 7XX XXX XXX or 07XX XXX XXX
-    final cleaned = value.replaceAll(RegExp(r'[\s\-]'), '');
-    if (cleaned.startsWith('+250') && cleaned.length == 13) return null;
-    if (cleaned.startsWith('0') && cleaned.length == 10) return null;
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required';
+    }
+
+    final cleaned = value.trim().replaceAll(RegExp(r'[\s\-()]'), '');
+    final rwandaPhoneRegex = RegExp(r'^(\+250|250|0)7[2389]\d{7}$');
+    if (rwandaPhoneRegex.hasMatch(cleaned)) return null;
+
     return 'Enter a valid Rwandan phone number';
   }
 
   static String? validateEmail(String? value) {
-    if (value == null || value.isEmpty) return null; // Email is optional
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) return 'Enter a valid email address';
+    if (value == null || value.trim().isEmpty) return null;
+
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Enter a valid email address';
+    }
+
     return null;
   }
 
   static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Password is required';
-    if (value.length < 6) return 'Password must be at least 6 characters';
+    if (value.length < 8) return 'Password must be at least 8 characters';
+    if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
+      return 'Password must include a letter';
+    }
+    if (!RegExp(r'\d').hasMatch(value)) {
+      return 'Password must include a number';
+    }
+
     return null;
   }
 
@@ -30,19 +44,62 @@ class Validators {
   }
 
   static String? validateName(String? value) {
-    if (value == null || value.isEmpty) return 'Full name is required';
-    if (value.length < 2) return 'Name must be at least 2 characters';
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return 'Full name is required';
+    if (trimmed.length < 2) return 'Name must be at least 2 characters';
+    if (!RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$").hasMatch(trimmed)) {
+      return 'Name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+
     return null;
   }
 
   static String? validateRequired(String? value, String fieldName) {
-    if (value == null || value.isEmpty) return '$fieldName is required';
+    if (value == null || value.trim().isEmpty) return '$fieldName is required';
+    return null;
+  }
+
+  static String? validatePositiveNumber(
+    String? value,
+    String fieldName, {
+    bool required = true,
+    double? max,
+  }) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      return required ? '$fieldName is required' : null;
+    }
+
+    final number = double.tryParse(trimmed);
+    if (number == null) return '$fieldName must be a valid number';
+    if (number <= 0) return '$fieldName must be greater than zero';
+    if (max != null && number > max) return '$fieldName must be $max or less';
+
+    return null;
+  }
+
+  static String? validatePositiveInteger(
+    String? value,
+    String fieldName, {
+    bool required = true,
+    int? max,
+  }) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      return required ? '$fieldName is required' : null;
+    }
+
+    final number = int.tryParse(trimmed);
+    if (number == null) return '$fieldName must be a whole number';
+    if (number <= 0) return '$fieldName must be greater than zero';
+    if (max != null && number > max) return '$fieldName must be $max or less';
+
     return null;
   }
 
   /// Normalizes a Rwandan phone number to +250 format
   static String normalizePhone(String phone) {
-    final cleaned = phone.replaceAll(RegExp(r'[\s\-]'), '');
+    final cleaned = phone.trim().replaceAll(RegExp(r'[\s\-()]'), '');
     if (cleaned.startsWith('0') && cleaned.length == 10) {
       return '+250${cleaned.substring(1)}';
     }

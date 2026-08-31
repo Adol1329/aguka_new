@@ -25,7 +25,12 @@ export interface NotificationRule {
 }
 
 export const notificationsApi = {
-  getNotifications: async (params?: { page?: number; limit?: number; isRead?: boolean; type?: string }) => {
+  getNotifications: async (params?: {
+    page?: number;
+    limit?: number;
+    isRead?: boolean;
+    type?: string;
+  }) => {
     // request<T> returns ApiResponse<T>
     // We want T to be Notification[]
     return apiClient.get<Notification[]>("/notifications", params as any);
@@ -68,6 +73,10 @@ export const notificationsApi = {
 
   deleteRule: async (id: string) => {
     return apiClient.delete<{ message: string }>(`/notification-rules/${id}`);
+  },
+
+  registerDevice: async (data: { fcmToken: string; platform?: string }) => {
+    return apiClient.post<{ message: string }>("/notifications/devices", data);
   },
 };
 

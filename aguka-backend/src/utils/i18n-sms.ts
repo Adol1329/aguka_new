@@ -23,38 +23,46 @@ const translations: Record<string, Record<Language, string>> = {
       "ALERTE CRITIQUE: Fortes pluies attendues. Protégez vos champs contre l érosion.",
   },
   "alert.irrigation.started": {
-    kinyarwanda: "Aguka: Kuhira byatangiye mu murima wawe.",
-    english: "Aguka: Irrigation started in your field.",
-    french: "Aguka: L irrigation a commencé dans votre champ.",
+    kinyarwanda: "AGUKA: Kuhira byatangiye mu murima wawe.",
+    english: "AGUKA: Irrigation started in your field.",
+    french: "AGUKA: L irrigation a commencé dans votre champ.",
   },
   "alert.irrigation.stopped": {
-    kinyarwanda: "Aguka: Kuhira byahagaze mu murima wawe.",
-    english: "Aguka: Irrigation stopped in your field.",
-    french: "Aguka: L irrigation s est arrêtée dans votre champ.",
+    kinyarwanda: "AGUKA: Kuhira byahagaze mu murima wawe.",
+    english: "AGUKA: Irrigation stopped in your field.",
+    french: "AGUKA: L irrigation s est arrêtée dans votre champ.",
   },
   "alert.system.error": {
     kinyarwanda:
-      "Aguka: Hari ikibazo cyagaragaye kuri sisitemu yawe. Reba niba ibikoresho bikora neza.",
+      "AGUKA: Hari ikibazo cyagaragaye kuri sisitemu yawe. Reba niba ibikoresho bikora neza.",
     english:
-      "Aguka: A system error was detected. Please check your IoT kit hardware.",
+      "AGUKA: A system error was detected. Please check your IoT kit hardware.",
     french:
-      "Aguka: Une erreur système a été détectée. Veuillez vérifier votre kit IoT.",
+      "AGUKA: Une erreur système a été détectée. Veuillez vérifier votre kit IoT.",
   },
   "ussd.main.menu": {
     kinyarwanda:
-      "Muraho {name}!\n1. Imiterere y ubutaka\n2. Iteganyagihe\n3. Kuhira\n4. Ibiciro ku isoko\n5. Guhamagara umujyanama\n6. Ubufasha",
+      "Muraho {name}!\n1. Imiterere y ubutaka\n2. Iteganyagihe\n3. Kuhira\n4. Ibiciro ku isoko\n5. Guhamagara umujyanama\n6. Ubufasha\n7. Kubona ijambobanga",
     english:
-      "Hello {name}!\n1. Soil Status\n2. Weather Info\n3. Irrigation\n4. Market Prices\n5. Contact Agent\n6. Help",
+      "Hello {name}!\n1. Soil Status\n2. Weather Info\n3. Irrigation\n4. Market Prices\n5. Contact Agent\n6. Help\n7. Get login password",
     french:
-      "Bonjour {name}!\n1. État du sol\n2. Météo\n3. Irrigation\n4. Prix du marché\n5. Contacter un agent\n6. Aide",
+      "Bonjour {name}!\n1. État du sol\n2. Météo\n3. Irrigation\n4. Prix du marché\n5. Contacter un agent\n6. Aide\n7. Obtenir le mot de passe",
+  },
+  "ussd.password.reset": {
+    kinyarwanda:
+      "Ijambobanga rishya rya AGUKA: {password}. Rikoreshe winjire, uzasabwa kurihindura.",
+    english:
+      "Your new AGUKA password: {password}. Use it to log in — you'll be asked to change it.",
+    french:
+      "Votre nouveau mot de passe AGUKA : {password}. Utilisez-le pour vous connecter — il vous sera demandé de le changer.",
   },
   "ussd.help": {
     kinyarwanda:
-      "Aguka Smart Farming igufasha gukurikirana ubutaka bwawe no kuhira mu buryo bugezweho. Hamagara 078XXXXXXX niba ukeneye ubufasha buhagije.",
+      "AGUKA SMART FARMING KIT igufasha gukurikirana ubutaka bwawe no kuhira mu buryo bugezweho. Hamagara 078XXXXXXX niba ukeneye ubufasha buhagije.",
     english:
-      "Aguka Smart Farming helps you monitor your soil and irrigation with precision. Call 078XXXXXXX for technical support.",
+      "AGUKA SMART FARMING KIT helps you monitor your soil and irrigation with precision. Call 078XXXXXXX for technical support.",
     french:
-      "Aguka Smart Farming vous aide à surveiller votre sol et votre irrigation avec précision. Appelez le 078XXXXXXX pour un support technique.",
+      "AGUKA SMART FARMING KIT vous aide à surveiller votre sol et votre irrigation avec précision. Appelez le 078XXXXXXX pour un support technique.",
   },
   "ussd.soil.status": {
     kinyarwanda:
@@ -81,9 +89,9 @@ const translations: Record<string, Record<Language, string>> = {
       "Prix du marché (RWF/kg):\nPommes de terre: {potatoes}\nMaïs: {maize}\nHaricots: {beans}",
   },
   "ussd.agent.contact": {
-    kinyarwanda: "Umujyanama azaguhamagara mu kanya. Aguka iragushimiye!",
-    english: "An agent will call you shortly. Thank you for using Aguka!",
-    french: "Un agent vous appellera sous peu. Merci d'utiliser Aguka!",
+    kinyarwanda: "Umujyanama azaguhamagara mu kanya. AGUKA iragushimiye!",
+    english: "An agent will call you shortly. Thank you for using AGUKA!",
+    french: "Un agent vous appellera sous peu. Merci d'utiliser AGUKA!",
   },
 };
 

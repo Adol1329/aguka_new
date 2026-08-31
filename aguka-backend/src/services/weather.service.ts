@@ -157,9 +157,9 @@ export class WeatherService {
       tempMin: Math.round(day.tempMin),
       tempMax: Math.round(day.tempMax),
       condition: day.condition,
-      rainfallMm: day.rainfall,
+      rainfallMm: Math.round(day.rainfall * 10) / 10,
       humidityPercent: Math.round(day.humidityAvg),
-      precipitationProbability: day.rainfall > 0 ? 80 : 20, // Approximate from OpenWeather
+      precipitationProbability: Math.round(day.popMax * 100),
     }));
   }
 
@@ -177,6 +177,7 @@ export class WeatherService {
           tempMax: -Infinity,
           humiditySum: 0,
           rainfall: 0,
+          popMax: 0,
           count: 0,
           condition: item.weather[0].main,
         });
@@ -187,6 +188,15 @@ export class WeatherService {
       day.tempMin = Math.min(day.tempMin, item.main.temp);
       day.tempMax = Math.max(day.tempMax, item.main.temp);
       day.humiditySum += item.main.humidity;
+      // "3h" = rain volume for that 3-hour slot; sum across the day's slots
+      // for a real daily total instead of leaving it at its initial 0.
+      day.rainfall += item.rain?.["3h"] ?? 0;
+      // "pop" (0-1) is OpenWeatherMap's real per-slot precipitation
+      // probability — take the day's max rather than an average, since
+      // "will it rain at some point today" is what an irrigation decision
+      // needs, and averaging a short heavy-rain window against six dry
+      // ones would understate the real risk.
+      day.popMax = Math.max(day.popMax, item.pop ?? 0);
       day.count++;
     });
 
@@ -199,6 +209,7 @@ export class WeatherService {
         tempMax: day.tempMax,
         humidityAvg: day.humiditySum / day.count,
         rainfall: day.rainfall,
+        popMax: day.popMax,
         condition: day.condition,
       }));
   }

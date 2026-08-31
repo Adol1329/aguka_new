@@ -11,7 +11,8 @@ export const Route = createFileRoute("/super-admin")({
     if (user.requiresPasswordChange) {
       throw redirect({ to: "/change-password" as any });
     }
-    if (!canAccessRoute(user.role, "/super-admin")) {
+    const path = window.location.pathname.replace(/\/$/, "") || "/super-admin";
+    if (!canAccessRoute(user.role, path)) {
       throw redirect({ to: "/access-denied" as any });
     }
   },

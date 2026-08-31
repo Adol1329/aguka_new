@@ -4,7 +4,19 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, ArrowLeft, ArrowRight, ShieldCheck, AlertCircle, Mail, Key, Eye, EyeOff, CheckCircle2, Timer } from "lucide-react";
+import {
+  Leaf,
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  AlertCircle,
+  Mail,
+  Key,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  Timer,
+} from "lucide-react";
 import { toast } from "sonner";
 import { authApi } from "@/api/auth";
 import { normalizeRwandaPhone, validateRwandaPhone } from "@/utils/phoneUtils";
@@ -68,7 +80,11 @@ function ForgotPasswordPage() {
         setErrorMsg(t("forgot_password.error.no_account"));
         toast.error(t("forgot_password.error.no_account"));
       } else if (data.hasEmail) {
-        toast.success(t("forgot_password.success.code_sent_to", { email: data.maskedEmail || t("forgot_password.your_email") }));
+        toast.success(
+          t("forgot_password.success.code_sent_to", {
+            email: data.maskedEmail || t("forgot_password.your_email"),
+          }),
+        );
         setRecoveryPhone(normalizedPhone);
         setMaskedEmail(data.maskedEmail || t("forgot_password.your_email"));
         setOtp("");
@@ -185,19 +201,19 @@ function ForgotPasswordPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* LEFT BRAND PANEL (Aguka Branding) */}
+      {/* LEFT BRAND PANEL (AGUKA Branding) */}
       <div className="relative hidden w-1/2 flex-col justify-between bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 p-12 text-white lg:flex overflow-hidden">
         {/* Glow Effects */}
         <div className="absolute -left-1/4 -top-1/4 h-[80%] w-[80%] rounded-full bg-emerald-500/20 blur-3xl" />
         <div className="absolute -bottom-1/4 -right-1/4 h-[80%] w-[80%] rounded-full bg-teal-500/20 blur-3xl" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md ring-1 ring-white/20">
-            <Leaf className="h-6 w-6 text-emerald-300" />
-          </div>
+          <img src="/imbaraga-logo.png" alt="AGUKA" className="h-12 w-12 object-contain" />
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Aguka</h1>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">{t("app.tagline")}</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">AGUKA</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+              {t("app.tagline")}
+            </p>
           </div>
         </div>
 
@@ -232,10 +248,12 @@ function ForgotPasswordPage() {
         <div className="mx-auto w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex items-center gap-2 lg:hidden mb-8">
-            <Leaf className="h-8 w-8 text-emerald-600" />
+            <img src="/imbaraga-logo.png" alt="AGUKA" className="h-8 w-8 object-contain" />
             <div>
-              <span className="text-xl font-bold text-slate-900">Aguka</span>
-              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">{t("forgot_password.smart_farming")}</span>
+              <span className="text-xl font-bold text-slate-900">AGUKA</span>
+              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">
+                {t("forgot_password.smart_farming")}
+              </span>
             </div>
           </div>
 
@@ -244,9 +262,7 @@ function ForgotPasswordPage() {
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
                 {t("forgot_password.title")}
               </h2>
-              <p className="text-sm text-slate-500">
-                {t("forgot_password.subtitle")}
-              </p>
+              <p className="text-sm text-slate-500">{t("forgot_password.subtitle")}</p>
             </div>
 
             {step === "phone" ? (
@@ -302,9 +318,14 @@ function ForgotPasswordPage() {
                   <div className="flex items-start gap-3">
                     <Mail className="mt-0.5 h-5 w-5 text-emerald-600" />
                     <div>
-                      <p className="text-sm font-bold text-slate-800">{t("forgot_password.code.enter_email_code")}</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {t("forgot_password.code.enter_email_code")}
+                      </p>
                       <p className="mt-1 text-xs text-slate-600">
-                        {t("forgot_password.code.sent_to_for", { email: maskedEmail, phone: recoveryPhone })}
+                        {t("forgot_password.code.sent_to_for", {
+                          email: maskedEmail,
+                          phone: recoveryPhone,
+                        })}
                       </p>
                     </div>
                   </div>
@@ -341,9 +362,16 @@ function ForgotPasswordPage() {
                     {t("forgot_password.code.valid_minutes")}
                   </span>
                   {countdown > 0 ? (
-                    <span className="font-semibold text-slate-500">{t("forgot_password.code.resend_in", { seconds: countdown })}</span>
+                    <span className="font-semibold text-slate-500">
+                      {t("forgot_password.code.resend_in", { seconds: countdown })}
+                    </span>
                   ) : (
-                    <button type="button" onClick={handleResend} disabled={isLoading} className="font-bold text-emerald-600 hover:text-emerald-700">
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      disabled={isLoading}
+                      className="font-bold text-emerald-600 hover:text-emerald-700"
+                    >
                       {t("forgot_password.code.resend")}
                     </button>
                   )}
@@ -358,7 +386,11 @@ function ForgotPasswordPage() {
                     {isLoading ? t("forgot_password.verifying") : t("forgot_password.verify_code")}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
-                  <button type="button" onClick={goBackToPhone} className="w-full text-sm font-semibold text-slate-500 hover:text-slate-700">
+                  <button
+                    type="button"
+                    onClick={goBackToPhone}
+                    className="w-full text-sm font-semibold text-slate-500 hover:text-slate-700"
+                  >
                     {t("forgot_password.use_different_phone")}
                   </button>
                 </div>
@@ -371,8 +403,12 @@ function ForgotPasswordPage() {
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
                     <div>
-                      <p className="text-sm font-bold text-slate-800">{t("forgot_password.success.code_verified")}</p>
-                      <p className="mt-1 text-xs text-slate-600">{t("forgot_password.password.create_for", { phone: recoveryPhone })}</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {t("forgot_password.success.code_verified")}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {t("forgot_password.password.create_for", { phone: recoveryPhone })}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -394,15 +430,24 @@ function ForgotPasswordPage() {
                       className="h-12 w-full rounded-xl border-slate-200 bg-white pr-10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
                       required
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
+                    >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
-                  <p className="text-xs font-medium text-slate-400">{t("forgot_password.password.min_hint")}</p>
+                  <p className="text-xs font-medium text-slate-400">
+                    {t("forgot_password.password.min_hint")}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmNewPassword" className="text-sm font-semibold text-slate-700">
+                  <Label
+                    htmlFor="confirmNewPassword"
+                    className="text-sm font-semibold text-slate-700"
+                  >
                     {t("forgot_password.password.confirm")}
                   </Label>
                   <div className="relative">
@@ -418,13 +463,25 @@ function ForgotPasswordPage() {
                       className="h-12 w-full rounded-xl border-slate-200 bg-white pr-10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
                       required
                     />
-                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
-                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                   {confirmPassword ? (
-                    <p className={`text-xs font-semibold ${passwordsMatch ? "text-emerald-600" : "text-red-500"}`}>
-                      {passwordsMatch ? t("forgot_password.passwords_match") : t("forgot_password.error.passwords_mismatch")}
+                    <p
+                      className={`text-xs font-semibold ${passwordsMatch ? "text-emerald-600" : "text-red-500"}`}
+                    >
+                      {passwordsMatch
+                        ? t("forgot_password.passwords_match")
+                        : t("forgot_password.error.passwords_mismatch")}
                     </p>
                   ) : null}
                 </div>
@@ -441,7 +498,9 @@ function ForgotPasswordPage() {
                   disabled={isLoading || password.length < 8 || !passwordsMatch}
                   className="group relative flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-600/10 hover:bg-emerald-700 hover:shadow-emerald-700/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {isLoading ? t("forgot_password.resetting_password") : t("forgot_password.reset_password")}
+                  {isLoading
+                    ? t("forgot_password.resetting_password")
+                    : t("forgot_password.reset_password")}
                   <Key className="h-4 w-4" />
                 </Button>
               </form>

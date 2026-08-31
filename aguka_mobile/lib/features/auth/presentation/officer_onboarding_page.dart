@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:aguka_mobile/core/utils/validators.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_bloc.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_event.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_state.dart';
@@ -19,9 +20,16 @@ class _OfficerOnboardingPageState extends State<OfficerOnboardingPage> {
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
+      if (_selectedSpecializations.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Select at least one specialization')),
+        );
+        return;
+      }
+
       final data = {
-        'employeeId': _employeeIdController.text,
-        'organization': _organizationController.text,
+        'employeeId': _employeeIdController.text.trim(),
+        'organization': _organizationController.text.trim(),
         'specializations': _selectedSpecializations,
         'coveredSectors': [], // Optional for now
       };
@@ -60,7 +68,8 @@ class _OfficerOnboardingPageState extends State<OfficerOnboardingPage> {
                       labelText: 'Employee ID',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => Validators.validateRequired(v, 'Employee ID'),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -69,7 +78,8 @@ class _OfficerOnboardingPageState extends State<OfficerOnboardingPage> {
                       labelText: 'Organization',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    textInputAction: TextInputAction.done,
+                    validator: (v) => Validators.validateRequired(v, 'Organization'),
                   ),
                   const SizedBox(height: 24),
                   const Text('Specializations', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -110,5 +120,12 @@ class _OfficerOnboardingPageState extends State<OfficerOnboardingPage> {
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _employeeIdController.dispose();
+    _organizationController.dispose();
+    super.dispose();
   }
 }

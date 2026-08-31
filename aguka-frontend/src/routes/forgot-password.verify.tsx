@@ -20,7 +20,7 @@ function ForgotPasswordVerifyPage() {
   const { phone, email } = Route.useSearch();
   const navigate = useNavigate();
   const { t } = useI18n();
-  
+
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -91,7 +91,7 @@ function ForgotPasswordVerifyPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* LEFT BRAND PANEL (Aguka Branding) */}
+      {/* LEFT BRAND PANEL (AGUKA Branding) */}
       <div className="relative hidden w-1/2 flex-col justify-between bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 p-12 text-white lg:flex overflow-hidden">
         <div className="absolute -left-1/4 -top-1/4 h-[80%] w-[80%] rounded-full bg-emerald-500/20 blur-3xl" />
         <div className="absolute -bottom-1/4 -right-1/4 h-[80%] w-[80%] rounded-full bg-teal-500/20 blur-3xl" />
@@ -101,8 +101,10 @@ function ForgotPasswordVerifyPage() {
             <Leaf className="h-6 w-6 text-emerald-300" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Aguka</h1>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">{t("app.tagline")}</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">AGUKA</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+              {t("app.tagline")}
+            </p>
           </div>
         </div>
 
@@ -138,8 +140,10 @@ function ForgotPasswordVerifyPage() {
           <div className="flex items-center gap-2 lg:hidden mb-8">
             <Leaf className="h-8 w-8 text-emerald-600" />
             <div>
-              <span className="text-xl font-bold text-slate-900">Aguka</span>
-              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">{t("forgot_password.smart_farming")}</span>
+              <span className="text-xl font-bold text-slate-900">AGUKA</span>
+              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">
+                {t("forgot_password.smart_farming")}
+              </span>
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:aguka_mobile/core/utils/validators.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_bloc.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_event.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_state.dart';
@@ -21,10 +22,10 @@ class _CooperativeOnboardingPageState extends State<CooperativeOnboardingPage> {
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
       final data = {
-        'cooperativeName': _nameController.text,
-        'registrationNumber': _regNumberController.text,
+        'cooperativeName': _nameController.text.trim(),
+        'registrationNumber': _regNumberController.text.trim(),
         'cooperativeType': _selectedType ?? 'CROP',
-        'memberCount': int.tryParse(_memberCountController.text) ?? 0,
+        'memberCount': int.tryParse(_memberCountController.text.trim()) ?? 0,
       };
 
       context.read<AuthBloc>().add(AuthOnboardingRequested(
@@ -61,7 +62,8 @@ class _CooperativeOnboardingPageState extends State<CooperativeOnboardingPage> {
                       labelText: 'Cooperative Name',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => Validators.validateRequired(v, 'Cooperative name'),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -70,11 +72,12 @@ class _CooperativeOnboardingPageState extends State<CooperativeOnboardingPage> {
                       labelText: 'RCA Registration Number',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) => Validators.validateRequired(v, 'Registration number'),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _selectedType,
+                    initialValue: _selectedType,
                     items: ['CROP', 'LIVESTOCK', 'MULTI_PURPOSE', 'IRRIGATION']
                         .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                         .toList(),
@@ -83,6 +86,7 @@ class _CooperativeOnboardingPageState extends State<CooperativeOnboardingPage> {
                       labelText: 'Cooperative Type',
                       border: OutlineInputBorder(),
                     ),
+                    validator: (v) => v == null ? 'Cooperative type is required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -92,6 +96,12 @@ class _CooperativeOnboardingPageState extends State<CooperativeOnboardingPage> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    validator: (v) => Validators.validatePositiveInteger(
+                      v,
+                      'Number of members',
+                      max: 1000000,
+                    ),
                   ),
                   const Spacer(),
                   SizedBox(
@@ -113,5 +123,13 @@ class _CooperativeOnboardingPageState extends State<CooperativeOnboardingPage> {
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _regNumberController.dispose();
+    _memberCountController.dispose();
+    super.dispose();
   }
 }

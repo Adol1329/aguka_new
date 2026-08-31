@@ -4,15 +4,17 @@ class ReportAnalyticsEntity extends Equatable {
   final ReportOverviewEntity overview;
   final ReportTrendsEntity trends;
   final List<String> recommendations;
+  final String executiveSummary;
 
   const ReportAnalyticsEntity({
     required this.overview,
     required this.trends,
     required this.recommendations,
+    this.executiveSummary = '',
   });
 
   @override
-  List<Object?> get props => [overview, trends, recommendations];
+  List<Object?> get props => [overview, trends, recommendations, executiveSummary];
 }
 
 class ReportOverviewEntity extends Equatable {

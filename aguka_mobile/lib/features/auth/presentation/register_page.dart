@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:aguka_mobile/core/utils/validators.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_bloc.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_event.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_state.dart';
@@ -22,17 +23,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void _handleRegister() {
     if (_formKey.currentState?.validate() ?? false) {
-      if (_passwordController.text != _confirmPasswordController.text) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Passwords do not match')),
-        );
-        return;
-      }
-
       context.read<AuthBloc>().add(AuthRegisterRequested(
-            phone: _phoneController.text,
-            password: _passwordController.text,
-            fullName: _fullNameController.text,
+            phone: Validators.normalizePhone(_phoneController.text),
+            password: _passwordController.text.trim(),
+            fullName: _fullNameController.text.trim(),
             role: widget.role,
           ));
     }
@@ -43,12 +37,9 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthRegistered || state is AuthAuthenticated) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Registration Successful! Please login.')),
-            );
-          } else if (state is AuthError) {
+          // AuthAuthenticated: main.dart BlocBuilder handles routing to
+          // onboarding or MainNavigator based on isOnboarded.
+          if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
@@ -164,7 +155,8 @@ class _RegisterPageState extends State<RegisterPage> {
             prefixIcon: const Icon(Icons.person_outline),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          validator: (v) => (v == null || v.isEmpty) ? 'Please enter full name' : null,
+          textInputAction: TextInputAction.next,
+          validator: Validators.validateName,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -176,11 +168,8 @@ class _RegisterPageState extends State<RegisterPage> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           keyboardType: TextInputType.phone,
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'Please enter phone';
-            if (!v.startsWith('+') && v.length < 10) return 'Invalid phone';
-            return null;
-          },
+          textInputAction: TextInputAction.next,
+          validator: Validators.validatePhone,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -191,7 +180,8 @@ class _RegisterPageState extends State<RegisterPage> {
             prefixIcon: const Icon(Icons.lock_outline),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          validator: (v) => (v == null || v.length < 6) ? 'Password must be 6+ chars' : null,
+          textInputAction: TextInputAction.next,
+          validator: Validators.validatePassword,
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -202,7 +192,12 @@ class _RegisterPageState extends State<RegisterPage> {
             prefixIcon: const Icon(Icons.lock_reset),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          validator: (v) => (v != _passwordController.text) ? 'Passwords do not match' : null,
+          textInputAction: TextInputAction.done,
+          onFieldSubmitted: (_) => _handleRegister(),
+          validator: (v) => Validators.validateConfirmPassword(
+            v,
+            _passwordController.text,
+          ),
         ),
       ],
     );
@@ -245,6 +240,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _fullNameController.dispose();
     super.dispose();
   }

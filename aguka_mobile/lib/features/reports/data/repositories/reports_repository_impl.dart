@@ -11,9 +11,9 @@ class ReportsRepositoryImpl implements ReportsRepository {
   ReportsRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, ReportAnalyticsEntity>> getAnalytics() async {
+  Future<Either<Failure, ReportAnalyticsEntity>> getAnalytics(String role) async {
     try {
-      final result = await remoteDataSource.getAnalytics();
+      final result = await remoteDataSource.getAnalytics(role);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -23,9 +23,9 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<Either<Failure, String>> downloadReport(String type) async {
+  Future<Either<Failure, String>> downloadReport(String role, String type) async {
     try {
-      final result = await remoteDataSource.downloadReport(type);
+      final result = await remoteDataSource.downloadReport(role, type);
       return Right(result);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { authApi } from "@/api/auth";
 import { tabSession } from "@/utils/tabSession";
+import { connectSocket, disconnectSocket } from "./socket";
+import { registerPushToken, setupForegroundHandler } from "./fcm";
 
 export type Role = "super_admin" | "admin" | "cooperative" | "officer" | "farmer";
 
@@ -17,34 +19,83 @@ export const ROUTE_ROLES: Record<string, Role[]> = {
   "/super-admin/users": ["super_admin"],
   "/super-admin/roles": ["super_admin"],
   "/super-admin/settings": ["super_admin"],
-  "/super-admin/audit": ["super_admin"],
-  "/super-admin/backups": ["super_admin"],
-  "/super-admin/health": ["super_admin"],
+  "/super-admin/audit": ["super_admin", "admin"],
+  "/super-admin/backups": ["super_admin", "admin"],
+  "/super-admin/health": ["super_admin", "admin"],
+  "/super-admin/security": ["super_admin", "admin"],
   "/admin": ["super_admin", "admin"],
   "/admin/users": ["super_admin", "admin"],
+  "/admin/cooperatives": ["super_admin", "admin"],
   "/admin/farms": ["super_admin", "admin"],
   "/admin/settings": ["super_admin", "admin"],
-  "/admin/reports": ["super_admin", "admin"],
   "/cooperative": ["super_admin", "admin", "cooperative"],
+  "/cooperative/profile": ["super_admin", "admin", "cooperative"],
   "/cooperative/farmers": ["super_admin", "admin", "cooperative"],
   "/cooperative/resources": ["super_admin", "admin", "cooperative"],
   "/cooperative/events": ["super_admin", "admin", "cooperative"],
-  "/cooperative/reports": ["super_admin", "admin", "cooperative"],
   "/officer": ["super_admin", "admin", "officer"],
   "/officer/farms": ["super_admin", "admin", "officer"],
   "/officer/advisories": ["super_admin", "admin", "officer"],
   "/officer/risks": ["super_admin", "admin", "officer"],
-  "/officer/reports": ["super_admin", "admin", "officer"],
   "/farmer": ["super_admin", "admin", "officer", "cooperative", "farmer"],
+  "/farmer/cooperative": ["super_admin", "admin", "officer", "cooperative", "farmer"],
   "/farmer/profile": ["super_admin", "admin", "officer", "cooperative", "farmer"],
   "/farmer/soil": ["super_admin", "admin", "officer", "cooperative", "farmer"],
   "/farmer/weather": ["super_admin", "admin", "officer", "cooperative", "farmer"],
   "/farmer/irrigation": ["super_admin", "admin", "officer", "cooperative", "farmer"],
   "/farmer/activities": ["super_admin", "admin", "officer", "cooperative", "farmer"],
   "/farmer/community": ["super_admin", "admin", "officer", "cooperative", "farmer"],
+  "/notifications": ["super_admin", "admin", "officer", "cooperative", "farmer"],
   "/farmer/notifications": ["super_admin", "admin", "officer", "cooperative", "farmer"],
+  "/farmer/reports-v2": ["super_admin", "admin", "officer", "cooperative", "farmer"],
+  "/farmer/reports-v2/performance": ["super_admin", "admin", "officer", "cooperative", "farmer"],
+  "/farmer/reports-v2/seasonal": ["super_admin", "admin", "officer", "cooperative", "farmer"],
+  "/farmer/reports-v2/ai-recommendation": [
+    "super_admin",
+    "admin",
+    "officer",
+    "cooperative",
+    "farmer",
+  ],
+  "/farmer/reports-v2/soil-irrigation": [
+    "super_admin",
+    "admin",
+    "officer",
+    "cooperative",
+    "farmer",
+  ],
+  "/farmer/reports-v2/yield-productivity": [
+    "super_admin",
+    "admin",
+    "officer",
+    "cooperative",
+    "farmer",
+  ],
+  "/officer/reports-v2": ["super_admin", "admin", "officer"],
+  "/officer/reports-v2/assigned-farmers": ["super_admin", "admin", "officer"],
+  "/officer/reports-v2/advisory": ["super_admin", "admin", "officer"],
+  "/officer/reports-v2/risk": ["super_admin", "admin", "officer"],
+  "/officer/reports-v2/performance-comparison": ["super_admin", "admin", "officer"],
+  "/officer/reports-v2/monthly-summary": ["super_admin", "admin", "officer"],
+  "/cooperative/reports-v2": ["super_admin", "admin", "cooperative"],
+  "/cooperative/reports-v2/performance": ["super_admin", "admin", "cooperative"],
+  "/cooperative/reports-v2/farmer-comparison": ["super_admin", "admin", "cooperative"],
+  "/cooperative/reports-v2/resource-distribution": ["super_admin", "admin", "cooperative"],
+  "/cooperative/reports-v2/recommendation": ["super_admin", "admin", "cooperative"],
+  "/cooperative/reports-v2/production": ["super_admin", "admin", "cooperative"],
+  "/admin/reports-v2": ["super_admin", "admin"],
+  "/admin/reports-v2/system-usage": ["super_admin", "admin"],
+  "/admin/reports-v2/financial": ["super_admin", "admin"],
+  "/admin/reports-v2/data-validation": ["super_admin", "admin"],
+  "/admin/reports-v2/analytics-dashboard": ["super_admin", "admin"],
+  "/admin/reports-v2/user-activity": ["super_admin", "admin"],
+  "/super-admin/reports-v2": ["super_admin"],
+  "/super-admin/reports-v2/audit": ["super_admin"],
+  "/super-admin/reports-v2/system-health": ["super_admin"],
+  "/super-admin/reports-v2/backup": ["super_admin"],
+  "/super-admin/reports-v2/security": ["super_admin"],
+  "/super-admin/reports-v2/national": ["super_admin"],
   "/profile": ["super_admin", "admin", "officer", "cooperative", "farmer"],
-  "/reports": ["super_admin", "admin", "cooperative", "officer"],
   "/onboarding": ["farmer"],
 };
 
@@ -132,23 +183,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const storedUser = loadUser();
-    
+
     if (storedUser) {
+      connectSocket(storedUser.token);
+      registerPushToken();
+      setupForegroundHandler();
+
       // Refresh profile from backend to get latest data
-      authApi.getMe().then(res => {
-        if (res.success && res.data) {
-          const updatedUser = mapBackendUserToAuth(res.data as any, storedUser.token, storedUser.refreshToken);
-          setUser(updatedUser);
-          tabSession.set(updatedUser);
-        }
-      }).catch(() => {
-        if (!tabSession.get()) {
-          setUser(null);
-        }
-      });
+      authApi
+        .getMe()
+        .then((res) => {
+          if (res.success && res.data) {
+            const updatedUser = mapBackendUserToAuth(
+              res.data as any,
+              storedUser.token,
+              storedUser.refreshToken,
+            );
+            setUser(updatedUser);
+            tabSession.set(updatedUser);
+          }
+        })
+        .catch((err) => {
+          console.error("Auth refresh failed:", err);
+          signOut();
+        });
     }
 
-    const logoutChannel = new BroadcastChannel("aguka_logout");
+    const logoutChannel = new BroadcastChannel("imbaraga_logout");
     logoutChannel.onmessage = (event) => {
       if (event.data?.type === "LOGOUT" && event.data?.role === tabSession.getRole()) {
         tabSession.clear();
@@ -170,6 +231,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setUser(u);
     tabSession.set(u);
+    connectSocket(u.token);
+    registerPushToken();
   };
 
   const signOut = async () => {
@@ -181,8 +244,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setUser(null);
       tabSession.clear();
+      disconnectSocket();
       if (typeof window !== "undefined") {
-        const logoutChannel = new BroadcastChannel("aguka_logout");
+        const logoutChannel = new BroadcastChannel("imbaraga_logout");
         logoutChannel.postMessage({ type: "LOGOUT", role });
         logoutChannel.close();
       }
@@ -200,7 +264,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, token: user?.token || null, signIn, signOut, hasRole, canAccess, isLoading }}>
+    <Ctx.Provider
+      value={{ user, token: user?.token || null, signIn, signOut, hasRole, canAccess, isLoading }}
+    >
       {children}
     </Ctx.Provider>
   );
@@ -227,10 +293,10 @@ export function mapBackendUserToAuth(
 ): User {
   const rawRole = String(backendUser.role || "farmer").toLowerCase();
   const role = ROLE_MAP[rawRole] || "farmer";
-  const fullName = 
-    (backendUser.fullName as string) || 
-    (backendUser.farmerProfile as any)?.fullName || 
-    (backendUser.phone as string) || 
+  const fullName =
+    (backendUser.fullName as string) ||
+    (backendUser.farmerProfile as any)?.fullName ||
+    (backendUser.phone as string) ||
     "";
 
   return {
@@ -247,7 +313,10 @@ export function mapBackendUserToAuth(
     location: (backendUser.location as string) || undefined,
     cooperativeId: (backendUser.cooperativeId as string) || undefined,
     officerId: (backendUser.officerId as string) || undefined,
-    avatarUrl: (backendUser.avatarUrl as string) || (backendUser.farmerProfile as any)?.profileImageUrl || undefined,
+    avatarUrl:
+      (backendUser.avatarUrl as string) ||
+      (backendUser.farmerProfile as any)?.profileImageUrl ||
+      undefined,
     requiresPasswordChange: Boolean(backendUser.requiresPasswordChange),
   };
 }

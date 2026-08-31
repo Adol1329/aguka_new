@@ -8,7 +8,7 @@ interface StatCardProps {
   icon: LucideIcon;
   trend?: string;
   trendUp?: boolean;
-  accent?: "primary" | "success" | "warning" | "info";
+  accent?: "primary" | "success" | "warning" | "info" | "destructive";
 }
 
 export function StatCard({
@@ -24,6 +24,7 @@ export function StatCard({
     success: "bg-success/10 text-success",
     warning: "bg-warning/10 text-warning",
     info: "bg-info/10 text-info",
+    destructive: "bg-destructive/10 text-destructive",
   } as const;
 
   return (

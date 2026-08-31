@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:aguka_mobile/features/auth/presentation/register_page.dart';
 
 class RoleSelectionPage extends StatefulWidget {
@@ -37,13 +36,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
     ),
   ];
 
-  Future<void> _onContinue() async {
+  void _onContinue() {
     if (_selectedRole == null) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_role', _selectedRole!);
-
-    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RegisterPage(role: _selectedRole!),

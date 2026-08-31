@@ -2,18 +2,18 @@ import { server } from "./app.js";
 import { config } from "./config/index.js";
 import { prisma } from "./prisma.js";
 import { logger } from "./utils/logger.js";
-import * as os from 'os';
+import * as os from "os";
 
 function getLocalIP(): string {
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name] ?? []) {
-      if (iface.family === 'IPv4' && !iface.internal) {
+      if (iface.family === "IPv4" && !iface.internal) {
         return iface.address;
       }
     }
   }
-  return 'localhost';
+  return "localhost";
 }
 
 async function startServer() {

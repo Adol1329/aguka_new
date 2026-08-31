@@ -5,7 +5,7 @@ export interface Recommendation {
   title: string;
   message: string;
   recommendation: string;
-  confidence: 'low' | 'medium' | 'high';
+  confidence: "low" | "medium" | "high";
   priority: number; // 1-5 scale
   actionRequired: boolean;
   details?: Record<string, any>;

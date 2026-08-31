@@ -11,7 +11,7 @@ class FetchReportAnalytics extends ReportsEvent {}
 
 class DownloadReport extends ReportsEvent {
   final String type;
-  const DownloadReport(this.type);
+  const DownloadReport({this.type = 'pdf'});
 
   @override
   List<Object?> get props => [type];

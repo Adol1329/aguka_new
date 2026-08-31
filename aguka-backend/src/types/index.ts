@@ -101,9 +101,9 @@ export interface JwtPayload {
   sub: string;
   phone: string;
   role: UserRole;
+  farmerId?: string;
   cooperativeId?: string;
   officerId?: string;
-  assignedFarmers?: string[];
   iat: number;
   exp: number;
 }

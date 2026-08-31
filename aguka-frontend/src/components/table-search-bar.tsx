@@ -11,12 +11,12 @@ interface TableSearchBarProps {
   resultsCount?: number;
 }
 
-export function TableSearchBar({ 
-  value, 
-  onChange, 
-  placeholder, 
+export function TableSearchBar({
+  value,
+  onChange,
+  placeholder,
   onClear,
-  resultsCount 
+  resultsCount,
 }: TableSearchBarProps) {
   const { t } = useI18n();
 
@@ -27,7 +27,7 @@ export function TableSearchBar({
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || t('common.search') + "..."}
+          placeholder={placeholder || t("common.search") + "..."}
           className="pl-9 pr-12 bg-muted/30 border-border/50 hover:bg-muted/50 focus:bg-background transition-all"
         />
         {value && (
@@ -41,10 +41,12 @@ export function TableSearchBar({
           </Button>
         )}
       </div>
-      
+
       {value && resultsCount !== undefined && (
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider ml-1">
-          {resultsCount === 0 ? t("table.search.no_matches") : t("table.search.matches", { count: resultsCount })}
+          {resultsCount === 0
+            ? t("table.search.no_matches")
+            : t("table.search.matches", { count: resultsCount })}
         </div>
       )}
     </div>

@@ -88,10 +88,17 @@
     "optimal": "Buhagije",
     "low": "Buke",
     "high": "Bwinshi",
+    "status_moderate": "Buringaniye",
+    "status_normal": "Bisanzwe",
+    "status_extreme": "Bikabije",
+    "status_healthy": "Buzima",
+    "status_needs_attention": "Bisaba kwitabwaho",
     "nitrogen": "Nitrogene",
     "phosphorus": "Fosiforo",
     "potassium": "Potasiyumu",
-    "trend_7day": "Imiterere mu minsi 7"
+    "trend_7day": "Imiterere mu minsi 7",
+    "temp": "Ubushyuhe bw'ubutaka",
+    "ph": "pH y'ubutaka"
   },
   "weather": {
     "title": "Iteganyagihe",
@@ -131,7 +138,10 @@
     "saved": "Yazigamye",
     "manual_override": "Gufungura n'intoki",
     "smart_schedule": "Gahunda y'ubwenge",
-    "command_queued": "Ubusabe bwo gufungura pompo bwagezeho."
+    "command_queued": "Ubusabe bwo gufungura pompo bwagezeho.",
+    "pump_started": "Pompo yatangiye gukora.",
+    "pump_stopped": "Pompo yahagaritswe.",
+    "command_failed": "Ubusabe ntibwakunze. Ongera ugerageze."
   },
   "profile": {
     "title": "Umwirondoro",
@@ -177,8 +187,17 @@
     "how_can_we_help": "Twagufasha ute?",
     "guides": "Inyoborabuhinga",
     "guides_subtitle": "Soma uko wakoresha neza Aguka",
-    "live_chat": "Kuganira nonaha",
-    "live_chat_subtitle": "Vugana natwe nonaha",
+    "guides_title": "Inyoborabuhinga",
+    "guide1_title": "Kureba ibiciro ku isoko",
+    "guide1_desc": "Fungura Isoko kugira ngo urebe ibiciro by'ibihingwa ku masoko, hanyuma ukande ku kamenyetso k'ubutumwa kugira ngo ushyireho igiciro ushaka kumenyeshwa.",
+    "guide2_title": "Gucunga kuhira",
+    "guide2_desc": "Fungura Kuhira kugira ngo urebe uko pompo imeze n'amazi yakoreshejwe, hanyuma ukande Fungura/Funga Pompo kugira ngo uyicunge.",
+    "guide3_title": "Kwinjira mu koperative",
+    "guide3_desc": "Fungura Amakoperative kugira ngo urebe amakoperative ari hafi yawe wongere usabe kuyinjiramo, cyangwa uyicunge niba uri umuyobozi.",
+    "guide4_title": "Kureba raporo zawe",
+    "guide4_desc": "Fungura Raporo kugira ngo urebe imikorere y'umurima wawe hanyuma umanure raporo za PDF.",
+    "live_chat": "Ubufasha bw'Abaturage",
+    "live_chat_subtitle": "Baza abandi bahinzi n'impuguke",
     "call_support": "Hamagara ubufasha",
     "email_support": "Twandikire kuri imeyili",
     "faq1_q": "Nafungura nte pompo?",
@@ -209,6 +228,8 @@
   },
   "community": {
     "title": "Koperative",
+    "section_title": "Umuryango",
+    "farmer_community": "Umuryango w'abahinzi",
     "announcements": "Amatangazo",
     "market_prices": "Ibiciro",
     "urgent": "Birihutirwa",
@@ -223,7 +244,64 @@
     "add": "Ongeramo",
     "success": "Byagenze neza",
     "error": "Hari ikibazo",
-    "basic_info": "Amakuru y'ibanze"
+    "basic_info": "Amakuru y'ibanze",
+    "save": "Bika",
+    "view_all": "Reba byose",
+    "today": "Uyu munsi",
+    "yesterday": "Ejo hashize",
+    "days_ago": "hashize {n} iminsi"
+  },
+  "farmer": {
+    "title": "Umuhinzi"
+  },
+  "crops": {
+    "title": "Ibyo Ndate",
+    "empty": "Nta bihingwa byanditswe.",
+    "planted_days_ago": "Byatewe {n}iminsi ishize",
+    "of_id": "Igihingwa #{id}"
+  },
+  "monitoring": {
+    "title": "Gukurikirana",
+    "soil_trend": "Imiterere y'ubuhehere bw'ubutaka",
+    "forecast": "Iteganyagihe ry'iminsi 7"
+  },
+  "quick_actions": {
+    "title": "Ibikorwa Byihutirwa",
+    "my_crops": "Ibyo Ndate",
+    "expert_guides": "Inzobere z'ubuhinzi"
+  },
+  "recent_activities": {
+    "title": "Ibikorwa Biherutse",
+    "empty": "Nta bikorwa biherutse."
+  },
+  "onboarding": {
+    "slide1": {
+      "title": "Gukurikirana Ubutaka neza",
+      "desc": "Kurikirana Azote, Fosiforo na Potasiyumu mu gihe nyacyo kugirango umusaruro wawe wiyongere."
+    },
+    "slide2": {
+      "title": "Kuhira neza",
+      "desc": "Gucunga pompo y'amazi uvugana, ukigabanya amazi hafi ya 40% ukoresheje ibyuma by'ubwenge."
+    },
+    "slide3": {
+      "title": "Ibiciro by'Isoko Ryegeranye",
+      "desc": "Bona ibiciro byanyuma byo muri Kigali, Musanze n'ahandi kugirango ugurishe neza."
+    },
+    "next": "KOMEZA",
+    "get_started": "TANGIRA",
+    "skip": "SIMBUKA"
+  },
+  "activities": {
+    "title": "Ibikorwa"
+  },
+  "guidance": {
+    "title": "Inama"
+  },
+  "cooperatives": {
+    "title": "Koperative"
+  },
+  "reports": {
+    "title": "Raporo"
   },
   "auth": {
     "validation": {

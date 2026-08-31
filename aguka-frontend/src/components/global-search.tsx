@@ -1,15 +1,15 @@
 import * as React from "react";
-import { 
-  Search, 
-  Mic, 
-  Sprout, 
-  TrendingUp, 
-  AlertTriangle, 
-  MessageSquare, 
-  User, 
+import {
+  Search,
+  Mic,
+  Sprout,
+  TrendingUp,
+  AlertTriangle,
+  MessageSquare,
+  User,
   Command as CommandIcon,
   X,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { Command } from "cmdk";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,7 +39,12 @@ export function GlobalSearch() {
         e.preventDefault();
         setOpen((open) => !open);
       }
-      if (e.key === "s" && !open && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+      if (
+        e.key === "s" &&
+        !open &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
+      ) {
         e.preventDefault();
         setOpen(true);
       }
@@ -57,21 +62,22 @@ export function GlobalSearch() {
   };
 
   const startVoiceSearch = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert(t("global_search.voice_not_supported"));
       return;
     }
 
     const recognition = new SpeechRecognition();
-    
+
     // Map internal language codes to BCP 47
     const langMap: any = {
-      rw: 'rw-RW',
-      fr: 'fr-FR',
-      en: 'en-US'
+      rw: "rw-RW",
+      fr: "fr-FR",
+      en: "en-US",
     };
-    recognition.lang = langMap[lang] || 'en-US';
+    recognition.lang = langMap[lang] || "en-US";
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setQuery(transcript);
@@ -102,7 +108,7 @@ export function GlobalSearch() {
               onClick={() => setOpen(false)}
               className="fixed inset-0 bg-background/80 backdrop-blur-sm"
             />
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -114,12 +120,14 @@ export function GlobalSearch() {
                   <Search className="mr-2 h-5 w-5 shrink-0 opacity-50" />
                   <Command.Input
                     autoFocus
-                    placeholder={t('common.search') + "..."}
+                    placeholder={t("common.search") + "..."}
                     className="flex h-14 w-full rounded-md bg-transparent py-3 text-base outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     value={query}
                     onValueChange={setQuery}
                   />
-                  {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />}
+                  {isLoading && (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -146,50 +154,70 @@ export function GlobalSearch() {
                       </div>
                       <p className="text-sm font-medium">{t("global_search.empty.title")}</p>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => navigate({ to: '/farmer/community' })}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate({ to: "/farmer/community" })}
+                        >
                           {t("global_search.empty.search_community")}
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => navigate({ to: '/farmer/profile' })}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate({ to: "/farmer/profile" })}
+                        >
                           {t("global_search.empty.contact_services")}
                         </Button>
                       </div>
                     </div>
                   </Command.Empty>
 
-                  {results && Object.entries(results).map(([category, items]) => (
-                    <Command.Group key={category} heading={category} className="px-2 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {items.map((item) => {
-                        const Icon = icons[item.icon || "sprout"] || Sprout;
-                        return (
-                          <Command.Item
-                            key={item.id}
-                            onSelect={() => handleSelect(item.url)}
-                            className="group flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-3 text-sm text-foreground transition-all hover:bg-primary/10 aria-selected:bg-primary/10"
-                          >
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted group-hover:bg-primary/20 group-hover:text-primary transition-colors">
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                              <span className="font-medium group-hover:text-primary">{item.title}</span>
-                              <span className="text-xs text-muted-foreground line-clamp-1">{item.subtitle}</span>
-                            </div>
-                          </Command.Item>
-                        );
-                      })}
-                    </Command.Group>
-                  ))}
+                  {results &&
+                    Object.entries(results).map(([category, items]) => (
+                      <Command.Group
+                        key={category}
+                        heading={category}
+                        className="px-2 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+                      >
+                        {items.map((item) => {
+                          const Icon = icons[item.icon || "sprout"] || Sprout;
+                          return (
+                            <Command.Item
+                              key={item.id}
+                              onSelect={() => handleSelect(item.url)}
+                              className="group flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-3 text-sm text-foreground transition-all hover:bg-primary/10 aria-selected:bg-primary/10"
+                            >
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-medium group-hover:text-primary">
+                                  {item.title}
+                                </span>
+                                <span className="text-xs text-muted-foreground line-clamp-1">
+                                  {item.subtitle}
+                                </span>
+                              </div>
+                            </Command.Item>
+                          );
+                        })}
+                      </Command.Group>
+                    ))}
                 </Command.List>
 
                 <div className="flex items-center justify-between border-t bg-muted/50 px-4 py-3 text-xs text-muted-foreground">
                   <div className="flex gap-4">
                     <span className="flex items-center gap-1">
-                      <kbd className="rounded border bg-background px-1">↑↓</kbd> {t("global_search.hint.navigate")}
+                      <kbd className="rounded border bg-background px-1">↑↓</kbd>{" "}
+                      {t("global_search.hint.navigate")}
                     </span>
                     <span className="flex items-center gap-1">
-                      <kbd className="rounded border bg-background px-1">↵</kbd> {t("global_search.hint.select")}
+                      <kbd className="rounded border bg-background px-1">↵</kbd>{" "}
+                      {t("global_search.hint.select")}
                     </span>
                     <span className="flex items-center gap-1">
-                      <kbd className="rounded border bg-background px-1">ESC</kbd> {t("global_search.hint.close")}
+                      <kbd className="rounded border bg-background px-1">ESC</kbd>{" "}
+                      {t("global_search.hint.close")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">

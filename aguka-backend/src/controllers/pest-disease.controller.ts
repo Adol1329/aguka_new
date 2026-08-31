@@ -25,7 +25,7 @@ export const getPestDiseaseAlerts = async (
     const { severity, limit = "10" } = req.query;
 
     // Determine if user is requesting for cooperative or specific farmer
-    let where: any = {
+    const where: any = {
       alertType: { in: ["pest", "disease"] as AlertType[] },
     };
 

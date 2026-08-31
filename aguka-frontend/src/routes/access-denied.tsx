@@ -21,12 +21,11 @@ function AccessDeniedPage() {
           <Shield className="h-10 w-10 text-destructive" />
         </div>
         <h1 className="text-3xl font-bold text-foreground">{t("access_denied.title")}</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          {t("access_denied.description")}
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">{t("access_denied.description")}</p>
         {user && (
           <div className="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-            {t("access_denied.logged_in_as")} <span className="font-medium text-foreground">{user.name}</span> (
+            {t("access_denied.logged_in_as")}{" "}
+            <span className="font-medium text-foreground">{user.name}</span> (
             {t(`role.${user.role}`)})
           </div>
         )}

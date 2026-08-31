@@ -105,8 +105,12 @@ function OfficerFarms() {
     return "bg-slate-100 text-slate-600 border-slate-200";
   };
 
-  const districts = Array.from(new Set(farmerList.map((f) => f.district).filter(Boolean))).sort();
-  const crops = Array.from(new Set(farmerList.map(getCropName).filter(Boolean))).sort();
+  const districts = Array.from(
+    new Set(farmerList.map((f) => f.district).filter((d): d is string => Boolean(d))),
+  ).sort();
+  const crops = Array.from(
+    new Set(farmerList.map(getCropName).filter((c): c is string => Boolean(c))),
+  ).sort();
   const q = searchTerm.trim().toLowerCase();
   const hasActiveFilters =
     !!q || districtFilter !== "all" || cropFilter !== "all" || riskFilter !== "all";
@@ -294,7 +298,8 @@ function OfficerFarms() {
           const risk = getRisk(score);
           const crop = getCropName(f);
           const hasName = f.fullName && f.fullName !== "Unnamed User";
-          const displayName = hasName ? f.fullName : "Profile name missing";
+          const displayName = hasName ? (f.fullName as string) : "Profile name missing";
+          const avatarUrl = f.avatarUrl as string;
           return (
             <Card
               key={f.id}
@@ -306,11 +311,7 @@ function OfficerFarms() {
                     <div className="flex min-w-0 items-center gap-3">
                       {f.avatarUrl ? (
                         <img
-                          src={
-                            f.avatarUrl.startsWith("http")
-                              ? f.avatarUrl
-                              : `${BASE_URL}${f.avatarUrl}`
-                          }
+                          src={avatarUrl.startsWith("http") ? avatarUrl : `${BASE_URL}${avatarUrl}`}
                           alt={displayName}
                           className="h-12 w-12 shrink-0 rounded-xl border border-border/50 object-cover transition-all group-hover:border-primary/30"
                           onError={(e) => {
@@ -385,8 +386,8 @@ function OfficerFarms() {
                     Crop: {crop || "Not recorded"}
                   </div>
                   <Button size="sm" className="h-8 text-xs font-semibold group/btn" asChild>
-                    <Link to="/reports" search={{ farmerId: f.id }}>
-                      Analyze Data
+                    <Link to="/officer/farmer-detail" search={{ farmerId: f.id }}>
+                      View Details
                       <ChevronRight className="ml-1 h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
                     </Link>
                   </Button>

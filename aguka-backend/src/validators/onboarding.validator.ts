@@ -17,14 +17,15 @@ export const farmerOnboardingSchema = z.object({
   farmSizeHectares: z.number().positive(),
   waterSource: z.nativeEnum(WaterSource),
   irrigationType: z.nativeEnum(IrrigationType).default(IrrigationType.none),
-  preferredChannel: z.nativeEnum(AccessChannel).default(AccessChannel.smartphone),
+  preferredChannel: z
+    .nativeEnum(AccessChannel)
+    .default(AccessChannel.smartphone),
   crops: z.array(z.string()).optional(),
   livestock: z.array(z.string()).optional(),
 });
 
 export const officerOnboardingSchema = z.object({
   fullName: z.string().min(2).max(255),
-  employeeId: z.string().min(2).max(50),
   organization: z.string().min(2).max(255),
   specialization: z.string().min(2).max(100),
   assignedDistrict: z.string().min(2).max(100),
@@ -33,8 +34,8 @@ export const officerOnboardingSchema = z.object({
 
 export const cooperativeOnboardingSchema = z.object({
   cooperativeName: z.string().min(2).max(255),
-  registrationNumber: z.string().min(2).max(100),
-  operationalRegion: z.string().min(2).max(255),
+  district: z.string().min(2).max(100),
+  sector: z.string().min(2).max(100),
   memberCapacity: z.number().int().positive(),
   hasStorageFacility: z.boolean().default(false),
 });

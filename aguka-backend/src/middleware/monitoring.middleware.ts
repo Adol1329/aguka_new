@@ -181,24 +181,6 @@ export const getMonitoringData = (req: Request, res: Response) => {
 };
 
 export const getHealthStatus = (_req: Request, res: Response) => {
-  // #region agent log
-  fetch("http://127.0.0.1:7646/ingest/8e7223a1-1e67-4704-b579-50d84bc12fc1", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "8574fc",
-    },
-    body: JSON.stringify({
-      sessionId: "8574fc",
-      runId: "pre-fix",
-      hypothesisId: "H4",
-      location: "monitoring.middleware.ts:getHealthStatus",
-      message: "monitoring health handler executed",
-      data: {},
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   const health = monitoringService.getHealthStatus();
 
   res.status(health.status === "healthy" ? 200 : 503).json({

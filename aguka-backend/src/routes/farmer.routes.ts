@@ -5,8 +5,11 @@ import {
   authorize,
   authorizeFarmerOrRole,
 } from "../middleware/auth.middleware.js";
+import { validate } from "../middleware/validate.middleware.js";
+import { addFarmerCropSchema } from "../validators/crop.validator.js";
 import { UserRole } from "../types/index.js";
 import { getSimulatedData } from "../controllers/simulation.controller.js";
+import { getOverview } from "../controllers/overview.controller.js";
 import {
   getProfile,
   updateProfile,
@@ -16,20 +19,33 @@ import {
   getAssignedFarmers,
   assignToOfficer,
   getSoilReadings,
+  getFarmerCrops,
   addCrop,
   getCrops,
+  getCropCatalog,
   getCropGuidance,
+  getFarmGuidance,
   verifyFarmer,
   bulkVerifyFarmers,
+  getMyDistributions,
 } from "../controllers/farmer.controller.js";
 import {
   getActivityById,
   getActivityTypes,
   getCurrentFarmerActivities,
+  getFarmerActivities,
   createActivity,
 } from "../controllers/activity.controller.js";
 
 const router = Router();
+
+// OVERVIEW
+router.get(
+  "/overview",
+  authenticate,
+  authorize(UserRole.FARMER),
+  asyncHandler(getOverview),
+);
 
 // PROFILE
 router.get("/profile", authenticate, asyncHandler(getProfile));
@@ -40,8 +56,20 @@ router.patch("/profile", authenticate, asyncHandler(updateProfile));
 
 router.put("/profile", authenticate, asyncHandler(updateProfile));
 
+// DISTRIBUTIONS
+router.get(
+  "/distributions",
+  authenticate,
+  authorize(UserRole.FARMER),
+  asyncHandler(getMyDistributions),
+);
+
 // ACTIVITIES
-router.get("/activities", authenticate, asyncHandler(getCurrentFarmerActivities));
+router.get(
+  "/activities",
+  authenticate,
+  asyncHandler(getCurrentFarmerActivities),
+);
 
 router.post("/activities", authenticate, asyncHandler(createActivity));
 
@@ -50,13 +78,25 @@ router.get("/activity-types", authenticate, asyncHandler(getActivityTypes));
 router.get("/activities/:id", authenticate, asyncHandler(getActivityById));
 
 // CROPS
+router.get("/crop-types", authenticate, asyncHandler(getCropCatalog));
+
 router.get("/crops", authenticate, asyncHandler(getCrops));
 
-router.post("/crops", authenticate, asyncHandler(addCrop));
+router.post("/crops", authenticate, validate(addFarmerCropSchema), asyncHandler(addCrop));
 
-router.get("/crops/:cropId/guidance", authenticate, asyncHandler(getCropGuidance));
+router.get(
+  "/crops/:cropId/guidance",
+  authenticate,
+  asyncHandler(getCropGuidance),
+);
 
-router.get("/crops/simulate/:farmId", authenticate, asyncHandler(getSimulatedData));
+router.get("/guidance", authenticate, asyncHandler(getFarmGuidance));
+
+router.get(
+  "/crops/simulate/:farmId",
+  authenticate,
+  asyncHandler(getSimulatedData),
+);
 
 // ASSIGNMENTS
 router.get(
@@ -123,6 +163,30 @@ router.get(
     UserRole.SUPER_ADMIN,
   ),
   asyncHandler(getSoilReadings),
+);
+
+router.get(
+  "/:id/activities",
+  authenticate,
+  authorizeFarmerOrRole(
+    UserRole.OFFICER,
+    UserRole.COOPERATIVE,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  ),
+  asyncHandler(getFarmerActivities),
+);
+
+router.get(
+  "/:id/crops",
+  authenticate,
+  authorizeFarmerOrRole(
+    UserRole.OFFICER,
+    UserRole.COOPERATIVE,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  ),
+  asyncHandler(getFarmerCrops),
 );
 
 export default router;

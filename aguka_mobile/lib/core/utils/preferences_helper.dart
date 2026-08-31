@@ -7,6 +7,9 @@ class PreferencesHelper {
   static const String _userIdKey = 'user_id';
   static const String _userRoleKey = 'user_role';
   static const String _languageKey = 'language';
+  static const String _darkModeKey = 'dark_mode_enabled';
+  static const String _pushNotificationsKey = 'push_notifications_enabled';
+  static const String _smsAlertsKey = 'sms_alerts_enabled';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
@@ -62,6 +65,19 @@ class PreferencesHelper {
   // Language
   String get language => _prefs.getString(_languageKey) ?? 'en';
   Future<bool> setLanguage(String lang) => _prefs.setString(_languageKey, lang);
+
+  // Dark mode
+  bool get darkModeEnabled => _prefs.getBool(_darkModeKey) ?? false;
+  Future<bool> setDarkModeEnabled(bool enabled) => _prefs.setBool(_darkModeKey, enabled);
+
+  // Push notifications (local preference only)
+  bool get pushNotificationsEnabled => _prefs.getBool(_pushNotificationsKey) ?? true;
+  Future<bool> setPushNotificationsEnabled(bool enabled) =>
+      _prefs.setBool(_pushNotificationsKey, enabled);
+
+  // SMS alerts (local preference only)
+  bool get smsAlertsEnabled => _prefs.getBool(_smsAlertsKey) ?? false;
+  Future<bool> setSmsAlertsEnabled(bool enabled) => _prefs.setBool(_smsAlertsKey, enabled);
 
   // Check if authenticated
   bool get isAuthenticated => authToken != null && authToken!.isNotEmpty;

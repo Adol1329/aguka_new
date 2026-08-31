@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:aguka_mobile/shared/data/local/database_helper.dart';
 import 'package:aguka_mobile/shared/data/local/sync_service.dart';
+import 'package:aguka_mobile/features/market/data/market_alerts_remote_data_source.dart';
 import 'package:aguka_mobile/widgets/market_trend_chart.dart';
 import 'package:aguka_mobile/widgets/aguka_app_bar.dart';
 import 'package:aguka_mobile/injection_container.dart';
@@ -16,6 +17,7 @@ class MarketPage extends StatefulWidget {
 class _MarketPageState extends State<MarketPage> {
   final dbHelper = DatabaseHelper.instance;
   final syncService = sl<SyncService>();
+  final marketAlertsDataSource = sl<MarketAlertsRemoteDataSource>();
   List<Map<String, dynamic>> _marketPrices = [];
   List<Map<String, dynamic>> _priceAlerts = [];
   bool _isLoading = true;
@@ -30,14 +32,25 @@ class _MarketPageState extends State<MarketPage> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     final prices = await dbHelper.getMarketPrices();
-    final alerts = <Map<String, dynamic>>[];
-    
+    List<Map<String, dynamic>> alerts = [];
+    bool alertsFailed = false;
+    try {
+      alerts = await marketAlertsDataSource.getAlerts();
+    } catch (_) {
+      alertsFailed = true;
+    }
+
     if (!mounted) return;
     setState(() {
       _marketPrices = prices;
       _priceAlerts = alerts;
       _isLoading = false;
     });
+    if (alertsFailed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not load price alerts.')),
+      );
+    }
   }
 
   @override
@@ -138,8 +151,8 @@ class _MarketPageState extends State<MarketPage> {
                     backgroundColor: Colors.green.shade50,
                     child: const Icon(Icons.eco, color: Colors.green),
                   ),
-                  title: Text(price['cropName'] ?? 'Unknown Crop', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(price['marketName'] ?? 'N/A'),
+                  title: Text(price['crop_name'] ?? 'Unknown Crop', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(price['market_name'] ?? 'N/A'),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -221,46 +234,122 @@ class _MarketPageState extends State<MarketPage> {
 
   void _showAddAlertDialog() {
     final formKey = GlobalKey<FormState>();
-    final cropController = TextEditingController();
     final priceController = TextEditingController();
-    
+
+    // Distinct crops available from the synced market prices, keyed by
+    // crop_id — createPriceAlert requires a real cropId, not a free-text name.
+    final crops = <String, String>{};
+    for (final p in _marketPrices) {
+      final id = p['crop_id']?.toString();
+      final name = p['crop_name']?.toString();
+      if (id != null && id.isNotEmpty && name != null && name.isNotEmpty) {
+        crops[id] = name;
+      }
+    }
+
+    if (crops.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No crop prices available yet. Pull to refresh first.')),
+      );
+      return;
+    }
+
+    String? selectedCropId = crops.keys.first;
+    String alertType = 'above';
+    bool isSubmitting = false;
+    String? errorText;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('market.add_alert'.tr()),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: cropController,
-                decoration: InputDecoration(labelText: 'market.crop_name'.tr(), hintText: 'e.g., Maize'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Please enter crop name' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: priceController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'market.target_price'.tr(), hintText: 'e.g., 400'),
-                validator: (v) => (v == null || v.isEmpty) ? 'Please enter price' : null,
-              ),
-            ],
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('market.add_alert'.tr()),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedCropId,
+                  decoration: InputDecoration(labelText: 'market.crop_name'.tr()),
+                  items: crops.entries
+                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .toList(),
+                  onChanged: (v) => setDialogState(() => selectedCropId = v),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(labelText: 'market.target_price'.tr(), hintText: 'e.g., 400'),
+                  validator: (v) => (v == null || v.isEmpty || double.tryParse(v) == null)
+                      ? 'Please enter a valid price'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: alertType,
+                  decoration: const InputDecoration(labelText: 'Notify when price'),
+                  items: const [
+                    DropdownMenuItem(value: 'above', child: Text('Rises above target')),
+                    DropdownMenuItem(value: 'below', child: Text('Falls below target')),
+                  ],
+                  onChanged: (v) => setDialogState(() => alertType = v!),
+                ),
+                if (errorText != null) ...[
+                  const SizedBox(height: 12),
+                  Text(errorText!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                ],
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+              child: Text('common.cancel'.tr()),
+            ),
+            ElevatedButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (!(formKey.currentState?.validate() ?? false) || selectedCropId == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        isSubmitting = true;
+                        errorText = null;
+                      });
+                      try {
+                        await marketAlertsDataSource.createAlert(
+                          cropId: selectedCropId!,
+                          targetPrice: double.parse(priceController.text),
+                          alertType: alertType,
+                        );
+                        if (!ctx.mounted) return;
+                        Navigator.pop(dialogContext);
+                        await _loadMarketData();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('common.success'.tr())),
+                        );
+                      } catch (e) {
+                        setDialogState(() {
+                          isSubmitting = false;
+                          errorText = 'Failed to create alert: $e';
+                        });
+                      }
+                    },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text('common.add'.tr()),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('common.cancel'.tr())),
-          ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('common.success'.tr())));
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: Text('common.add'.tr()),
-          ),
-        ],
       ),
     );
   }

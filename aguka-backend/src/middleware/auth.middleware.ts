@@ -29,27 +29,6 @@ export const authenticate = async (
   _res: Response,
   next: NextFunction,
 ) => {
-  // #region agent log
-  const authPath = req.path;
-  if (authPath.includes("health") || authPath.includes("monitoring")) {
-    fetch("http://127.0.0.1:7646/ingest/8e7223a1-1e67-4704-b579-50d84bc12fc1", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "8574fc",
-      },
-      body: JSON.stringify({
-        sessionId: "8574fc",
-        runId: "pre-fix",
-        hypothesisId: "H1",
-        location: "auth.middleware.ts:authenticate",
-        message: "authenticate called on health/monitoring path",
-        data: { path: authPath, originalUrl: req.originalUrl },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }
-  // #endregion
   try {
     const authHeader = req.headers.authorization;
 
@@ -147,62 +126,11 @@ export const authorize = (...allowedRoles: UserRole[]) => {
         throw new ForbiddenError("Insufficient permissions");
       }
 
-      const requiredPermission = inferPermission(req);
-      if (requiredPermission) {
-        const rolePermissions = await getRolePermissions(req.user.role);
-        const hasPermission =
-          rolePermissions.includes("*") ||
-          rolePermissions.includes(requiredPermission);
-
-        if (!hasPermission) {
-          throw new ForbiddenError("Insufficient permissions");
-        }
-      }
-
       next();
     } catch (error) {
       next(error);
     }
   };
-};
-
-const inferPermission = (req: Request): string | null => {
-  const path = req.originalUrl.split("?")[0];
-  const method = req.method.toUpperCase();
-
-  if (path.includes("/superadmin/backups")) return "manage_backups";
-  if (path.includes("/superadmin/roles")) return "manage_roles";
-  if (path.includes("/superadmin/settings")) return "manage_settings";
-  if (path.includes("/superadmin/audit-logs") || path.includes("/audit")) {
-    return "view_audit_logs";
-  }
-  if (
-    path.includes("/superadmin/users") ||
-    (path.includes("/users") &&
-      !(method === "GET" && req.user?.role === UserRole.COOPERATIVE))
-  ) {
-    return "manage_users";
-  }
-  if (path.includes("/admin/notifications")) return "broadcast_notifications";
-  if (path.includes("/admin") || path.includes("/superadmin/reports")) {
-    return "manage_all_data";
-  }
-  if (path.includes("/officer/advisories")) return "send_advisories";
-  if (path.includes("/farmers/assigned") || path.includes("/officer/farms")) {
-    return "manage_assigned_farmers";
-  }
-  if (path.includes("/cooperatives") && path.includes("/resources")) {
-    return "manage_resources";
-  }
-  if (path.includes("/cooperatives") && path.includes("/activities")) {
-    return "schedule_events";
-  }
-  if (path.includes("/cooperatives") && path.includes("/members")) {
-    return "manage_cooperative_members";
-  }
-  if (path.includes("/reports") && method !== "GET") return "view_reports";
-
-  return null;
 };
 
 export const authorizeFarmerOrRole = (...allowedRoles: UserRole[]) => {
@@ -212,13 +140,14 @@ export const authorizeFarmerOrRole = (...allowedRoles: UserRole[]) => {
     }
 
     // Allow the user to access their own data if the requested farmer id matches their userId
-    // We assume the farmer id is in req.params.id
-    if (req.params.id && req.user.sub === req.params.id) {
+    // Check both :id and :farmerId param names
+    const ownerId = req.params.farmerId || req.params.id;
+    if (ownerId && req.user.sub === ownerId) {
       return next();
     }
 
     // Otherwise check roles
-    if (!allowedRoles.some((role) => req.user!.role === role)) {
+    if (allowedRoles.length > 0 && !allowedRoles.some((role) => req.user!.role === role)) {
       throw new ForbiddenError("Insufficient permissions");
     }
 
@@ -281,6 +210,51 @@ export const checkOwnership = (resourceUserIdField: string = "userId") => {
       next(error);
     }
   };
+};
+
+/**
+ * Verifies that a COOPERATIVE-role user manages the cooperative in req.params.id.
+ * ADMIN, SUPER_ADMIN, OFFICER, and FARMER bypass this check — their access is
+ * already scoped by the authorize() middleware and per-handler queries.
+ */
+export const requireCooperativeOwnership = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user) {
+      throw new UnauthorizedError("Authentication required");
+    }
+
+    const { role, sub: userId } = req.user;
+
+    if (
+      role === UserRole.ADMIN ||
+      role === UserRole.SUPER_ADMIN ||
+      role === UserRole.OFFICER ||
+      role === UserRole.FARMER
+    ) {
+      return next();
+    }
+
+    if (role === UserRole.COOPERATIVE) {
+      const cooperativeId = req.params.id;
+      if (!cooperativeId) return next();
+
+      const membership = await prisma.cooperativeMember.findFirst({
+        where: { userId, cooperativeId, role: "manager" },
+      });
+
+      if (!membership) {
+        throw new ForbiddenError("You do not manage this cooperative");
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const logAudit = async (

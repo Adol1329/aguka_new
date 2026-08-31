@@ -42,7 +42,7 @@ const getDatabaseConfig = () => {
 
 export async function createDatabaseBackup(createdBy: string) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const filename = `aguka_backup_${timestamp}.sql`;
+  const filename = `imbaraga_backup_${timestamp}.sql`;
   const backupDir = path.join(process.cwd(), "backups");
 
   if (!fs.existsSync(backupDir)) {
@@ -52,10 +52,11 @@ export async function createDatabaseBackup(createdBy: string) {
   const backupPath = path.join(backupDir, filename);
   const { dbName, dbHost, dbPort, dbUser, dbPass } = getDatabaseConfig();
 
+  const isAutomated = createdBy === "system";
   const pending = await prisma.backup.create({
     data: {
       name: filename,
-      type: "MANUAL",
+      type: isAutomated ? "AUTO" : "MANUAL",
       status: "IN_PROGRESS",
       filePath: backupPath,
       createdBy,

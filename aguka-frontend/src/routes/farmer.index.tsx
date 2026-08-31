@@ -4,4 +4,3 @@ import { FarmerDashboardComponent } from "@/components/farmer-dashboard";
 export const Route = createFileRoute("/farmer/")({
   component: FarmerDashboardComponent,
 });
-

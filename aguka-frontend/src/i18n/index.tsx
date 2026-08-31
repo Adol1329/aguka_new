@@ -18,7 +18,7 @@ type Dictionary = { [K in TranslationKey]: string };
 // Simplified type - params is always optional
 export type TranslateFn = <K extends TranslationKey>(
   key: K,
-  params?: Record<string, string | number>
+  params?: Record<string, string | number>,
 ) => string;
 
 export const LANGS: { code: Lang; label: string; flag: string }[] = [
@@ -27,7 +27,7 @@ export const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "fr", label: "Français", flag: "🇫🇷" },
 ];
 
-const STORAGE_KEY = "aguka.lang";
+const STORAGE_KEY = "imbaraga.lang";
 const RTL_PREP_LANGS = new Set<string>(["ar", "fa", "he", "ur"]);
 const templateRegex = /\{(\w+)\}/g;
 const dictionaryCache = new Map<Lang, Dictionary>([["en", en as Dictionary]]);
@@ -93,7 +93,9 @@ function resolveTemplate(
   return template.replace(templateRegex, (_, token: string) => {
     if (params[token] === undefined) {
       if (import.meta.env.DEV) {
-        console.warn(`[i18n] Missing interpolation value for "{${token}}" in key "${key}" (${lang})`);
+        console.warn(
+          `[i18n] Missing interpolation value for "{${token}}" in key "${key}" (${lang})`,
+        );
       }
       return `{${token}}`;
     }
@@ -162,7 +164,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const template = localized ?? fallback;
 
       if (!localized && import.meta.env.DEV) {
-        console.warn(`[i18n] Missing translation for key "${key}" in language "${lang}", using English fallback.`);
+        console.warn(
+          `[i18n] Missing translation for key "${key}" in language "${lang}", using English fallback.`,
+        );
       }
 
       if (!template) {

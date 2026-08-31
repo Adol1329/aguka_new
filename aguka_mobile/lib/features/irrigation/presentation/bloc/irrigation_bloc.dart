@@ -19,34 +19,41 @@ class IrrigationBloc extends Bloc<IrrigationEvent, IrrigationState> {
   }
 
   Future<void> _onFetchStatus(FetchIrrigationStatus event, Emitter<IrrigationState> emit) async {
-    emit(state.copyWith(status: IrrigationStateStatus.loading));
-    
+    emit(state.copyWith(status: IrrigationStateStatus.loading, lastAction: IrrigationActionType.fetch));
+
     final result = await _getStatusUseCase(event.farmId);
-    
+
     result.fold(
       (failure) => emit(state.copyWith(
         status: IrrigationStateStatus.error,
         errorMessage: failure.message,
+        lastAction: IrrigationActionType.fetch,
       )),
       (data) => emit(state.copyWith(
         status: IrrigationStateStatus.loaded,
         data: data,
+        clearError: true,
+        lastAction: IrrigationActionType.fetch,
       )),
     );
   }
 
   Future<void> _onTogglePump(TogglePump event, Emitter<IrrigationState> emit) async {
-    // Optionally emit a temporary loading state or optimistic update
+    emit(state.copyWith(status: IrrigationStateStatus.loading, lastAction: IrrigationActionType.toggle));
+
     final result = await _controlPumpUseCase(ControlPumpParams(farmId: event.farmId, isActive: event.isActive));
-    
+
     result.fold(
       (failure) => emit(state.copyWith(
         status: IrrigationStateStatus.error,
         errorMessage: failure.message,
+        lastAction: IrrigationActionType.toggle,
       )),
       (data) => emit(state.copyWith(
         status: IrrigationStateStatus.loaded,
         data: data,
+        clearError: true,
+        lastAction: IrrigationActionType.toggle,
       )),
     );
   }

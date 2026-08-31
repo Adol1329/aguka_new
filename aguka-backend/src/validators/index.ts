@@ -4,3 +4,6 @@ export * from "./common.validator.js";
 export * from "./sensor.validator.js";
 export * from "./crop.validator.js";
 export * from "./irrigation.validator.js";
+export * from "./livestock.validator.js";
+export * from "./cooperative.validator.js";
+export * from "./extension-officer.validator.js";

@@ -4,7 +4,6 @@ import 'package:aguka_mobile/features/auth/bloc/auth_bloc.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_state.dart';
 import 'package:aguka_mobile/core/bloc/navigation/navigation_cubit.dart';
 import 'package:easy_localization/easy_localization.dart';
-
 import 'package:flutter/services.dart';
 
 class AgukaAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -29,10 +28,11 @@ class AgukaAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        String greeting = '';
+        String greetingPrefix = '';
+        String greetingName = '';
         if (state is AuthAuthenticated) {
-          final name = state.user.fullName ?? 'Farmer';
-          greeting = '${'common.hello'.tr()}, ${name.split(' ')[0]}';
+          greetingPrefix = '${'common.hello'.tr()}, ';
+          greetingName = (state.user.fullName ?? 'Farmer').split(' ')[0];
         }
 
         return AppBar(
@@ -71,29 +71,49 @@ class AgukaAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           title: showProfileInfo
               ? Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      greeting,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                        color: Colors.white70,
+                    if (greetingName.isNotEmpty)
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '$greetingPrefix$greetingName',
+                          maxLines: 1,
+                          overflow: TextOverflow.clip,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white70,
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
                 )
-              : Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              : FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                 ),
           actions: [
             if (showFilter)

@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:aguka_mobile/core/utils/validators.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_bloc.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_event.dart';
 import 'package:aguka_mobile/features/auth/domain/entities/user_entity.dart';
@@ -142,6 +143,12 @@ class _ProfileViewState extends State<ProfileView> {
             readOnly,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             required: false,
+            validator: (value) => Validators.validatePositiveNumber(
+              value,
+              'profile.field.farm_size'.tr(),
+              required: false,
+              max: 100000,
+            ),
           ),
           _textField(
             'profile.field.primary_crop'.tr(),
@@ -226,6 +233,7 @@ class _ProfileViewState extends State<ProfileView> {
     bool readOnly, {
     TextInputType? keyboardType,
     bool required = true,
+    String? Function(String?)? validator,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -237,10 +245,10 @@ class _ProfileViewState extends State<ProfileView> {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
-        validator: required
-            ? (value) =>
-                value == null || value.trim().isEmpty ? '$label is required' : null
-            : null,
+        validator: validator ??
+            (required
+                ? (value) => Validators.validateRequired(value, label)
+                : null),
       ),
     );
   }

@@ -1,6 +1,9 @@
-import { tabSession } from '@/utils/tabSession';
+import { tabSession } from "@/utils/tabSession";
+import { updateSocketToken } from "@/lib/socket";
 
-export const BASE_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api/v1', '') : 'http://localhost:3000';
+export const BASE_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace("/api/v1", "")
+  : "http://localhost:3000";
 const API_URL = `${BASE_URL}/api/v1`;
 
 function getToken(): string | null {
@@ -22,7 +25,7 @@ export class ApiError extends Error {
     public details?: unknown,
   ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
@@ -40,8 +43,8 @@ async function request<T = unknown>(
   const token = getToken();
 
   const headers: Record<string, string> = {
-    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-    ...(options.headers as Record<string, string> || {}),
+    ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+    ...((options.headers as Record<string, string>) || {}),
   };
 
   if (token) {
@@ -53,7 +56,7 @@ async function request<T = unknown>(
     headers,
   });
 
-  if (res.status === 401 && retry && endpoint !== '/auth/refresh-token') {
+  if (res.status === 401 && retry && endpoint !== "/auth/refresh-token") {
     const refreshed = await refreshAccessToken();
     if (refreshed) {
       return request<T>(endpoint, options, false);
@@ -64,15 +67,16 @@ async function request<T = unknown>(
     tabSession.clear();
     if (onUnauthorized) onUnauthorized();
     const body = await res.json().catch(() => null);
-    const message = body?.error?.message || body?.message || 'Authentication required';
-    const code = body?.error?.code || 'UNAUTHORIZED';
+    const message = body?.error?.message || body?.message || "Authentication required";
+    const code = body?.error?.code || "UNAUTHORIZED";
     throw new ApiError(401, code, message, body?.error?.details);
   }
 
   if (res.status === 403) {
     const body = await res.json().catch(() => null);
-    const message = body?.error?.message || body?.message || 'You do not have permission to perform this action';
-    const code = body?.error?.code || 'FORBIDDEN';
+    const message =
+      body?.error?.message || body?.message || "You do not have permission to perform this action";
+    const code = body?.error?.code || "FORBIDDEN";
     throw new ApiError(403, code, message, body?.error?.details);
   }
 
@@ -87,14 +91,32 @@ async function request<T = unknown>(
   return data;
 }
 
+// The backend rotates the refresh token on every use (single-use), so if
+// several requests 401 around the same time (e.g. a page firing multiple
+// parallel queries right when the access token expires), each one must NOT
+// independently call this with the same now-stale token — only the first
+// would succeed and the rest would 401 and wipe out the session that the
+// first call just refreshed. Sharing one in-flight promise means concurrent
+// callers all await the same single refresh instead of racing.
+let refreshPromise: Promise<boolean> | null = null;
+
 async function refreshAccessToken(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = doRefreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+async function doRefreshAccessToken(): Promise<boolean> {
   const refreshToken = tabSession.getRefreshToken();
   if (!refreshToken) return false;
 
   try {
     const res = await fetch(`${API_URL}/auth/refresh-token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     });
 
@@ -114,6 +136,8 @@ async function refreshAccessToken(): Promise<boolean> {
       refreshToken: nextRefreshToken,
     });
 
+    updateSocketToken(accessToken);
+
     return true;
   } catch {
     return false;
@@ -122,40 +146,43 @@ async function refreshAccessToken(): Promise<boolean> {
 
 export const apiClient = {
   get: <T = unknown>(endpoint: string, params?: Record<string, string>) => {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return request<T>(`${endpoint}${qs}`, { method: 'GET' });
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<T>(`${endpoint}${qs}`, { method: "GET" });
   },
 
   post: <T = unknown>(endpoint: string, body?: unknown, options: Partial<RequestInit> = {}) =>
     request<T>(endpoint, {
-      method: 'POST',
-      body: body instanceof FormData ? body : (body ? JSON.stringify(body) : undefined),
+      method: "POST",
+      body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
       ...options,
     }),
 
   put: <T = unknown>(endpoint: string, body?: unknown) =>
     request<T>(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body: body ? JSON.stringify(body) : undefined,
     }),
 
   patch: <T = unknown>(endpoint: string, body?: unknown) =>
     request<T>(endpoint, {
-      method: 'PATCH',
+      method: "PATCH",
       body: body ? JSON.stringify(body) : undefined,
     }),
 
-  delete: <T = unknown>(endpoint: string) =>
-    request<T>(endpoint, { method: 'DELETE' }),
+  delete: <T = unknown>(endpoint: string) => request<T>(endpoint, { method: "DELETE" }),
 
-  download: async (endpoint: string, params?: Record<string, string>, filename: string = 'download') => {
+  download: async (
+    endpoint: string,
+    params?: Record<string, string>,
+    filename: string = "download",
+  ) => {
     const token = getToken();
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
 
     const res = await fetch(`${API_URL}${endpoint}${qs}`, {
-      method: 'GET',
+      method: "GET",
       headers,
     });
 
@@ -163,7 +190,31 @@ export const apiClient = {
 
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  downloadPost: async (endpoint: string, body?: unknown, filename: string = "download") => {
+    const token = getToken();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      method: "POST",
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!res.ok) throw new Error(`Download failed: ${res.statusText}`);
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);

@@ -37,7 +37,7 @@ const DEFAULTS: AdminSystemSettings = {
   realTimeWeatherSyncEnabled: true,
   marketPriceSyncEnabled: true,
   autoReportFrequency: "weekly",
-  reportRecipients: "admin@aguka.rw",
+  reportRecipients: "admin@imbaraga.org",
 };
 
 const parseSettingValue = <T,>(value: unknown, fallback: T): T => {
@@ -293,7 +293,7 @@ function AdminSettings() {
                 <Input
                   value={settings.reportRecipients}
                   onChange={(e) => updateSetting("reportRecipients", e.target.value)}
-                  placeholder="admin@aguka.rw, operations@aguka.rw"
+                  placeholder="admin@imbaraga.org, operations@imbaraga.org"
                 />
               </div>
             </CardContent>

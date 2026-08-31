@@ -4,7 +4,16 @@ import { useAuth, ROLE_HOME, getStoredUser, mapBackendUserToAuth } from "@/lib/a
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, ShieldCheck, Key, Eye, EyeOff, CheckCircle2, AlertCircle, LogOut } from "lucide-react";
+import {
+  Leaf,
+  ShieldCheck,
+  Key,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertCircle,
+  LogOut,
+} from "lucide-react";
 import { toast } from "sonner";
 import { authApi } from "@/api/auth";
 
@@ -30,17 +39,34 @@ function ForceChangePasswordPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const getPasswordStrength = (pwd: string) => {
-    if (!pwd) return { label: "", color: "bg-slate-200", width: "w-0", textColor: "text-slate-400" };
-    if (pwd.length < 6) return { label: "Weak / Intege", color: "bg-red-500", width: "w-1/3", textColor: "text-red-500" };
-    
+    if (!pwd)
+      return { label: "", color: "bg-slate-200", width: "w-0", textColor: "text-slate-400" };
+    if (pwd.length < 6)
+      return {
+        label: "Weak / Intege",
+        color: "bg-red-500",
+        width: "w-1/3",
+        textColor: "text-red-500",
+      };
+
     const hasLetters = /[a-zA-Z]/.test(pwd);
     const hasNumbers = /[0-9]/.test(pwd);
     const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
-    
+
     if (pwd.length >= 8 && hasLetters && hasNumbers && hasSpecial) {
-      return { label: "Strong / Gukomeza", color: "bg-emerald-500", width: "w-full", textColor: "text-emerald-500" };
+      return {
+        label: "Strong / Gukomeza",
+        color: "bg-emerald-500",
+        width: "w-full",
+        textColor: "text-emerald-500",
+      };
     }
-    return { label: "Medium / Ringaniye", color: "bg-amber-500", width: "w-2/3", textColor: "text-amber-500" };
+    return {
+      label: "Medium / Ringaniye",
+      color: "bg-amber-500",
+      width: "w-2/3",
+      textColor: "text-amber-500",
+    };
   };
 
   const strength = getPasswordStrength(password);
@@ -62,7 +88,7 @@ function ForceChangePasswordPage() {
 
     try {
       await authApi.forceChangePassword(password);
-      
+
       // Update local storage user details to mark requiresPasswordChange as false
       if (user) {
         const updatedUser = {
@@ -72,7 +98,7 @@ function ForceChangePasswordPage() {
         signIn(updatedUser);
       }
 
-      toast.success("Password updated successfully! Welcome to Aguka.");
+      toast.success("Password updated successfully! Welcome to AGUKA.");
       if (user) {
         navigate({ to: ROLE_HOME[user.role] as any });
       } else {
@@ -112,8 +138,10 @@ function ForceChangePasswordPage() {
             <Leaf className="h-6 w-6 text-emerald-300" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Aguka</h1>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Smart Farming Kit</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">AGUKA</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+              Smart Farming Kit
+            </p>
           </div>
         </div>
 
@@ -126,7 +154,8 @@ function ForceChangePasswordPage() {
             Security Update Required
           </h2>
           <p className="text-lg text-emerald-100/90 leading-relaxed">
-            Your account was registered or reset with a temporary password. For safety, you must set a new private password before proceeding to the dashboard.
+            Your account was registered or reset with a temporary password. For safety, you must set
+            a new private password before proceeding to the dashboard.
           </p>
         </div>
 
@@ -150,8 +179,10 @@ function ForceChangePasswordPage() {
           <div className="flex items-center gap-2 lg:hidden mb-8">
             <Leaf className="h-8 w-8 text-emerald-600" />
             <div>
-              <span className="text-xl font-bold text-slate-900">Aguka</span>
-              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">Smart Farming</span>
+              <span className="text-xl font-bold text-slate-900">AGUKA</span>
+              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">
+                Smart Farming
+              </span>
             </div>
           </div>
 
@@ -164,7 +195,7 @@ function ForceChangePasswordPage() {
                 Update password
               </h2>
               <p className="text-sm text-slate-500">
-                Please set your private password to unlock access to the Aguka dashboard.
+                Please set your private password to unlock access to the AGUKA dashboard.
               </p>
             </div>
 
@@ -199,7 +230,9 @@ function ForceChangePasswordPage() {
                       <span className={strength.textColor}>{strength.label}</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className={`h-full ${strength.color} ${strength.width} transition-all duration-300`} />
+                      <div
+                        className={`h-full ${strength.color} ${strength.width} transition-all duration-300`}
+                      />
                     </div>
                   </div>
                 )}
@@ -207,7 +240,9 @@ function ForceChangePasswordPage() {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword font-semibold text-slate-700">Confirm Password</Label>
+                <Label htmlFor="confirmPassword font-semibold text-slate-700">
+                  Confirm Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -223,7 +258,11 @@ function ForceChangePasswordPage() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
 
@@ -232,7 +271,8 @@ function ForceChangePasswordPage() {
                   <div className="flex items-center gap-1.5 text-xs font-semibold animate-in fade-in duration-200">
                     {passwordsMatch ? (
                       <span className="text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4 fill-emerald-50 text-emerald-600" /> Passwords match
+                        <CheckCircle2 className="h-4 w-4 fill-emerald-50 text-emerald-600" />{" "}
+                        Passwords match
                       </span>
                     ) : (
                       <span className="text-red-500 flex items-center gap-1">

@@ -48,7 +48,12 @@ type AdvisoryHistoryItem = {
   message: string;
   severity?: keyof typeof severityOptions;
   createdAt: string;
-  farmer?: { fullName?: string | null };
+  farmer?: {
+    id?: string;
+    farmName?: string | null;
+    fullName?: string | null;
+    user?: { fullName?: string | null; phone?: string | null };
+  };
 };
 
 function AdvisoriesPage() {
@@ -261,7 +266,12 @@ function AdvisoriesPage() {
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
                       <AlertCircle className="h-3 w-3" />
-                      Sent to: {a.farmer?.fullName || "Selected Farmers"}
+                      Sent to:{" "}
+                      {a.farmer?.user?.fullName ||
+                        a.farmer?.fullName ||
+                        a.farmer?.farmName ||
+                        a.farmer?.user?.phone ||
+                        "Selected Farmers"}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
                       {new Date(a.createdAt).toLocaleDateString()}

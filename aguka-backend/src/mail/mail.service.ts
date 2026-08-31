@@ -69,9 +69,9 @@ export class MailService {
       await this.transporter.sendMail({
         from:
           process.env.MAIL_FROM ||
-          `"Aguka Smart Farming" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
+          `"AGUKA SMART FARMING KIT" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
         to: user.email,
-        subject: "Aguka — Account Under Review / Konti Irimo Gusuzumwa",
+        subject: "AGUKA — Account Under Review / Konti Irimo Gusuzumwa",
         html,
       });
       logger.info(`Registration email sent to ${user.email}`);
@@ -97,9 +97,9 @@ export class MailService {
       await this.transporter.sendMail({
         from:
           process.env.MAIL_FROM ||
-          `"Aguka Smart Farming" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
+          `"AGUKA SMART FARMING KIT" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
         to: user.email,
-        subject: "Aguka — Account Approved! / Konti Yemejwe! ✅",
+        subject: "AGUKA — Account Approved! / Konti Yemejwe! ✅",
         html,
       });
       logger.info(`Approval email sent to ${user.email}`);
@@ -125,9 +125,9 @@ export class MailService {
       await this.transporter.sendMail({
         from:
           process.env.MAIL_FROM ||
-          `"Aguka Smart Farming" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
+          `"AGUKA SMART FARMING KIT" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
         to: user.email,
-        subject: "Aguka — Account Not Approved / Konti Ntiyemejwe",
+        subject: "AGUKA — Account Not Approved / Konti Ntiyemejwe",
         html,
       });
       logger.info(`Rejection email sent to ${user.email}`);
@@ -148,8 +148,8 @@ export class MailService {
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
   <div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
     <div style="text-align: center; margin-bottom: 24px;">
-      <h1 style="color: #16a34a; font-size: 24px; margin: 0;">🔐 Aguka</h1>
-      <p style="color: #6b7280; font-size: 14px;">Smart Farming Kit</p>
+      <h1 style="color: #16a34a; font-size: 24px; margin: 0;">🔐 AGUKA</h1>
+      <p style="color: #6b7280; font-size: 14px;">SMART FARMING KIT</p>
     </div>
     <h2 style="color: #111827; font-size: 20px;">Password Reset Code / Kode yo kugufashe kuhinddura ijambo banga</h2>
     <p style="color: #374151; font-size: 15px;">Use the 6-digit code below to reset your password. Valid for <strong>10 minutes</strong>.</p>
@@ -158,7 +158,7 @@ export class MailService {
     </div>
     <p style="color: #6b7280; font-size: 13px;">If you did not request this reset, please ignore this email. Your account remains secure.</p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-    <p style="color: #9ca3af; font-size: 12px; text-align: center;">© 2026 Imbaraga Farmers Organization · Aguka Smart Farming Kit</p>
+    <p style="color: #9ca3af; font-size: 12px; text-align: center;">© 2026 Imbaraga Farmers Organization · AGUKA SMART FARMING KIT</p>
   </div>
 </body>
 </html>`;
@@ -166,9 +166,9 @@ export class MailService {
       await this.transporter.sendMail({
         from:
           process.env.MAIL_FROM ||
-          `"Aguka Smart Farming Kit" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
+          `"AGUKA SMART FARMING KIT" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
         to: data.email,
-        subject: "Aguka - Password Reset Code",
+        subject: "AGUKA - Password Reset Code",
         html,
       });
       logger.info(`Password reset OTP sent to ${data.email}`);
@@ -191,18 +191,18 @@ export class MailService {
 <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
   <div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
     <div style="text-align: center; margin-bottom: 24px;">
-      <h1 style="color: #16a34a; font-size: 24px; margin: 0;">Aguka</h1>
-      <p style="color: #6b7280; font-size: 14px;">Smart Farming Kit</p>
+      <h1 style="color: #16a34a; font-size: 24px; margin: 0;">AGUKA</h1>
+      <p style="color: #6b7280; font-size: 14px;">SMART FARMING KIT</p>
     </div>
     <h2 style="color: #111827; font-size: 20px;">Password reset required</h2>
-    <p style="color: #374151; font-size: 15px;">Hello ${data.fullName}, an administrator started a password reset for your Aguka account (${data.phone}).</p>
+    <p style="color: #374151; font-size: 15px;">Hello ${data.fullName}, an administrator started a password reset for your AGUKA account (${data.phone}).</p>
     <p style="color: #374151; font-size: 15px;">Use this one-time code on the password reset page to create your own new password. This code is valid for <strong>10 minutes</strong>.</p>
     <div style="background: #f0fdf4; border: 2px dashed #16a34a; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
       <p style="font-size: 42px; font-weight: 900; letter-spacing: 12px; color: #15803d; margin: 0; font-family: monospace;">${data.otp}</p>
     </div>
     <p style="color: #6b7280; font-size: 13px;">If you did not expect this reset, contact your administrator before signing in.</p>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-    <p style="color: #9ca3af; font-size: 12px; text-align: center;">2026 Imbaraga Farmers Organization - Aguka Smart Farming Kit</p>
+    <p style="color: #9ca3af; font-size: 12px; text-align: center;">2026 Imbaraga Farmers Organization - AGUKA SMART FARMING KIT</p>
   </div>
 </body>
 </html>`;
@@ -210,9 +210,9 @@ export class MailService {
       await this.transporter.sendMail({
         from:
           process.env.MAIL_FROM ||
-          `"Aguka Smart Farming Kit" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
+          `"AGUKA SMART FARMING KIT" <${process.env.MAIL_USER || process.env.SMTP_USER}>`,
         to: data.email,
-        subject: "Aguka - Password Reset Code",
+        subject: "AGUKA - Password Reset Code",
         html,
       });
       logger.info(`Admin password reset OTP sent to ${data.email}`);

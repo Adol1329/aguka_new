@@ -62,7 +62,11 @@ export const resetPasswordWithOtp = async (
 ) => {
   try {
     const { phone, otp, newPassword } = req.body;
-    const result = await authService.resetPasswordWithOtp(phone, otp, newPassword);
+    const result = await authService.resetPasswordWithOtp(
+      phone,
+      otp,
+      newPassword,
+    );
     return res.json({ success: true, data: result });
   } catch (error) {
     return next(error);
@@ -163,7 +167,11 @@ export const logout = async (
     const token = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.split(" ")[1]
       : undefined;
-    const result = await authService.logout(req.user!.sub, token, req.user!.exp);
+    const result = await authService.logout(
+      req.user!.sub,
+      token,
+      req.user!.exp,
+    );
     return res.json({ success: true, data: result });
   } catch (error) {
     return next(error);

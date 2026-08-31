@@ -5,6 +5,7 @@ import {
   sendSms,
   sendBulkSms,
   ussdCallback,
+  receiveInboundSms,
   getStatus,
 } from "../controllers/sms.controller.js";
 
@@ -15,6 +16,8 @@ router.post("/send", authenticate, asyncHandler(sendSms));
 router.post("/send-bulk", authenticate, asyncHandler(sendBulkSms));
 
 router.post("/ussd/callback", asyncHandler(ussdCallback));
+
+router.post("/inbound", asyncHandler(receiveInboundSms));
 
 router.get("/status", asyncHandler(getStatus));
 

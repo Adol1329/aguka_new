@@ -1,10 +1,13 @@
 import { auditService } from "./audit.service.js";
 import { prisma } from "../prisma.js";
 import { logger } from "../utils/logger.js";
+import { notificationRuleService } from "./notification-rule.service.js";
 
 interface MarketPrice {
+  id: string;
   cropId: string;
   cropName: string;
+  crop: { nameEn: string };
   marketId: string;
   marketName: string;
   district: string;
@@ -34,6 +37,89 @@ interface MarketInsight {
   nextHarvestImpact: string;
 }
 
+const PRICE_STALE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+const BASE_PRICES: Record<string, { min: number; max: number; avg: number }> = {
+  maize: { min: 300, max: 400, avg: 350 },
+  potato: { min: 250, max: 350, avg: 300 },
+  beans: { min: 480, max: 560, avg: 520 },
+  rice: { min: 800, max: 950, avg: 875 },
+  coffee: { min: 250, max: 400, avg: 320 },
+  wheat: { min: 300, max: 450, avg: 375 },
+  tea: { min: 200, max: 300, avg: 250 },
+  cassava: { min: 150, max: 250, avg: 200 },
+  banana: { min: 150, max: 300, avg: 220 },
+  sorghum: { min: 300, max: 400, avg: 350 },
+};
+const DEFAULT_PRICE_RANGE = { min: 200, max: 800, avg: 500 };
+
+// Kigali's three urban districts — used as a proxy for "close to the sample
+// markets" since all seeded markets are Kigali-based.
+const KIGALI_DISTRICTS = new Set(["Gasabo", "Kicukiro", "Nyarugenge", "Kigali"]);
+
+// Rwanda's 30 districts grouped under their real province, so a farmer's
+// district maps to the province whose markets are shown to them by default.
+const DISTRICT_TO_PROVINCE: Record<string, string> = {
+  Gasabo: "Kigali City",
+  Kicukiro: "Kigali City",
+  Nyarugenge: "Kigali City",
+  Musanze: "Northern Province",
+  Gakenke: "Northern Province",
+  Burera: "Northern Province",
+  Gicumbi: "Northern Province",
+  Rulindo: "Northern Province",
+  Rubavu: "Western Province",
+  Nyabihu: "Western Province",
+  Rutsiro: "Western Province",
+  Ngororero: "Western Province",
+  Karongi: "Western Province",
+  Rusizi: "Western Province",
+  Nyamasheke: "Western Province",
+  Huye: "Southern Province",
+  Nyamagabe: "Southern Province",
+  Nyaruguru: "Southern Province",
+  Muhanga: "Southern Province",
+  Kamonyi: "Southern Province",
+  Gisagara: "Southern Province",
+  Nyanza: "Southern Province",
+  Ruhango: "Southern Province",
+  Kayonza: "Eastern Province",
+  Bugesera: "Eastern Province",
+  Gatsibo: "Eastern Province",
+  Kirehe: "Eastern Province",
+  Ngoma: "Eastern Province",
+  Nyagatare: "Eastern Province",
+  Rwamagana: "Eastern Province",
+};
+
+interface MarketDefinition {
+  marketId: string;
+  marketName: string;
+  district: string;
+  province: string;
+}
+
+const MARKETS: MarketDefinition[] = [
+  { marketId: "market_0", marketName: "Kigali Central Market", district: "Nyarugenge", province: "Kigali City" },
+  { marketId: "market_1", marketName: "Nyabugogo Market", district: "Nyarugenge", province: "Kigali City" },
+  { marketId: "market_2", marketName: "Kimironko Market", district: "Gasabo", province: "Kigali City" },
+  { marketId: "market_3", marketName: "Remera Market", district: "Gasabo", province: "Kigali City" },
+  { marketId: "market_4", marketName: "Kicukiro Market", district: "Kicukiro", province: "Kigali City" },
+  { marketId: "market_5", marketName: "Musanze Market", district: "Musanze", province: "Northern Province" },
+  { marketId: "market_6", marketName: "Byumba Market", district: "Gicumbi", province: "Northern Province" },
+  { marketId: "market_7", marketName: "Gisenyi Market", district: "Rubavu", province: "Western Province" },
+  { marketId: "market_8", marketName: "Karongi Market", district: "Karongi", province: "Western Province" },
+  { marketId: "market_9", marketName: "Huye Market", district: "Huye", province: "Southern Province" },
+  { marketId: "market_10", marketName: "Muhanga Market", district: "Muhanga", province: "Southern Province" },
+  { marketId: "market_11", marketName: "Nyagatare Market", district: "Nyagatare", province: "Eastern Province" },
+  { marketId: "market_12", marketName: "Rwamagana Market", district: "Rwamagana", province: "Eastern Province" },
+];
+
+function provinceForDistrict(district: string | undefined | null): string {
+  if (!district) return "Kigali City";
+  return DISTRICT_TO_PROVINCE[district] || "Kigali City";
+}
+
 export class MarketService {
   async getCurrentPrices(
     userId: string,
@@ -45,32 +131,118 @@ export class MarketService {
         where: { userId },
         include: { cooperative: true },
       });
+      const district = farmer?.district || "Kigali";
+      const province = provinceForDistrict(farmer?.district);
 
-      if (!farmer) {
-        return await this.getStoredOrSimulatedPrices("Kigali", filters);
+      await this.ensureFreshPrices();
+
+      const where: Record<string, unknown> = {};
+      if (filters.crop) where.cropId = filters.crop;
+      if (filters.market) {
+        where.marketName = { contains: filters.market, mode: "insensitive" };
+      } else {
+        // No explicit market search — default to markets in the farmer's own
+        // province so prices reflect where they actually sell, not a fixed
+        // Kigali-only list.
+        const localMarketIds = MARKETS.filter((m) => m.province === province).map(
+          (m) => m.marketId,
+        );
+        where.marketId = { in: localMarketIds };
       }
 
-      // Try to fetch from Rwanda Agricultural Market API
-      const isExternalApiEnabled = false;
-      if (isExternalApiEnabled) {
-        try {
-          const apiPrices = await this.fetchFromRwandaAPI(
-            farmer!.district,
-            filters,
-          );
-          await this.saveMarketPrices(apiPrices);
-          return apiPrices;
-        } catch (apiError) {
-          logger.error("Failed to fetch from Rwanda API:", apiError);
-        }
-      }
+      const rows = await prisma.marketPrice.findMany({
+        where,
+        include: { crop: true },
+        orderBy: { recordedAt: "desc" },
+      });
 
-      // Fallback to database or simulated data
-      return await this.getStoredOrSimulatedPrices(farmer.district, filters);
+      return rows.map((row) => ({
+        id: row.id,
+        cropId: row.cropId,
+        cropName: row.crop.nameEn,
+        crop: { nameEn: row.crop.nameEn },
+        marketId: row.marketId,
+        marketName: row.marketName,
+        district: row.district || district,
+        priceRwfPerKg: Number(row.priceRwfPerKg),
+        unit: "kg",
+        currency: row.currency,
+        recordedAt: row.recordedAt,
+        trend: row.trend as "up" | "down" | "stable",
+        trendPercentage: Number(row.trendPercentage),
+      }));
     } catch (error) {
       logger.error("Error fetching current prices:", error);
       throw error;
     }
+  }
+
+  /**
+   * Regenerate simulated market prices for every active crop/market pair and
+   * persist them, so the prices farmers see and the prices price-alerts are
+   * evaluated against are always the same rows (single source of truth).
+   */
+  async regenerateSimulatedPrices(): Promise<number> {
+    const crops = await prisma.crop.findMany({
+      where: { isActive: true, deletedAt: null },
+    });
+    const now = new Date();
+    let count = 0;
+
+    for (const crop of crops) {
+      const priceRange = BASE_PRICES[crop.id] ?? DEFAULT_PRICE_RANGE;
+
+      for (const market of MARKETS) {
+        const variation = (Math.random() - 0.5) * 0.2; // +/-10%
+        const priceRwfPerKg = Math.round(priceRange.avg * (1 + variation));
+        const trend = (["up", "down", "stable"] as const)[
+          Math.floor(Math.random() * 3)
+        ];
+        const trendPercentage = Math.round(Math.random() * 10 * 10) / 10;
+
+        await prisma.marketPrice.upsert({
+          where: { cropId_marketId: { cropId: crop.id, marketId: market.marketId } },
+          update: {
+            marketName: market.marketName,
+            district: market.district,
+            priceRwfPerKg,
+            recordedAt: now,
+            trend,
+            trendPercentage,
+          },
+          create: {
+            cropId: crop.id,
+            marketId: market.marketId,
+            marketName: market.marketName,
+            district: market.district,
+            priceRwfPerKg,
+            currency: "RWF",
+            recordedAt: now,
+            trend,
+            trendPercentage,
+          },
+        });
+        count++;
+      }
+    }
+
+    // Every price refresh is the trigger point for alert evaluation, whether
+    // it came from the daily cron or a farmer simply opening the Prices tab
+    // (see ensureFreshPrices) — this keeps alerts live without depending on
+    // the separate marketPriceSyncEnabled cron toggle.
+    await this.checkPriceAlerts();
+
+    return count;
+  }
+
+  private async ensureFreshPrices(): Promise<void> {
+    const cutoff = new Date(Date.now() - PRICE_STALE_MS);
+    const freshCount = await prisma.marketPrice.count({
+      where: { recordedAt: { gte: cutoff } },
+    });
+    if (freshCount > 0) return;
+
+    await this.regenerateSimulatedPrices();
   }
 
   async getPriceHistory(
@@ -114,12 +286,17 @@ export class MarketService {
 
       return alerts.map((alert) => ({
         id: alert.id,
+        cropId: alert.cropId,
         cropName: alert.crop?.nameEn || "Unknown",
+        crop: { nameEn: alert.crop?.nameEn || "Unknown" },
         marketName: alert.marketId || "General Market",
         targetPrice: alert.targetPrice,
         currentPrice: alert.currentPrice,
         alertType: alert.alertType,
+        isActive: alert.isActive,
         isTriggered: alert.isTriggered,
+        smsEnabled: alert.smsEnabled,
+        lastTriggered: alert.lastTriggered,
         createdAt: alert.createdAt,
       }));
     } catch (error) {
@@ -135,6 +312,7 @@ export class MarketService {
       targetPrice: number;
       alertType: string;
       marketId?: string;
+      smsEnabled?: boolean;
     },
   ): Promise<any> {
     try {
@@ -146,6 +324,7 @@ export class MarketService {
           targetPrice: data.targetPrice,
           alertType: data.alertType,
           isActive: true,
+          smsEnabled: data.smsEnabled ?? false,
         },
         include: { crop: true },
       });
@@ -161,11 +340,15 @@ export class MarketService {
 
       return {
         id: alert.id,
+        cropId: alert.cropId,
         cropName: alert.crop?.nameEn,
+        crop: { nameEn: alert.crop?.nameEn },
         marketName: alert.marketId || "General Market",
         targetPrice: alert.targetPrice,
         alertType: alert.alertType,
         isActive: alert.isActive,
+        smsEnabled: alert.smsEnabled,
+        lastTriggered: alert.lastTriggered,
       };
     } catch (error) {
       logger.error("Error creating price alert:", error);
@@ -173,18 +356,166 @@ export class MarketService {
     }
   }
 
+  async deletePriceAlert(id: string, userId: string): Promise<void> {
+    try {
+      const alert = await prisma.priceAlert.findFirst({
+        where: { id, userId },
+      });
+
+      if (!alert) {
+        throw new Error("Price alert not found or access denied");
+      }
+
+      await prisma.priceAlert.delete({ where: { id } });
+
+      await auditService.logAction({
+        userId,
+        action: "DELETE_PRICE_ALERT",
+        module: "MARKET",
+        resourceId: id,
+      });
+    } catch (error) {
+      logger.error("Error deleting price alert:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check all active price alerts against current market prices
+   */
+  async checkPriceAlerts(): Promise<void> {
+    try {
+      const activeAlerts = await prisma.priceAlert.findMany({
+        where: { isActive: true, isTriggered: false },
+        include: { crop: true },
+      });
+
+      for (const alert of activeAlerts) {
+        // Find latest price for this crop/market
+        const marketPrice = await prisma.marketPrice.findFirst({
+          where: {
+            cropId: alert.cropId,
+            marketId: alert.marketId || undefined,
+          },
+          orderBy: { recordedAt: "desc" },
+        });
+
+        if (!marketPrice) continue;
+
+        const currentPrice = marketPrice.priceRwfPerKg;
+        let isTriggered = false;
+
+        if (alert.alertType === "above" && currentPrice >= alert.targetPrice) {
+          isTriggered = true;
+        } else if (
+          alert.alertType === "below" &&
+          currentPrice <= alert.targetPrice
+        ) {
+          isTriggered = true;
+        }
+
+        if (isTriggered) {
+          // 1. Update alert status
+          await prisma.priceAlert.update({
+            where: { id: alert.id },
+            data: {
+              isTriggered: true,
+              currentPrice: currentPrice,
+              lastTriggered: new Date(),
+            },
+          });
+
+          // 2. Trigger Notification
+          await notificationRuleService.createNotification({
+            userId: alert.userId,
+            title: "Market Price Alert",
+            message: `AGUKA: ${alert.crop?.nameEn} price has reached ${currentPrice} RWF in ${marketPrice.marketName}. This matches your target of ${alert.targetPrice} RWF.`,
+            type: "market_alert",
+            priority: "normal",
+            metadata: {
+              alertId: alert.id,
+              cropId: alert.cropId,
+              marketId: alert.marketId,
+              currentPrice: currentPrice,
+            },
+            smsEnabled: alert.smsEnabled,
+          });
+
+          logger.info(`Price alert ${alert.id} triggered for user ${alert.userId}`);
+        }
+      }
+    } catch (error) {
+      logger.error("Error checking price alerts:", error);
+    }
+  }
+
   async getMarketInsights(userId: string): Promise<MarketInsight[]> {
     try {
+      await this.ensureFreshPrices();
+
       const farmer = await prisma.farmerProfile.findUnique({
         where: { userId },
       });
 
-      if (!farmer) {
-        return this.generateMarketInsights("Kigali");
+      let crops: { id: string; nameEn: string }[] = [];
+      if (farmer) {
+        const farmerCrops = await prisma.farmerCrop.findMany({
+          where: { farmerId: farmer.id },
+          include: { crop: true },
+          distinct: ["cropId"],
+        });
+        crops = farmerCrops.map((fc) => fc.crop);
       }
 
-      // Generate insights based on market data
-      const insights = this.generateMarketInsights(farmer.district);
+      if (crops.length === 0) {
+        // No farmer profile or no registered crops yet — fall back to the
+        // most common staple crops so the endpoint still returns something useful.
+        crops = await prisma.crop.findMany({
+          where: { isActive: true, deletedAt: null },
+          orderBy: { nameEn: "asc" },
+          take: 3,
+        });
+      }
+
+      const insights: MarketInsight[] = [];
+      for (const crop of crops) {
+        const rows = await prisma.marketPrice.findMany({
+          where: { cropId: crop.id },
+        });
+        if (rows.length === 0) continue;
+
+        const prices = rows.map((r) => Number(r.priceRwfPerKg));
+        const averagePrice = Math.round(
+          prices.reduce((sum, p) => sum + p, 0) / prices.length,
+        );
+        const best = rows.reduce((a, b) =>
+          Number(a.priceRwfPerKg) >= Number(b.priceRwfPerKg) ? a : b,
+        );
+
+        const upCount = rows.filter((r) => r.trend === "up").length;
+        const downCount = rows.filter((r) => r.trend === "down").length;
+        const priceTrend: MarketInsight["priceTrend"] =
+          upCount > downCount ? "rising" : downCount > upCount ? "falling" : "stable";
+
+        insights.push({
+          cropId: crop.id,
+          cropName: crop.nameEn,
+          bestMarket: best.marketName,
+          bestPrice: Number(best.priceRwfPerKg),
+          averagePrice,
+          priceTrend,
+          recommendation:
+            priceTrend === "rising"
+              ? "Prices are trending up across markets — consider waiting if you can store your harvest."
+              : priceTrend === "falling"
+                ? "Prices are trending down — selling soon may get you a better return."
+                : "Prices are steady across markets — sell whenever it suits your schedule.",
+          nextHarvestImpact:
+            priceTrend === "falling"
+              ? "New supply entering the market may push prices down further."
+              : "Prices are expected to hold steady in the near term.",
+        });
+      }
 
       return insights;
     } catch (error) {
@@ -198,129 +529,35 @@ export class MarketService {
     params: { cropId: string; quantity?: number },
   ): Promise<any[]> {
     try {
+      await this.ensureFreshPrices();
+
       const farmer = await prisma.farmerProfile.findUnique({
         where: { userId },
       });
+      const isNearKigali = farmer ? KIGALI_DISTRICTS.has(farmer.district) : true;
 
-      if (!farmer) {
-        return this.generateMarketRecommendations(
-          { location: "Kigali" },
-          params.cropId,
-        );
-      }
+      const rows = await prisma.marketPrice.findMany({
+        where: { cropId: params.cropId },
+        orderBy: { priceRwfPerKg: "desc" },
+      });
 
-      // Get market recommendations based on location and crop
-      const recommendations = this.generateMarketRecommendations(
-        farmer,
-        params.cropId,
-      );
+      const transportCost = isNearKigali ? 2000 : 15000;
+      const distance = isNearKigali ? "5-10 km" : "40-60 km";
 
-      return recommendations;
+      return rows.map((row) => ({
+        marketId: row.marketId,
+        marketName: row.marketName,
+        distance,
+        estimatedPrice: Number(row.priceRwfPerKg),
+        transportCost,
+        recommendation: isNearKigali
+          ? "Good value — low transport cost from your district"
+          : "Higher transport cost from your district — weigh it against the price gain",
+      }));
     } catch (error) {
       logger.error("Error getting market recommendations:", error);
       throw error;
     }
-  }
-
-  private async fetchFromRwandaAPI(
-    _district: string,
-    _filters: { crop?: string; market?: string },
-  ): Promise<MarketPrice[]> {
-    // This would integrate with Rwanda's National Agricultural Export Development Board (NAEB) API
-    // or Ministry of Agriculture and Animal Resources (MINAGRI) market data
-
-    const apiPrices: MarketPrice[] = [
-      {
-        cropId: "maize",
-        cropName: "Maize",
-        marketId: "kigali",
-        marketName: "Nyabugogo Market",
-        district: "Kigali City",
-        priceRwfPerKg: 2500,
-        unit: "kg",
-        currency: "RWF",
-        recordedAt: new Date(),
-        trend: "up",
-        trendPercentage: 5.2,
-      },
-      {
-        cropId: "beans",
-        cropName: "Beans",
-        marketId: "kigali",
-        marketName: "Kigali Central Market",
-        district: "Kigali City",
-        priceRwfPerKg: 520,
-        unit: "kg",
-        currency: "RWF",
-        recordedAt: new Date(),
-        trend: "stable",
-        trendPercentage: 0.8,
-      },
-      // Add more crops and markets
-    ];
-
-    return apiPrices;
-  }
-
-  private async getStoredOrSimulatedPrices(
-    _district: string,
-    filters: { crop?: string; market?: string },
-  ): Promise<MarketPrice[]> {
-    // Simulated market data for Rwanda
-    const basePrices = {
-      maize: { min: 300, max: 400, avg: 350 },
-      beans: { min: 480, max: 560, avg: 520 },
-      rice: { min: 800, max: 950, avg: 875 },
-      potatoes: { min: 250, max: 350, avg: 300 },
-      tomatoes: { min: 400, max: 600, avg: 500 },
-      onions: { min: 350, max: 450, avg: 400 },
-      cabbage: { min: 200, max: 300, avg: 250 },
-      carrots: { min: 450, max: 550, avg: 500 },
-    };
-
-    const markets = [
-      "Kigali Central Market",
-      "Nyabugogo Market",
-      "Kimironko Market",
-      "Remera Market",
-      "Kicukiro Market",
-    ];
-
-    const prices: MarketPrice[] = [];
-
-    Object.entries(basePrices).forEach(([cropId, priceData]) => {
-      if (filters.crop && cropId !== filters.crop) return;
-
-      markets.forEach((marketName, index) => {
-        if (
-          filters.market &&
-          !marketName.toLowerCase().includes(filters.market.toLowerCase())
-        )
-          return;
-
-        const variation = (Math.random() - 0.5) * 0.2; // ±10% variation
-        const price = priceData.avg * (1 + variation);
-        const trend =
-          Math.random() > 0.5 ? "up" : Math.random() > 0.5 ? "down" : "stable";
-        const trendPercentage = Math.abs(Math.random() * 10);
-
-        prices.push({
-          cropId,
-          cropName: cropId.charAt(0).toUpperCase() + cropId.slice(1),
-          marketId: `market_${index}`,
-          marketName,
-          district: "General",
-          priceRwfPerKg: Math.round(price),
-          unit: "kg",
-          currency: "RWF",
-          recordedAt: new Date(),
-          trend: trend as "up" | "down" | "stable",
-          trendPercentage: Math.round(trendPercentage * 10) / 10,
-        });
-      });
-    });
-
-    return prices;
   }
 
   private generatePriceHistory(
@@ -350,88 +587,6 @@ export class MarketService {
     return history;
   }
 
-  private generateMarketInsights(_district: string): MarketInsight[] {
-    return [
-      {
-        cropId: "maize",
-        cropName: "Maize",
-        bestMarket: "Kigali Central Market",
-        bestPrice: 380,
-        averagePrice: 350,
-        priceTrend: "rising",
-        recommendation: "Consider selling in 2-3 weeks for better prices",
-        nextHarvestImpact: "Prices may decrease as new harvest enters market",
-      },
-      {
-        cropId: "beans",
-        cropName: "Beans",
-        bestMarket: "Nyabugogo Market",
-        bestPrice: 540,
-        averagePrice: 520,
-        priceTrend: "stable",
-        recommendation: "Current prices are good, consider selling now",
-        nextHarvestImpact: "Prices expected to remain stable",
-      },
-    ];
-  }
-
-  private generateMarketRecommendations(farmer: any, cropId: string): any[] {
-    const markets = [
-      {
-        marketId: "kigali_central",
-        marketName: "Kigali Central Market",
-        distance: farmer.location.includes("Kigali") ? "5 km" : "50 km",
-        estimatedPrice: cropId === "maize" ? 380 : 540,
-        transportCost: farmer.location.includes("Kigali") ? 2000 : 15000,
-        recommendation: "Best prices, higher transport cost",
-      },
-      {
-        marketId: "local_market",
-        marketName: "Local District Market",
-        distance: "10 km",
-        estimatedPrice: cropId === "maize" ? 320 : 480,
-        transportCost: 5000,
-        recommendation: "Lower prices, lower transport cost",
-      },
-    ];
-
-    return markets;
-  }
-
-  private async saveMarketPrices(prices: MarketPrice[]): Promise<void> {
-    // Save prices to database for historical tracking
-    try {
-      for (const price of prices) {
-        await prisma.marketPrice.upsert({
-          where: {
-            cropId_marketId: {
-              cropId: price.cropId,
-              marketId: price.marketId,
-            },
-          },
-          update: {
-            priceRwfPerKg: price.priceRwfPerKg,
-            recordedAt: price.recordedAt,
-            trend: price.trend,
-            trendPercentage: price.trendPercentage,
-          },
-          create: {
-            cropId: price.cropId,
-            marketId: price.marketId,
-            marketName: price.marketName,
-            district: "General",
-            priceRwfPerKg: price.priceRwfPerKg,
-            currency: price.currency,
-            recordedAt: price.recordedAt,
-            trend: price.trend,
-            trendPercentage: price.trendPercentage,
-          },
-        });
-      }
-    } catch (error) {
-      logger.error("Error saving market prices:", error);
-    }
-  }
 }
 
 export const marketService = new MarketService();

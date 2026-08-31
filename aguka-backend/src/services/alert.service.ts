@@ -1,11 +1,15 @@
 import { AlertSeverity, AlertType, Language } from "@prisma/client";
+import { EventEmitter } from "events";
 import { prisma } from "../prisma.js";
 import { smsService } from "./sms.service.js";
-import { notificationService } from "./notification.service.js";
+import { notificationRuleService } from "./notification-rule.service.js";
 import { getSmsTranslation } from "../utils/i18n-sms.js";
 import { logger } from "../utils/logger.js";
 
-export class AlertService {
+export class AlertService extends EventEmitter {
+  constructor() {
+    super();
+  }
   /**
    * Get paginated alerts with filters
    */
@@ -93,15 +97,28 @@ export class AlertService {
       },
     });
 
-    // 2. Trigger Push Notification
+    // 2. Dispatch via Unified Notification System
     const user = alert.farmer.user;
     if (user) {
-      notificationService
-        .sendToUser(user.id, `Aguka: ${data.title}`, data.message, {
+      // Trigger Socket.IO and Push Notification through the centralized dispatcher
+      notificationRuleService.createNotification({
+        userId: user.id,
+        title: `AGUKA: ${data.title}`,
+        message: data.message,
+        type: data.alertType,
+        priority: data.severity === "critical" ? "high" : "normal",
+        metadata: {
           alertId: alert.id,
-          type: data.alertType,
-        })
-        .catch((err) => logger.error("FCM Alert Error:", err));
+          farmerId: data.farmerId,
+          severity: data.severity,
+        },
+      });
+
+      this.emit("alertTriggered", {
+        userId: user.id,
+        farmId: alert.farmerId,
+        alert,
+      });
     }
 
     // 3. Bridge to SMS for CRITICAL alerts

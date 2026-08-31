@@ -73,7 +73,11 @@ router.post(
   asyncHandler(firebaseVerify),
 );
 
-router.post("/refresh-token", asyncHandler(refreshToken));
+router.post(
+  "/refresh-token",
+  rateLimiter({ windowMs: 15 * 60 * 1000, maxRequests: 20 }),
+  asyncHandler(refreshToken),
+);
 
 router.post("/logout", authenticate, asyncHandler(logout));
 
@@ -94,6 +98,7 @@ router.post(
 
 router.post(
   "/reset-password",
+  rateLimiter({ windowMs: 60 * 60 * 1000, maxRequests: 5 }),
   validate(resetPasswordSchema),
   asyncHandler(resetPassword),
 );

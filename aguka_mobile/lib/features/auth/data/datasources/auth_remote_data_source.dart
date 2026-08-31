@@ -17,7 +17,7 @@ abstract class AuthRemoteDataSource {
     required String password,
   });
 
-  Future<UserModel> register({
+  Future<LoginResponse> register({
     required String phone,
     required String password,
     required String fullName,
@@ -46,6 +46,13 @@ abstract class AuthRemoteDataSource {
   });
 
   Future<void> logout();
+
+  Future<LoginResponse> refreshToken(String refreshToken);
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -65,7 +72,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
     if (response.statusCode == 200) {
       final data = response.data['data'] ?? response.data;
-      final token = data['token'] as String? ?? data['accessToken'] as String? ?? '';
+      final token = data['accessToken'] as String? ?? data['token'] as String? ?? '';
       final refreshToken = data['refreshToken'] as String?;
       final user = UserModel.fromJson(data['user'] ?? data);
       return LoginResponse(user: user, token: token, refreshToken: refreshToken);
@@ -75,7 +82,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> register({
+  Future<LoginResponse> register({
     required String phone,
     required String password,
     required String fullName,
@@ -88,15 +95,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       'password': password,
       'fullName': fullName,
       'role': role.toLowerCase(),
-      'email': email,
-      'language': language,
+      if (email != null) 'email': email,
+      if (language != null) 'language': language,
     };
 
     final response = await client.post('/auth/register', data: data);
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       final responseData = response.data['data'] ?? response.data;
-      return UserModel.fromJson(responseData['user'] ?? responseData);
+      final token = responseData['accessToken'] as String? ??
+          responseData['token'] as String? ?? '';
+      final refreshToken = responseData['refreshToken'] as String?;
+      final user = UserModel.fromJson(responseData['user'] ?? responseData);
+      return LoginResponse(user: user, token: token, refreshToken: refreshToken);
     } else {
       throw ServerException('Registration failed');
     }
@@ -203,6 +214,41 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     await client.post('/auth/logout');
+  }
+
+  @override
+  Future<LoginResponse> refreshToken(String refreshToken) async {
+    final response = await client.post('/auth/refresh-token', data: {
+      'refreshToken': refreshToken,
+    });
+    if (response.statusCode == 200) {
+      final data = response.data['data'] ?? response.data;
+      final token = data['accessToken'] as String? ?? data['token'] as String? ?? '';
+      final newRefreshToken = data['refreshToken'] as String?;
+      final userData = data['user'] as Map<String, dynamic>?;
+      final user = userData != null ? UserModel.fromJson(userData) : UserModel(id: '', phone: '', role: '', language: 'en', isActive: true);
+      return LoginResponse(user: user, token: token, refreshToken: newRefreshToken);
+    } else {
+      throw ServerException('Token refresh failed');
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await client.post('/auth/change-password', data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      });
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to change password');
+      }
+    } on DioException catch (e) {
+      throw ServerException(_errorMessage(e, 'Failed to change password'));
+    }
   }
 
   String _errorMessage(DioException error, String fallback) {

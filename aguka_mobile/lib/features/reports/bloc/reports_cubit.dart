@@ -1,27 +1,23 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:aguka_mobile/core/usecases/usecase.dart';
+import 'package:aguka_mobile/features/reports/domain/repositories/reports_repository.dart';
 import 'package:aguka_mobile/features/reports/domain/usecases/get_report_analytics_usecase.dart';
-import 'reports_event.dart';
 import 'reports_state.dart';
 
-// Keep alias for backward compatibility with injection_container.dart
-typedef ReportsCubit = ReportsBloc;
-
-class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
+class ReportsCubit extends Cubit<ReportsState> {
   final GetReportAnalyticsUseCase _getAnalyticsUseCase;
+  final ReportsRepository _repository;
 
-  ReportsBloc({required GetReportAnalyticsUseCase getAnalyticsUseCase})
-      : _getAnalyticsUseCase = getAnalyticsUseCase,
-        super(const ReportsState()) {
-    on<FetchReportAnalytics>(_onFetchAnalytics);
-    on<DownloadReport>(_onDownloadReport);
-  }
+  ReportsCubit({
+    required GetReportAnalyticsUseCase getAnalyticsUseCase,
+    required ReportsRepository repository,
+  })  : _getAnalyticsUseCase = getAnalyticsUseCase,
+        _repository = repository,
+        super(const ReportsState());
 
-  Future<void> _onFetchAnalytics(
-      FetchReportAnalytics event, Emitter<ReportsState> emit) async {
+  Future<void> fetchAnalytics(String role) async {
     emit(state.copyWith(status: ReportsStatus.loading));
 
-    final result = await _getAnalyticsUseCase(NoParams());
+    final result = await _getAnalyticsUseCase(role);
 
     result.fold(
       (failure) => emit(state.copyWith(
@@ -35,9 +31,12 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     );
   }
 
-  Future<void> _onDownloadReport(
-      DownloadReport event, Emitter<ReportsState> emit) async {
-    // Download logic handled by URL launcher or share_plus in the UI
-    // For now, this event is a no-op placeholder
+  Future<void> downloadReport(String role, String type) async {
+    // Do not change the main status — report content must stay visible.
+    final result = await _repository.downloadReport(role, type);
+    result.fold(
+      (failure) => emit(state.copyWith(downloadError: failure.message)),
+      (url) => emit(state.copyWith(downloadUrl: url)),
+    );
   }
 }

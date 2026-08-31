@@ -7,11 +7,7 @@ import { getLogs, getRecentActivity } from "../controllers/audit.controller.js";
 const router = Router();
 
 // Audit logs retrieval (Super Admins & Admins query globally, other roles query their own logs)
-router.get(
-  "/",
-  authenticate,
-  asyncHandler(getLogs),
-);
+router.get("/", authenticate, asyncHandler(getLogs));
 
 // Recent activity preview for the header (Admins & Super Admins)
 router.get(

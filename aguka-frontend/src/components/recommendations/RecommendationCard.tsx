@@ -10,7 +10,7 @@ interface RecommendationCardProps {
     title: string;
     message: string;
     recommendation: string;
-    confidence: 'low' | 'medium' | 'high';
+    confidence: "low" | "medium" | "high";
     priority: number;
     actionRequired: boolean;
     details?: Record<string, any>;
@@ -63,19 +63,17 @@ export const RecommendationCard = ({ recommendation }: RecommendationCardProps) 
   return (
     <div className="border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="font-semibold text-lg flex-1">
-          {recommendation.title}
-        </h3>
+        <h3 className="font-semibold text-lg flex-1">{recommendation.title}</h3>
         <RecommendationBadge confidence={recommendation.confidence} />
       </div>
-      
+
       <p className="text-muted-foreground mb-4">{recommendation.message}</p>
-      
+
       <div className="bg-muted p-4 rounded-lg mb-4">
         <p className="font-medium mb-2">Recommended Action:</p>
         <p className="text-sm">{recommendation.recommendation}</p>
       </div>
-      
+
       {recommendation.details && Object.keys(recommendation.details).length > 0 && (
         <div className="mb-4">
           <p className="font-medium mb-2">Details:</p>
@@ -83,15 +81,15 @@ export const RecommendationCard = ({ recommendation }: RecommendationCardProps) 
             {Object.entries(recommendation.details).map(([key, value]) => (
               <div key={key} className="flex">
                 <span className="font-medium w-24">{`${key}:`}</span>
-                <span>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                <span>{typeof value === "object" ? JSON.stringify(value) : String(value)}</span>
               </div>
             ))}
           </div>
         </div>
       )}
-      
+
       <div className="flex justify-end gap-3">
-        <Button 
+        <Button
           variant="outline"
           size="sm"
           disabled={isDismissing}
@@ -100,7 +98,7 @@ export const RecommendationCard = ({ recommendation }: RecommendationCardProps) 
         >
           {isDismissing ? "Dismissing..." : "Dismiss"}
         </Button>
-        <Button 
+        <Button
           variant={recommendation.actionRequired ? "default" : "outline"}
           size="sm"
           disabled={isAccepting}

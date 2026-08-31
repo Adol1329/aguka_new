@@ -62,6 +62,9 @@ class NavigationCubit extends Cubit<NavigationState> {
     }
   }
 
+  /// Returns the current user role from preferences.
+  String? getCurrentRole() => _prefs.userRole;
+
   /// Refreshes the navigation configuration (e.g., after login/role change)
   void refreshNavigation() {
     emit(NavigationState.initial(_prefs));

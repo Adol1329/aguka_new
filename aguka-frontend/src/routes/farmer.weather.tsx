@@ -19,7 +19,13 @@ function WeatherPage() {
     );
   }
 
-  const today = (forecast?.[0] as any) || { temperatureCelsius: 28, humidityPercent: 62, windSpeedKmh: 12, precipitationProbability: 0, condition: "Partly Cloudy" };
+  const today = (forecast?.[0] as any) || {
+    temperatureCelsius: 28,
+    humidityPercent: 62,
+    windSpeedKmh: 12,
+    precipitationProbability: 0,
+    condition: "Partly Cloudy",
+  };
 
   return (
     <div className="space-y-6">
@@ -59,7 +65,7 @@ function WeatherPage() {
           {forecast?.map((w: any, idx: number) => (
             <div key={idx} className="rounded-xl border bg-gradient-data p-4 text-center">
               <div className="text-xs font-medium text-muted-foreground">
-                {new Date(w.forecastDate).toLocaleDateString([], { weekday: 'short' })}
+                {new Date(w.forecastDate).toLocaleDateString([], { weekday: "short" })}
               </div>
               <div className="text-3xl my-2">
                 {w.precipitationProbability > 50 ? "🌧️" : w.temperatureCelsius > 25 ? "☀️" : "⛅"}

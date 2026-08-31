@@ -57,3 +57,13 @@ class AuthPendingReview extends AuthState {
   @override
   List<Object?> get props => [user];
 }
+
+/// Role is not supported on mobile (admin / super_admin)
+class AuthUnsupportedRole extends AuthState {
+  final String role;
+
+  const AuthUnsupportedRole({required this.role});
+
+  @override
+  List<Object?> get props => [role];
+}

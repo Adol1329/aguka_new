@@ -1,6 +1,21 @@
 import { prisma } from "../prisma.js";
 import { logger } from "../utils/logger.js";
-import { NotificationRule } from "@prisma/client";
+import {
+  NotificationRule,
+  DeliveryChannel,
+  DeliveryStatus,
+} from "@prisma/client";
+import { notificationService } from "./notification.service.js";
+import { smsService } from "./sms.service.js";
+
+// We'll need a way to get the RealTimeSync instance.
+// In a real app, this might be handled via dependency injection or a global emitter.
+// For now, we'll assume there's a way to access the IO server.
+let socketInstance: any = null;
+
+export const setSocketInstance = (instance: any) => {
+  socketInstance = instance;
+};
 
 export class NotificationRuleService {
   /**
@@ -26,7 +41,7 @@ export class NotificationRuleService {
     data: {
       name: string;
       description?: string;
-      type: "system_alert" | "farming_recommendation" | "report_availability";
+      type: string;
       channels: string[];
       conditions?: Record<string, any>;
     },
@@ -134,6 +149,7 @@ export class NotificationRuleService {
           orderBy: { createdAt: "desc" },
           skip,
           take: limit,
+          include: { deliveries: true },
         }),
         prisma.notification.count({ where }),
       ]);
@@ -165,6 +181,13 @@ export class NotificationRuleService {
         },
         data: { status: "read" },
       });
+
+      if (socketInstance) {
+        socketInstance.to(`user_${userId}`).emit("notification:read", {
+          notificationIds,
+          userId,
+        });
+      }
     } catch (error) {
       logger.error("Failed to mark notifications as read:", error);
       throw error;
@@ -173,13 +196,20 @@ export class NotificationRuleService {
 
   async markAllAsRead(userId: string): Promise<void> {
     try {
-      await prisma.notification.updateMany({
+      const result = await prisma.notification.updateMany({
         where: {
           userId,
           status: "pending",
         },
         data: { status: "read" },
       });
+
+      if (socketInstance && result.count > 0) {
+        socketInstance.to(`user_${userId}`).emit("notification:bulk-read", {
+          userId,
+          count: result.count,
+        });
+      }
     } catch (error) {
       logger.error("Failed to mark all notifications as read:", error);
       throw error;
@@ -201,14 +231,16 @@ export class NotificationRuleService {
   }
 
   /**
-   * Create a notification (called by other services)
+   * Central Notification Dispatcher
    */
   async createNotification(data: {
     userId: string;
     title: string;
     message: string;
     type?: string;
-    channel?: string;
+    priority?: string;
+    metadata?: any;
+    smsEnabled?: boolean;
   }): Promise<void> {
     try {
       const user = await prisma.user.findUnique({
@@ -217,7 +249,7 @@ export class NotificationRuleService {
 
       if (!user) return;
 
-      // Check user's notification rules
+      // 1. Evaluate Notification Rules
       const rules = await prisma.notificationRule.findMany({
         where: {
           userId: data.userId,
@@ -226,28 +258,238 @@ export class NotificationRuleService {
         },
       });
 
-      // If no rules exist or rules allow app notifications
-      const shouldNotify =
-        rules.length === 0 || rules.some((r) => r.channels.includes("app"));
-
-      if (shouldNotify) {
-        await prisma.notification.create({
-          data: {
-            userId: data.userId,
-            title: data.title,
-            message: data.message,
-            channel: data.channel || "app",
-          },
+      // Determine enabled channels
+      const enabledChannels = new Set<string>(["IN_APP", "SOCKET"]); // Always enabled by default
+      if (rules.length > 0) {
+        rules.forEach((rule) => {
+          rule.channels.forEach((channel) => {
+            const mappedChannel = channel.toUpperCase();
+            if (mappedChannel === "APP") enabledChannels.add("IN_APP");
+            else if (mappedChannel === "PUSH") enabledChannels.add("FCM");
+            else enabledChannels.add(mappedChannel);
+          });
         });
+      } else {
+        // Fallback for new users without rules
+        enabledChannels.add("FCM");
       }
 
-      // Send push notification if enabled
-      if (rules.some((r) => r.channels.includes("push"))) {
-        // This would call the push notification service
-        logger.info(`Push notification queued for user ${data.userId}`);
+      // Per-call opt-in (e.g. a price alert created with its own SMS toggle),
+      // independent of the user's saved NotificationRule channels.
+      if (data.smsEnabled) {
+        enabledChannels.add("SMS");
       }
+
+      // 2. Check Quiet Hours for non-urgent notifications
+      const isUrgent = data.priority === "urgent" || data.priority === "high";
+      if (!isUrgent && this.isWithinQuietHours(user)) {
+        logger.info(`Notification for ${user.id} silenced by quiet hours`);
+        enabledChannels.delete("FCM");
+        enabledChannels.delete("SMS");
+      }
+
+      // 3. Save Notification Record
+      const notification = await prisma.notification.create({
+        data: {
+          userId: data.userId,
+          title: data.title,
+          message: data.message,
+          type: data.type || "system",
+          priority: data.priority || "normal",
+          metadata: data.metadata || {},
+          channel: Array.from(enabledChannels).join(","),
+        },
+      });
+
+      // 4. Create Delivery Tracking Records
+      const deliveryData = Array.from(enabledChannels).map((channel) => ({
+        notificationId: notification.id,
+        channel: channel as DeliveryChannel,
+        status: DeliveryStatus.PENDING,
+      }));
+
+      await prisma.notificationDelivery.createMany({
+        data: deliveryData,
+      });
+
+      // 5. Dispatch to Channels
+      const dispatchPromises = [];
+
+      // IN_APP is implicitly "delivered" when saved to DB
+      dispatchPromises.push(
+        this.updateDeliveryStatus(notification.id, "IN_APP", "SENT"),
+      );
+
+      // Socket.IO Delivery
+      if (enabledChannels.has("SOCKET")) {
+        dispatchPromises.push(this.dispatchSocket(data.userId, notification));
+      }
+
+      // FCM Delivery
+      if (enabledChannels.has("FCM")) {
+        dispatchPromises.push(this.dispatchFCM(data.userId, notification));
+      }
+
+      // SMS Delivery
+      if (enabledChannels.has("SMS")) {
+        dispatchPromises.push(this.dispatchSMS(data.userId, notification));
+      }
+
+      await Promise.allSettled(dispatchPromises);
     } catch (error) {
-      logger.error("Failed to create notification:", error);
+      logger.error("Failed to dispatch notification:", error);
+    }
+  }
+
+  private isWithinQuietHours(user: any): boolean {
+    if (!user.quietHoursStart || !user.quietHoursEnd) return false;
+
+    try {
+      const now = new Date();
+      // Simple time comparison - can be improved with luxon for timezone support
+      const currentH = now.getHours();
+      const currentM = now.getMinutes();
+      const currentTime = currentH * 60 + currentM;
+
+      const [startH, startM] = user.quietHoursStart.split(":").map(Number);
+      const [endH, endM] = user.quietHoursEnd.split(":").map(Number);
+
+      const startTime = startH * 60 + startM;
+      const endTime = endH * 60 + endM;
+
+      if (startTime > endTime) {
+        // Overnights (e.g., 22:00 to 06:00)
+        return currentTime >= startTime || currentTime <= endTime;
+      } else {
+        // Same day (e.g., 13:00 to 14:00)
+        return currentTime >= startTime && currentTime <= endTime;
+      }
+    } catch (err) {
+      logger.error("Quiet hours evaluation failed:", err);
+      return false;
+    }
+  }
+
+  private async dispatchSocket(userId: string, notification: any) {
+    try {
+      if (socketInstance) {
+        socketInstance.to(`user_${userId}`).emit("notification:new", notification);
+        await this.updateDeliveryStatus(notification.id, "SOCKET", "SENT");
+      } else {
+        await this.updateDeliveryStatus(
+          notification.id,
+          "SOCKET",
+          "FAILED",
+          "Socket instance not available",
+        );
+      }
+    } catch (error: any) {
+      await this.updateDeliveryStatus(
+        notification.id,
+        "SOCKET",
+        "FAILED",
+        error.message,
+      );
+    }
+  }
+
+  private async dispatchFCM(userId: string, notification: any) {
+    try {
+      const response = await notificationService.sendToUser(
+        userId,
+        notification.title,
+        notification.message,
+        {
+          id: notification.id,
+          type: notification.type,
+          ...notification.metadata,
+        },
+      );
+
+      if (response && response.successCount > 0) {
+        await this.updateDeliveryStatus(notification.id, "FCM", "SENT");
+      } else {
+        await this.updateDeliveryStatus(
+          notification.id,
+          "FCM",
+          "FAILED",
+          "FCM failed to deliver to any device",
+        );
+      }
+    } catch (error: any) {
+      await this.updateDeliveryStatus(
+        notification.id,
+        "FCM",
+        "FAILED",
+        error.message,
+      );
+    }
+  }
+
+  private async dispatchSMS(userId: string, notification: any) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { phone: true },
+      });
+
+      if (!user?.phone) {
+        await this.updateDeliveryStatus(
+          notification.id,
+          "SMS",
+          "FAILED",
+          "No phone number on file",
+        );
+        return;
+      }
+
+      if (!smsService.isConfigured()) {
+        await this.updateDeliveryStatus(
+          notification.id,
+          "SMS",
+          "FAILED",
+          "SMS gateway not configured",
+        );
+        return;
+      }
+
+      const result = await smsService.sendSms(user.phone, notification.message);
+      if (result.success) {
+        await this.updateDeliveryStatus(notification.id, "SMS", "SENT");
+      } else {
+        await this.updateDeliveryStatus(
+          notification.id,
+          "SMS",
+          "FAILED",
+          result.error,
+        );
+      }
+    } catch (error: any) {
+      await this.updateDeliveryStatus(notification.id, "SMS", "FAILED", error.message);
+    }
+  }
+
+  private async updateDeliveryStatus(
+    notificationId: string,
+    channel: string,
+    status: DeliveryStatus,
+    reason?: string,
+  ) {
+    try {
+      await prisma.notificationDelivery.updateMany({
+        where: {
+          notificationId,
+          channel: channel as DeliveryChannel,
+        },
+        data: {
+          status,
+          deliveredAt: status === "SENT" ? new Date() : null,
+          failedAt: status === "FAILED" ? new Date() : null,
+          failureReason: reason || null,
+        },
+      });
+    } catch (error) {
+      logger.error(`Failed to update delivery status for ${channel}:`, error);
     }
   }
 }

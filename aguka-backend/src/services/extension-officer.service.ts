@@ -1,4 +1,8 @@
 import { prisma } from "../prisma.js";
+import {
+  ForbiddenError,
+  NotFoundError,
+} from "../middleware/error.middleware.js";
 
 export class ExtensionOfficerService {
   /**
@@ -56,8 +60,10 @@ export class ExtensionOfficerService {
     }
 
     // Extract farmer profiles with users
-    const validFarmers = assignments.map(a => a.farmer).filter(f => f.farmerProfile !== null);
-    
+    const validFarmers = assignments
+      .map((a) => a.farmer)
+      .filter((f) => f.farmerProfile !== null);
+
     // Get cooperative info (assuming all farmers belong to same cooperative)
     const cooperative =
       validFarmers.length > 0 && validFarmers[0].farmerProfile?.cooperativeId
@@ -67,11 +73,11 @@ export class ExtensionOfficerService {
         : null;
 
     // Calculate performance metrics
-    const soilReadings = validFarmers.flatMap((f) => 
-      f.farmerProfile!.soilReadings.map(r => ({ ...r, farmer: f }))
+    const soilReadings = validFarmers.flatMap((f) =>
+      f.farmerProfile!.soilReadings.map((r) => ({ ...r, farmer: f })),
     );
-    const activities = validFarmers.flatMap((f) => 
-      f.farmerProfile!.farmActivities.map(a => ({ ...a, farmer: f }))
+    const activities = validFarmers.flatMap((f) =>
+      f.farmerProfile!.farmActivities.map((a) => ({ ...a, farmer: f })),
     );
 
     const recentSoilReadings = soilReadings
@@ -104,18 +110,18 @@ export class ExtensionOfficerService {
 
     // Calculate averages
     const validMoistureReadings = soilReadings.filter(
-      (r) => r.moisturePercent !== null
+      (r) => r.moisturePercent !== null,
     );
     const avgSoilMoisture =
       validMoistureReadings.length > 0
         ? validMoistureReadings.reduce(
             (sum, r) => sum + Number(r.moisturePercent),
-            0
+            0,
           ) / validMoistureReadings.length
         : 0;
 
-    const totalIrrigationEvents = activities.filter(
-      (a) => a.activityType.toLowerCase().includes("irrigation")
+    const totalIrrigationEvents = activities.filter((a) =>
+      a.activityType.toLowerCase().includes("irrigation"),
     ).length;
 
     const avgActivitiesPerFarmer =
@@ -145,19 +151,23 @@ export class ExtensionOfficerService {
         cooperativeName: p.cooperative?.name,
         avgSoilMoisture: Number(avgMoisture.toFixed(2)),
         totalActivities: farmerActivities.length,
-        totalIrrigation: farmerActivities.filter(
-          (a) => a.activityType.toLowerCase().includes("irrigation")
+        totalIrrigation: farmerActivities.filter((a) =>
+          a.activityType.toLowerCase().includes("irrigation"),
         ).length,
         lastActivityDate:
           farmerActivities.length > 0
             ? Math.max(
-                ...farmerActivities.map((a) => new Date(a.activityDate).getTime())
+                ...farmerActivities.map((a) =>
+                  new Date(a.activityDate).getTime(),
+                ),
               )
             : null,
         lastSoilReadingDate:
           farmerSoilReadings.length > 0
             ? Math.max(
-                ...farmerSoilReadings.map((r) => new Date(r.readingAt).getTime())
+                ...farmerSoilReadings.map((r) =>
+                  new Date(r.readingAt).getTime(),
+                ),
               )
             : null,
       };
@@ -168,7 +178,7 @@ export class ExtensionOfficerService {
       activeFarmers: validFarmers.filter(
         (f) =>
           f.farmerProfile!.soilReadings.length > 0 ||
-          f.farmerProfile!.farmActivities.length > 0
+          f.farmerProfile!.farmActivities.length > 0,
       ).length,
       cooperativeInfo: cooperative
         ? {
@@ -194,13 +204,26 @@ export class ExtensionOfficerService {
    */
   async getFarmerAnalysis(
     extensionOfficerId: string,
-    farmerId: string
+    farmerIdOrProfileId: string,
   ) {
-    // Verify the officer is assigned to this farmer
+    // 1. Resolve farmer profile first (to handle both User ID and Profile ID)
+    const profile = await prisma.farmerProfile.findFirst({
+      where: {
+        OR: [{ id: farmerIdOrProfileId }, { userId: farmerIdOrProfileId }],
+      },
+    });
+
+    if (!profile) {
+      throw new NotFoundError("Farmer profile");
+    }
+
+    const farmerUserId = profile.userId;
+
+    // 2. Verify the officer is assigned to this farmer user
     const assignment = await prisma.extensionOfficerAssignment.findFirst({
       where: {
         extensionOfficerId,
-        farmerId,
+        farmerId: farmerUserId,
       },
       include: {
         farmer: {
@@ -210,9 +233,11 @@ export class ExtensionOfficerService {
                 cooperative: true,
                 soilReadings: {
                   orderBy: { readingAt: "desc" },
+                  take: 100, // Limit to recent readings
                 },
                 farmActivities: {
                   orderBy: { activityDate: "desc" },
+                  take: 50,
                 },
                 farmerCrops: {
                   include: {
@@ -228,7 +253,7 @@ export class ExtensionOfficerService {
     });
 
     if (!assignment || !assignment.farmer.farmerProfile) {
-      throw new Error("Farmer not assigned to this extension officer or profile missing");
+      throw new ForbiddenError("Farmer not assigned to this extension officer");
     }
 
     const farmerProfile = assignment.farmer.farmerProfile;
@@ -250,28 +275,34 @@ export class ExtensionOfficerService {
       .reverse(); // Oldest first for charting
 
     // Activity frequency by type
-    const activityByType = activities.reduce((acc, activity) => {
-      const type = activity.activityType || "other";
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const activityByType = activities.reduce(
+      (acc, activity) => {
+        const type = activity.activityType || "other";
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Monthly activity trend (last 6 months)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     const recentActivities = activities.filter(
-      (a) => new Date(a.activityDate) >= sixMonthsAgo
+      (a) => new Date(a.activityDate) >= sixMonthsAgo,
     );
 
-    const monthlyActivity = recentActivities.reduce((acc, activity) => {
-      const date = new Date(activity.activityDate);
-      const monthKey = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}`;
-      acc[monthKey] = (acc[monthKey] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const monthlyActivity = recentActivities.reduce(
+      (acc, activity) => {
+        const date = new Date(activity.activityDate);
+        const monthKey = `${date.getFullYear()}-${String(
+          date.getMonth() + 1,
+        ).padStart(2, "0")}`;
+        acc[monthKey] = (acc[monthKey] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Crop information
     const cropInfo = crops.map((crop) => ({
@@ -287,27 +318,21 @@ export class ExtensionOfficerService {
       estimatedYieldKg: crop.estimatedYieldKg
         ? Number(crop.estimatedYieldKg)
         : null,
-      actualYieldKg: crop.actualYieldKg
-        ? Number(crop.actualYieldKg)
-        : null,
+      actualYieldKg: crop.actualYieldKg ? Number(crop.actualYieldKg) : null,
     }));
 
     // Irrigation zone status
     const zoneStatus = irrigationZones.map((zone) => ({
       id: zone.id,
       name: zone.name,
-      sizeHectares: zone.sizeHectares
-        ? Number(zone.sizeHectares)
-        : null,
+      sizeHectares: zone.sizeHectares ? Number(zone.sizeHectares) : null,
       cropType: zone.cropType,
       soilType: zone.soilType,
       isActive: zone.isActive,
       status: zone.status,
       lastIrrigated: zone.lastIrrigated,
       nextScheduled: zone.nextScheduled,
-      moistureLevel: zone.moistureLevel
-        ? Number(zone.moistureLevel)
-        : null,
+      moistureLevel: zone.moistureLevel ? Number(zone.moistureLevel) : null,
     }));
 
     return {
@@ -330,8 +355,7 @@ export class ExtensionOfficerService {
           ? {
               id: farmerProfile.cooperative.id,
               name: farmerProfile.cooperative.name,
-              registrationNumber:
-                farmerProfile.cooperative.registrationNumber,
+              registrationNumber: farmerProfile.cooperative.registrationNumber,
             }
           : null,
       },
@@ -341,9 +365,7 @@ export class ExtensionOfficerService {
           soilReadings.length > 0
             ? {
                 id: soilReadings[0].id,
-                moisturePercent: Number(
-                  soilReadings[0].moisturePercent || 0
-                ),
+                moisturePercent: Number(soilReadings[0].moisturePercent || 0),
                 temperatureCelsius: soilReadings[0].temperatureCelsius
                   ? Number(soilReadings[0].temperatureCelsius)
                   : null,
@@ -366,30 +388,28 @@ export class ExtensionOfficerService {
         averageMoisture:
           soilReadings.length > 0
             ? Number(
-                (soilReadings.reduce(
-                  (sum, r) => sum + Number(r.moisturePercent || 0),
-                  0
-                ) /
-                  soilReadings.filter((r) => r.moisturePercent !== null)
-                    .length)
-                  .toFixed(2)
+                (
+                  soilReadings.reduce(
+                    (sum, r) => sum + Number(r.moisturePercent || 0),
+                    0,
+                  ) /
+                  soilReadings.filter((r) => r.moisturePercent !== null).length
+                ).toFixed(2),
               )
             : 0,
       },
       activityAnalysis: {
         totalActivities: activities.length,
-        recentActivities: activities
-          .slice(0, 10)
-          .map((a) => ({
-            id: a.id,
-            activityType: a.activityType,
-            category: a.category,
-            description: a.notes,
-            quantity: a.quantity ? Number(a.quantity) : null,
-            unit: a.unit,
-            costRwf: a.costRwf ? Number(a.costRwf) : null,
-            activityDate: a.activityDate,
-          })),
+        recentActivities: activities.slice(0, 10).map((a) => ({
+          id: a.id,
+          activityType: a.activityType,
+          category: a.category,
+          description: a.notes,
+          quantity: a.quantity ? Number(a.quantity) : null,
+          unit: a.unit,
+          costRwf: a.costRwf ? Number(a.costRwf) : null,
+          activityDate: a.activityDate,
+        })),
         activityByType,
         monthlyActivity: Object.keys(monthlyActivity).map((month) => ({
           month,
@@ -406,7 +426,7 @@ export class ExtensionOfficerService {
         farmerProfile,
         soilReadings,
         activities,
-        crops
+        crops,
       ),
     };
   }
@@ -418,7 +438,7 @@ export class ExtensionOfficerService {
     _farmerProfile: any,
     soilReadings: any[],
     activities: any[],
-    crops: any[]
+    crops: any[],
   ): Array<{
     type: string;
     priority: "low" | "medium" | "high";
@@ -438,7 +458,7 @@ export class ExtensionOfficerService {
       recentReadings.length > 0
         ? recentReadings.reduce(
             (sum, r) => sum + Number(r.moisturePercent || 0),
-            0
+            0,
           ) / recentReadings.length
         : 0;
 
@@ -448,7 +468,7 @@ export class ExtensionOfficerService {
         priority: "high",
         title: "Low Soil Moisture Detected",
         description: `Average soil moisture is ${avgMoisture.toFixed(
-          1
+          1,
         )}%, which is below the optimal range. Consider increasing irrigation frequency.`,
       });
     } else if (avgMoisture > 70) {
@@ -457,7 +477,7 @@ export class ExtensionOfficerService {
         priority: "medium",
         title: "High Soil Moisture Detected",
         description: `Average soil moisture is ${avgMoisture.toFixed(
-          1
+          1,
         )}%, which is above the optimal range. Ensure proper drainage to prevent waterlogging.`,
       });
     }
@@ -469,7 +489,8 @@ export class ExtensionOfficerService {
       activities.some(
         (a) =>
           a.activityType === "planting" &&
-          new Date(a.activityDate).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000
+          new Date(a.activityDate).getTime() >
+            Date.now() - 30 * 24 * 60 * 60 * 1000,
       );
 
     if (!hasRecentPlanting && crops.length > 0) {
@@ -478,7 +499,7 @@ export class ExtensionOfficerService {
         .sort(
           (a, b) =>
             new Date(b.activityDate).getTime() -
-            new Date(a.activityDate).getTime()
+            new Date(a.activityDate).getTime(),
         )[0];
 
       if (
@@ -490,7 +511,8 @@ export class ExtensionOfficerService {
           type: "planting",
           priority: "medium",
           title: "Consider Planting Season Preparation",
-          description: "No recent planting activity detected. Review planting schedule and prepare for next season.",
+          description:
+            "No recent planting activity detected. Review planting schedule and prepare for next season.",
         });
       }
     }
@@ -512,7 +534,7 @@ export class ExtensionOfficerService {
             priority: "medium",
             title: "Check Maize Crop Readiness",
             description: `Maize planted ${Math.floor(
-              daysPlanted
+              daysPlanted,
             )} days ago may be approaching harvest time. Monitor for maturity signs.`,
           });
         }
@@ -525,7 +547,8 @@ export class ExtensionOfficerService {
         type: "general",
         priority: "low",
         title: "Regular Monitoring Recommended",
-        description: "All metrics appear within normal ranges. Continue regular monitoring and scheduled activities.",
+        description:
+          "All metrics appear within normal ranges. Continue regular monitoring and scheduled activities.",
       });
     }
 
@@ -542,7 +565,7 @@ export class ExtensionOfficerService {
       startDate?: Date;
       endDate?: Date;
       limit?: number;
-    } = {}
+    } = {},
   ) {
     // Verify the user is an extension officer
     const officerProfile = await prisma.extensionOfficerProfile.findUnique({
@@ -563,24 +586,26 @@ export class ExtensionOfficerService {
               include: {
                 cooperative: true,
                 soilReadings: {
-                  where: options.startDate || options.endDate
-                    ? {
-                        readingAt: {
-                          gte: options.startDate,
-                          lte: options.endDate,
-                        },
-                      }
-                    : undefined,
+                  where:
+                    options.startDate || options.endDate
+                      ? {
+                          readingAt: {
+                            gte: options.startDate,
+                            lte: options.endDate,
+                          },
+                        }
+                      : undefined,
                 },
                 farmActivities: {
-                  where: options.startDate || options.endDate
-                    ? {
-                        activityDate: {
-                          gte: options.startDate,
-                          lte: options.endDate,
-                        },
-                      }
-                    : undefined,
+                  where:
+                    options.startDate || options.endDate
+                      ? {
+                          activityDate: {
+                            gte: options.startDate,
+                            lte: options.endDate,
+                          },
+                        }
+                      : undefined,
                 },
               },
             },
@@ -614,23 +639,21 @@ export class ExtensionOfficerService {
         // Calculate soil moisture score (0-25 points)
         const soilReadings = farmerProfile.soilReadings || [];
         const validMoistureReadings = soilReadings.filter(
-          (r) => r.moisturePercent !== null
+          (r) => r.moisturePercent !== null,
         );
         let soilMoistureScore = 0;
         if (validMoistureReadings.length > 0) {
           const avgMoisture =
             validMoistureReadings.reduce(
               (sum, r) => sum + Number(r.moisturePercent),
-              0
+              0,
             ) / validMoistureReadings.length;
           // Optimal moisture range: 40-60%
           if (avgMoisture >= 40 && avgMoisture <= 60) {
             soilMoistureScore = 25; // Perfect score
           } else if (avgMoisture >= 30 && avgMoisture <= 70) {
             // Linear decrease from 25 to 0 as we move away from optimal range
-            soilMoistureScore =
-              25 -
-              Math.abs(avgMoisture - 50) * (25 / 20); // 20 points deviation max
+            soilMoistureScore = 25 - Math.abs(avgMoisture - 50) * (25 / 20); // 20 points deviation max
           }
           // Ensure score doesn't go below 0
           soilMoistureScore = Math.max(0, soilMoistureScore);
@@ -642,7 +665,7 @@ export class ExtensionOfficerService {
 
         // Calculate irrigation score (0-25 points)
         const irrigationActivities = activities.filter((a) =>
-          a.activityType.toLowerCase().includes("irrigation")
+          a.activityType.toLowerCase().includes("irrigation"),
         );
         let irrigationScore = 0;
         if (irrigationActivities.length > 0) {
@@ -660,7 +683,7 @@ export class ExtensionOfficerService {
 
           // Bonus points for expected yield data
           const cropsWithYieldEstimate = crops.filter(
-            (c: any) => c.estimatedYieldKg !== null
+            (c: any) => c.estimatedYieldKg !== null,
           );
           if (cropsWithYieldEstimate.length > 0) {
             cropScore += Math.min(10, cropsWithYieldEstimate.length * 2); // 2 points per crop with yield estimate, max 10
@@ -678,15 +701,16 @@ export class ExtensionOfficerService {
           district: farmerProfile.district,
           cooperativeId: farmerProfile.cooperativeId,
           cooperativeName:
-            farmerProfile.cooperative?.name ||
-            "Not assigned to cooperative",
+            farmerProfile.cooperative?.name || "Not assigned to cooperative",
           soilMoistureAvg:
             validMoistureReadings.length > 0
               ? Number(
-                  (validMoistureReadings.reduce(
-                    (sum, r) => sum + Number(r.moisturePercent),
-                    0
-                  ) / validMoistureReadings.length).toFixed(2)
+                  (
+                    validMoistureReadings.reduce(
+                      (sum, r) => sum + Number(r.moisturePercent),
+                      0,
+                    ) / validMoistureReadings.length
+                  ).toFixed(2),
                 )
               : null,
           activitiesCount: activities.length,
@@ -694,10 +718,12 @@ export class ExtensionOfficerService {
           cropsCount: crops.length,
           overallScore: Number(overallScore.toFixed(2)),
         };
-      })
+      }),
     );
 
-    const validScores = farmerScores.filter(f => f !== null) as NonNullable<typeof farmerScores[0]>[];
+    const validScores = farmerScores.filter((f) => f !== null) as NonNullable<
+      (typeof farmerScores)[0]
+    >[];
 
     // Sort by overall score descending
     validScores.sort((a, b) => b.overallScore - a.overallScore);
@@ -712,8 +738,7 @@ export class ExtensionOfficerService {
     const totalFarmers = validScores.length;
     const avgScore =
       totalFarmers > 0
-        ? validScores.reduce((sum, f) => sum + f.overallScore, 0) /
-          totalFarmers
+        ? validScores.reduce((sum, f) => sum + f.overallScore, 0) / totalFarmers
         : 0;
     const topPerformer = totalFarmers > 0 ? validScores[0] : null;
 
@@ -769,7 +794,7 @@ export class ExtensionOfficerService {
       message: string;
       recommendation?: string;
       severity?: "info" | "warning" | "critical";
-    }
+    },
   ) {
     // Get all assigned farmer profiles
     const assignments = await prisma.extensionOfficerAssignment.findMany({
@@ -786,34 +811,41 @@ export class ExtensionOfficerService {
       .filter(Boolean) as string[];
 
     if (data.farmerIds && data.farmerIds.length > 0) {
-       // Filter to only the requested ones, ensuring they are assigned
-       // Allow matching by either FarmerProfile ID or User ID
-       targetProfileIds = assignments
-         .filter(a => data.farmerIds!.includes(a.farmerId) || (a.farmer.farmerProfile && data.farmerIds!.includes(a.farmer.farmerProfile.id)))
-         .map(a => a.farmer.farmerProfile?.id)
-         .filter(Boolean) as string[];
-         
-       if (targetProfileIds.length === 0) {
-         throw new Error("None of the specified farmers are assigned to this officer");
-       }
+      // Filter to only the requested ones, ensuring they are assigned
+      // Allow matching by either FarmerProfile ID or User ID
+      targetProfileIds = assignments
+        .filter(
+          (a) =>
+            data.farmerIds!.includes(a.farmerId) ||
+            (a.farmer.farmerProfile &&
+              data.farmerIds!.includes(a.farmer.farmerProfile.id)),
+        )
+        .map((a) => a.farmer.farmerProfile?.id)
+        .filter(Boolean) as string[];
+
+      if (targetProfileIds.length === 0) {
+        throw new Error(
+          "None of the specified farmers are assigned to this officer",
+        );
+      }
     }
 
     if (targetProfileIds.length === 0) {
       throw new Error("No assigned farmers found to send advisory to");
     }
 
-    const alerts = targetProfileIds.map(profileId => ({
-        farmerId: profileId,
-        alertType: "advisory" as const,
-        severity: data.severity || "info",
-        title: data.title,
-        message: data.message,
-        recommendation: data.recommendation,
-        createdById: officerId,
+    const alerts = targetProfileIds.map((profileId) => ({
+      farmerId: profileId,
+      alertType: "advisory" as const,
+      severity: data.severity || "info",
+      title: data.title,
+      message: data.message,
+      recommendation: data.recommendation,
+      createdById: officerId,
     }));
 
     await prisma.alert.createMany({ data: alerts });
-    
+
     return { success: true, count: alerts.length };
   }
 
@@ -856,6 +888,27 @@ export class ExtensionOfficerService {
         },
       },
       orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Get all field visit notes for an extension officer
+   */
+  async getOfficerFieldWork(extensionOfficerId: string) {
+    return prisma.fieldVisitNote.findMany({
+      where: { officerId: extensionOfficerId },
+      include: {
+        farmer: {
+          select: {
+            id: true,
+            farmName: true,
+            fullName: true,
+            district: true,
+            sector: true,
+          },
+        },
+      },
+      orderBy: { visitDate: "desc" },
     });
   }
 }

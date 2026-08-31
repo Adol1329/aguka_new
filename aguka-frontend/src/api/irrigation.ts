@@ -1,4 +1,4 @@
-import { apiClient, ApiResponse } from './client';
+import { apiClient, ApiResponse } from "./client";
 
 export interface IrrigationSchedule {
   id: string;
@@ -39,36 +39,36 @@ export interface IrrigationLog {
 export interface IrrigationStatus {
   isActive: boolean;
   activeZoneId: string | null;
-  zones: Array<{ id: string; name: string; status: string; moistureLevel?: number; temperature?: number }>;
+  zones: Array<{
+    id: string;
+    name: string;
+    status: string;
+    moistureLevel?: number;
+    temperature?: number;
+  }>;
   waterUsedToday: number;
   savedWater: number;
 }
 
 export const irrigationApi = {
-  getSchedules: () =>
-    apiClient.get<IrrigationSchedule[]>('/irrigation/schedules'),
+  getSchedules: () => apiClient.get<IrrigationSchedule[]>("/irrigation/schedules"),
 
-  getLogs: () =>
-    apiClient.get<IrrigationLog[]>('/irrigation/logs'),
+  getLogs: () => apiClient.get<IrrigationLog[]>("/irrigation/logs"),
 
-  getStatus: () =>
-    apiClient.get<IrrigationStatus>('/irrigation/status'),
+  getStatus: () => apiClient.get<IrrigationStatus>("/irrigation/status"),
 
-  control: (zoneId: string, action: 'start' | 'stop') =>
-    apiClient.post<ApiResponse>('/irrigation/control', { zoneId, action }),
+  control: (zoneId: string, action: "start" | "stop") =>
+    apiClient.post<ApiResponse>("/irrigation/control", { zoneId, action }),
 
   createSchedule: (data: Partial<IrrigationSchedule>) =>
-    apiClient.post<IrrigationSchedule>('/irrigation/schedules', data),
+    apiClient.post<IrrigationSchedule>("/irrigation/schedules", data),
 
   updateSchedule: (id: string, data: Partial<IrrigationSchedule>) =>
-    apiClient.put<IrrigationSchedule>(`/irrigation/schedules/${id}`, data),
+    apiClient.patch<IrrigationSchedule>(`/irrigation/schedules/${id}`, data),
 
-  deleteSchedule: (id: string) =>
-    apiClient.delete<ApiResponse>(`/irrigation/schedules/${id}`),
+  deleteSchedule: (id: string) => apiClient.delete<ApiResponse>(`/irrigation/schedules/${id}`),
 
-  trigger: (zoneId: string) =>
-    apiClient.post<ApiResponse>('/irrigation/trigger', { zoneId }),
+  trigger: (zoneId: string) => apiClient.post<ApiResponse>("/irrigation/trigger", { zoneId }),
 
-  stop: (zoneId: string) =>
-    apiClient.post<ApiResponse>('/irrigation/stop', { zoneId }),
+  stop: (zoneId: string) => apiClient.post<ApiResponse>("/irrigation/stop", { zoneId }),
 };

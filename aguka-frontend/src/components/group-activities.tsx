@@ -1,21 +1,53 @@
 import { PageHeader } from "@/components/dashboard-ui";
 import { Card } from "@/components/ui/card";
-import { useCooperativeActivities, useCreateCooperativeActivity } from "@/hooks/use-data";
+import {
+  useCooperativeActivities,
+  useCreateCooperativeActivity,
+  useSendEventReminder,
+} from "@/hooks/use-data";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Users, Loader2, MapPin, Clock } from "lucide-react";
+import { Calendar, Plus, Users, Loader2, MapPin, Clock, Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useUpdateCooperativeActivity, useDeleteCooperativeActivity } from "@/hooks/use-data";
+import { Pencil, Trash2 } from "lucide-react";
 
 export function GroupActivitiesComponent() {
   const { user } = useAuth();
   const coopId = user?.cooperativeId;
   const { data: activities, isLoading } = useCooperativeActivities(coopId || "");
   const createActivity = useCreateCooperativeActivity();
+  const updateActivity = useUpdateCooperativeActivity();
+  const deleteActivity = useDeleteCooperativeActivity();
+  const sendReminder = useSendEventReminder();
+
+  // ALL state declared before any early return (React Rules of Hooks)
+  const [remindingId, setRemindingId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("meeting");
+  const [date, setDate] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
+  const [editingActivity, setEditingActivity] = useState<any>(null);
 
   if (!coopId) {
     return (
@@ -29,13 +61,6 @@ export function GroupActivitiesComponent() {
     );
   }
 
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("meeting");
-  const [date, setDate] = useState("");
-  const [location, setLocation] = useState("");
-  const [description, setDescription] = useState("");
-
   const handleSubmit = async () => {
     if (!title || !date) {
       toast.error("Please provide title and date");
@@ -43,21 +68,45 @@ export function GroupActivitiesComponent() {
     }
 
     try {
-      await createActivity.mutateAsync({
-        coopId,
-        data: {
-          title,
-          activityType: type,
-          scheduledAt: new Date(date).toISOString(),
-          location,
-          description,
-        },
-      });
-      toast.success("Event scheduled successfully");
+      if (editingActivity) {
+        await updateActivity.mutateAsync({
+          coopId,
+          activityId: editingActivity.id,
+          data: { title, activityType: type, scheduledAt: new Date(date).toISOString(), location, description },
+        });
+        toast.success("Event updated");
+        setEditingActivity(null);
+      } else {
+        await createActivity.mutateAsync({
+          coopId,
+          data: { title, activityType: type, scheduledAt: new Date(date).toISOString(), location, description },
+        });
+        toast.success("Event scheduled successfully");
+      }
       setOpen(false);
       resetForm();
     } catch (error) {
-      toast.error("Failed to schedule event");
+      toast.error(editingActivity ? "Failed to update event" : "Failed to schedule event");
+    }
+  };
+
+  const handleEdit = (e: any) => {
+    setEditingActivity(e);
+    setTitle(e.title);
+    setType(e.activityType);
+    setDate(e.scheduledAt ? new Date(e.scheduledAt).toISOString().slice(0, 16) : "");
+    setLocation(e.location || "");
+    setDescription(e.description || "");
+    setOpen(true);
+  };
+
+  const handleDelete = async (e: any) => {
+    if (!confirm(`Delete "${e.title}"? This cannot be undone.`)) return;
+    try {
+      await deleteActivity.mutateAsync({ coopId, activityId: e.id });
+      toast.success("Event deleted");
+    } catch {
+      toast.error("Failed to delete event");
     }
   };
 
@@ -67,6 +116,7 @@ export function GroupActivitiesComponent() {
     setDate("");
     setLocation("");
     setDescription("");
+    setEditingActivity(null);
   };
 
   if (isLoading) {
@@ -92,12 +142,16 @@ export function GroupActivitiesComponent() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Schedule New Activity</DialogTitle>
+                <DialogTitle>{editingActivity ? "Edit Activity" : "Schedule New Activity"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Activity Title</label>
-                  <Input placeholder="e.g. Monthly General Assembly" value={title} onChange={e => setTitle(e.target.value)} />
+                  <Input
+                    placeholder="e.g. Monthly General Assembly"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -117,23 +171,37 @@ export function GroupActivitiesComponent() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Date & Time</label>
-                    <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
+                    <Input
+                      type="datetime-local"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Location</label>
-                  <Input placeholder="e.g. Sector Office Hall" value={location} onChange={e => setLocation(e.target.value)} />
+                  <Input
+                    placeholder="e.g. Sector Office Hall"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Description</label>
-                  <Textarea placeholder="Agenda and details..." value={description} onChange={e => setDescription(e.target.value)} />
+                  <Textarea
+                    placeholder="Agenda and details..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button onClick={handleSubmit} disabled={createActivity.isPending}>
-                  {createActivity.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Event
+                <Button variant="outline" onClick={() => { setOpen(false); resetForm(); }}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSubmit} disabled={createActivity.isPending || updateActivity.isPending}>
+                  {(createActivity.isPending || updateActivity.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingActivity ? "Save Changes" : "Save Event"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -142,11 +210,14 @@ export function GroupActivitiesComponent() {
       />
       <div className="grid gap-6 md:grid-cols-2">
         {activities?.map((e: any) => (
-          <Card key={e.id} className="overflow-hidden hover:shadow-md transition-shadow group border-border/50">
+          <Card
+            key={e.id}
+            className="overflow-hidden hover:shadow-md transition-shadow group border-border/50"
+          >
             <div className="flex items-stretch">
               <div className="w-16 bg-primary/5 flex flex-col items-center justify-center border-r border-border/50 p-2">
                 <div className="text-[10px] uppercase font-bold text-muted-foreground">
-                  {new Date(e.scheduledAt).toLocaleString('default', { month: 'short' })}
+                  {new Date(e.scheduledAt).toLocaleString("default", { month: "short" })}
                 </div>
                 <div className="text-2xl font-black text-primary">
                   {new Date(e.scheduledAt).getDate()}
@@ -154,7 +225,10 @@ export function GroupActivitiesComponent() {
               </div>
               <div className="flex-1 p-5">
                 <div className="flex items-start justify-between mb-2">
-                  <Badge variant="outline" className="capitalize text-[10px] font-bold tracking-wider">
+                  <Badge
+                    variant="outline"
+                    className="capitalize text-[10px] font-bold tracking-wider"
+                  >
                     {e.activityType}
                   </Badge>
                   <div className="flex items-center gap-1 text-[10px] font-bold text-success uppercase">
@@ -165,7 +239,10 @@ export function GroupActivitiesComponent() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {new Date(e.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(e.scheduledAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3" />
@@ -175,6 +252,51 @@ export function GroupActivitiesComponent() {
                     <Users className="h-3 w-3" />
                     {e.expectedParticipants || 0} Members expected
                   </div>
+                </div>
+                <div className="flex items-center gap-1 mt-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    disabled={remindingId === e.id}
+                    onClick={async () => {
+                      setRemindingId(e.id);
+                      try {
+                        await sendReminder.mutateAsync({ coopId, activityId: e.id });
+                        toast.success("Reminder sent to all members");
+                      } catch {
+                        toast.error("Failed to send reminder");
+                      } finally {
+                        setRemindingId(null);
+                      }
+                    }}
+                  >
+                    {remindingId === e.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <Bell className="h-3 w-3 mr-1" />
+                    )}
+                    Remind
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => handleEdit(e)}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(e)}
+                    disabled={deleteActivity.isPending}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete
+                  </Button>
                 </div>
               </div>
             </div>
@@ -204,7 +326,9 @@ function Badge({ children, variant = "default", className = "" }: any) {
     success: "bg-success/10 text-success border-success/20",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full ${variants[variant]} ${className}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full ${variants[variant]} ${className}`}
+    >
       {children}
     </span>
   );

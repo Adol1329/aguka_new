@@ -39,4 +39,13 @@ abstract class AuthRepository {
   });
 
   Future<bool> isAuthenticated();
+
+  Future<Either<Failure, void>> refreshToken();
+
+  Future<Either<Failure, void>> clearLocalSession();
+
+  Future<Either<Failure, void>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
 }

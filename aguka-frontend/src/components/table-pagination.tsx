@@ -1,9 +1,4 @@
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, 
-  ChevronsRight 
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { useI18n } from "@/lib/i18n";
 
@@ -34,9 +29,13 @@ export function TablePagination({
       <div className="text-sm text-muted-foreground">
         {totalItems > 0 ? (
           <>
-            {t("table.pagination.showing")} <span className="font-medium text-foreground">{startItem}</span> {t("table.pagination.to")}{" "}
-            <span className="font-medium text-foreground">{endItem}</span> {t("table.pagination.of")}{" "}
-            <span className="font-medium text-foreground">{totalItems}</span> {t("table.pagination.entries")}
+            {t("table.pagination.showing")}{" "}
+            <span className="font-medium text-foreground">{startItem}</span>{" "}
+            {t("table.pagination.to")}{" "}
+            <span className="font-medium text-foreground">{endItem}</span>{" "}
+            {t("table.pagination.of")}{" "}
+            <span className="font-medium text-foreground">{totalItems}</span>{" "}
+            {t("table.pagination.entries")}
           </>
         ) : (
           t("table.pagination.no_entries")

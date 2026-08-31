@@ -4,7 +4,17 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, ArrowLeft, ArrowRight, ShieldCheck, Key, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Leaf,
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  Key,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { authApi } from "@/api/auth";
 
@@ -29,17 +39,34 @@ function ForgotPasswordResetPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const getPasswordStrength = (pwd: string) => {
-    if (!pwd) return { label: "", color: "bg-slate-200", width: "w-0", textColor: "text-slate-400" };
-    if (pwd.length < 6) return { label: t("auth.password_strength.weak"), color: "bg-red-500", width: "w-1/3", textColor: "text-red-500" };
-    
+    if (!pwd)
+      return { label: "", color: "bg-slate-200", width: "w-0", textColor: "text-slate-400" };
+    if (pwd.length < 6)
+      return {
+        label: t("auth.password_strength.weak"),
+        color: "bg-red-500",
+        width: "w-1/3",
+        textColor: "text-red-500",
+      };
+
     const hasLetters = /[a-zA-Z]/.test(pwd);
     const hasNumbers = /[0-9]/.test(pwd);
     const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
-    
+
     if (pwd.length >= 8 && hasLetters && hasNumbers && hasSpecial) {
-      return { label: t("auth.password_strength.strong"), color: "bg-emerald-500", width: "w-full", textColor: "text-emerald-500" };
+      return {
+        label: t("auth.password_strength.strong"),
+        color: "bg-emerald-500",
+        width: "w-full",
+        textColor: "text-emerald-500",
+      };
     }
-    return { label: t("auth.password_strength.medium"), color: "bg-amber-500", width: "w-2/3", textColor: "text-amber-500" };
+    return {
+      label: t("auth.password_strength.medium"),
+      color: "bg-amber-500",
+      width: "w-2/3",
+      textColor: "text-amber-500",
+    };
   };
 
   const strength = getPasswordStrength(password);
@@ -84,8 +111,10 @@ function ForgotPasswordResetPage() {
             <Leaf className="h-6 w-6 text-emerald-300" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">Aguka</h1>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">{t("app.tagline")}</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-white">AGUKA</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+              {t("app.tagline")}
+            </p>
           </div>
         </div>
 
@@ -121,8 +150,10 @@ function ForgotPasswordResetPage() {
           <div className="flex items-center gap-2 lg:hidden mb-8">
             <Leaf className="h-8 w-8 text-emerald-600" />
             <div>
-              <span className="text-xl font-bold text-slate-900">Aguka</span>
-              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">{t("forgot_password.smart_farming")}</span>
+              <span className="text-xl font-bold text-slate-900">AGUKA</span>
+              <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-600">
+                {t("forgot_password.smart_farming")}
+              </span>
             </div>
           </div>
 
@@ -134,15 +165,15 @@ function ForgotPasswordResetPage() {
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
                 {t("forgot_password.reset.choose_new_password")}
               </h2>
-              <p className="text-sm text-slate-500">
-                {t("forgot_password.reset.subtitle")}
-              </p>
+              <p className="text-sm text-slate-500">{t("forgot_password.reset.subtitle")}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* New Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="font-semibold text-slate-700">{t("forgot_password.password.new")}</Label>
+                <Label htmlFor="password" className="font-semibold text-slate-700">
+                  {t("forgot_password.password.new")}
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -170,7 +201,9 @@ function ForgotPasswordResetPage() {
                       <span className={strength.textColor}>{strength.label}</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div className={`h-full ${strength.color} ${strength.width} transition-all duration-300`} />
+                      <div
+                        className={`h-full ${strength.color} ${strength.width} transition-all duration-300`}
+                      />
                     </div>
                   </div>
                 )}
@@ -178,7 +211,9 @@ function ForgotPasswordResetPage() {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="font-semibold text-slate-700">{t("forgot_password.password.confirm")}</Label>
+                <Label htmlFor="confirmPassword" className="font-semibold text-slate-700">
+                  {t("forgot_password.password.confirm")}
+                </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -194,7 +229,11 @@ function ForgotPasswordResetPage() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
 
@@ -203,11 +242,13 @@ function ForgotPasswordResetPage() {
                   <div className="flex items-center gap-1.5 text-xs font-semibold animate-in fade-in duration-200">
                     {passwordsMatch ? (
                       <span className="text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4 fill-emerald-50 text-emerald-600" /> {t("forgot_password.passwords_match")}
+                        <CheckCircle2 className="h-4 w-4 fill-emerald-50 text-emerald-600" />{" "}
+                        {t("forgot_password.passwords_match")}
                       </span>
                     ) : (
                       <span className="text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-4 w-4" /> {t("forgot_password.error.passwords_mismatch")}
+                        <AlertCircle className="h-4 w-4" />{" "}
+                        {t("forgot_password.error.passwords_mismatch")}
                       </span>
                     )}
                   </div>
@@ -226,7 +267,9 @@ function ForgotPasswordResetPage() {
                 disabled={isLoading || password.length < 8 || !passwordsMatch}
                 className="group relative flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-600/10 hover:bg-emerald-700 hover:shadow-emerald-700/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
               >
-                {isLoading ? t("forgot_password.reset.setting_new_password") : t("forgot_password.reset_password")}
+                {isLoading
+                  ? t("forgot_password.reset.setting_new_password")
+                  : t("forgot_password.reset_password")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </form>

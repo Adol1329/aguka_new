@@ -140,6 +140,10 @@ model User {
   cell     String?
   village  String?
 
+  // Notification preferences
+  quietHoursStart String? // e.g., "22:00"
+  quietHoursEnd   String? // e.g., "06:00"
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -160,10 +164,22 @@ model User {
   payments             Payment[]
   feedback             Feedback[]
   createdAlerts        Alert[]                      @relation("CreatedBy")
+  advisoryTemplates    AdvisoryTemplate[]
+  fieldVisitNotes      FieldVisitNote[]
+  generatedReports     Report[]
+  postLikes            PostLike[]
+  postViews            PostView[]
+  postReports          PostReport[]
+  forumPosts           ForumPost[]                  @relation("UserPosts")
+  forumComments        ForumComment[]               @relation("UserComments")
+  resourceDistributions ResourceDistribution[]       @relation("FarmerResources")
+  managerAssignments   ResourceDistribution[]       @relation("ManagerAssignments")
+  signedCertificates   Certificate[]
 
   @@index([phone])
   @@index([role])
   @@index([isApproved])
+  @@index([deletedAt])
 }
 
 model ExtensionOfficerProfile {
@@ -180,6 +196,8 @@ model ExtensionOfficerProfile {
   deletedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([deletedAt])
 }
 
 model CooperativeProfile {
@@ -188,6 +206,8 @@ model CooperativeProfile {
   cooperativeName    String?
   registrationNumber String?
   cooperativeType    String?
+  district           String?
+  sector             String?
   memberCount        Int?    @default(0)
   certificateUrl     String?
 
@@ -196,6 +216,8 @@ model CooperativeProfile {
   deletedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([deletedAt])
 }
 
 model Device {
@@ -215,6 +237,7 @@ model Device {
 model FarmerProfile {
   id               String          @id @default(uuid())
   userId           String          @unique
+  farmerCode       String?         @unique
   cooperativeId    String?
   fullName         String
   farmName         String?
@@ -261,13 +284,14 @@ model FarmerProfile {
   reports             Report[]
   alerts              Alert[]
   supportTickets      SupportTicket[]
-  forumPosts          ForumPost[]
-  forumComments       ForumComment[]
   farmerFiles         FarmerFiles[]        @relation("FarmerFiles")
   recommendations     Recommendation[]
+  fieldVisitNotes     FieldVisitNote[]
+  certificates        Certificate[]
 
   @@index([userId])
   @@index([cooperativeId])
+  @@index([deletedAt])
 }
 
 model Cooperative {
@@ -291,12 +315,15 @@ model Cooperative {
   marketplaceListings MarketplaceListing[]
   announcements       Announcement[]
   messages            GroupMessage[]
-  bulkOrders          BulkOrder[]
   cooperativeReports  CooperativeReport[]
   members             CooperativeMember[]
+  memberRequests      MemberRequest[]
+  dues                MemberDue[]
+  expenses            CooperativeExpense[]
 
   @@index([district])
   @@index([isActive])
+  @@index([deletedAt])
 }
 
 model CooperativeMember {
@@ -330,7 +357,8 @@ model CooperativeActivity {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 
-  cooperative Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  cooperative Cooperative   @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  attendees   EventAttendee[]
 
   @@index([cooperativeId])
   @@index([status])
@@ -342,39 +370,52 @@ model Resource {
   cooperativeId     String
   name              String
   description       String?
+  category          String? // Seeds, Fertilizer, Tools, etc.
   resourceType      ResourceType
-  quantity          Int?
-  unit              String?
-  availableQuantity Int?
-  condition         String?
-  location          String?
+  quantity          Decimal?     @db.Decimal(10, 2) // Total stock
+  availableQuantity Decimal?     @db.Decimal(10, 2) // Current available stock
+  minStockLevel     Decimal?     @db.Decimal(10, 2)
+  unit              String? // kg, bags, liters, units
+  condition         String? // Good, Fair, Poor (for equipment)
+  location          String? // MUSANZE depot, etc.
   isAvailable       Boolean      @default(true)
+  expiryDate        DateTime? // For inputs
+  lastMaintenance   DateTime? // For equipment
+  nextMaintenance   DateTime? // For equipment
+  status            String       @default("available") // Available, Low Stock, Assigned, etc.
   addedBy           String
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
-  cooperative Cooperative       @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
-  bookings    ResourceBooking[]
+  cooperative   Cooperative            @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  distributions ResourceDistribution[]
 
   @@index([cooperativeId])
   @@index([resourceType])
+  @@index([status])
 }
 
-model ResourceBooking {
-  id         String   @id @default(uuid())
-  resourceId String
-  memberId   String
-  quantity   Int
-  startDate  DateTime
-  endDate    DateTime
-  status     String   @default("pending")
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+model ResourceDistribution {
+  id             String    @id @default(uuid())
+  resourceId     String
+  farmerId       String // The recipient
+  assignedById   String // The Cooperative Manager
+  quantity       Decimal?  @db.Decimal(10, 2)
+  unit           String?
+  location       String?
+  status         String    @default("distributed") // distributed, returned, cancelled
+  notes          String?
+  distributedAt  DateTime  @default(now())
+  returnedAt     DateTime?
+  expectedReturn DateTime?
 
   resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  farmer   User     @relation("FarmerResources", fields: [farmerId], references: [id], onDelete: Cascade)
+  assignedBy User    @relation("ManagerAssignments", fields: [assignedById], references: [id], onDelete: Cascade)
 
   @@index([resourceId])
+  @@index([farmerId])
+  @@index([assignedById])
   @@index([status])
 }
 
@@ -431,24 +472,72 @@ model GroupMessage {
   @@index([createdAt])
 }
 
-model BulkOrder {
-  id               String    @id @default(uuid())
-  cooperativeId    String
-  productName      String
-  supplier         String?
-  quantity         Decimal   @db.Decimal(10, 2)
-  unit             String    @default("kg")
-  unitPrice        Decimal   @db.Decimal(10, 2)
-  totalPrice       Decimal   @db.Decimal(12, 2)
-  status           String    @default("pending")
-  expectedDelivery DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+model MemberRequest {
+  id            String   @id @default(uuid())
+  cooperativeId String
+  userId        String   @unique
+  status        String   @default("pending")
+  requestedAt   DateTime @default(now())
+  reviewedAt    DateTime?
+  reviewedBy    String?
 
   cooperative Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
 
   @@index([cooperativeId])
   @@index([status])
+}
+
+model EventAttendee {
+  id         String   @id @default(uuid())
+  activityId String
+  userId     String
+  status     String   @default("pending")
+  attendedAt DateTime?
+
+  activity CooperativeActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, userId])
+  @@index([activityId])
+}
+
+model MemberDue {
+  id            String   @id @default(uuid())
+  cooperativeId String
+  userId        String
+  amount        Decimal  @db.Decimal(12, 2)
+  period        String
+  status        String   @default("pending")
+  dueDate       DateTime
+  paidAt        DateTime?
+  paidById      String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  cooperative Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+
+  @@index([cooperativeId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model CooperativeExpense {
+  id            String   @id @default(uuid())
+  cooperativeId String
+  category      String
+  amount        Decimal  @db.Decimal(12, 2)
+  description   String
+  receiptUrl    String?
+  recordedBy    String
+  expenseDate   DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  cooperative Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+
+  @@index([cooperativeId])
+  @@index([category])
+  @@index([expenseDate])
 }
 
 model CooperativeReport {
@@ -515,6 +604,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([createdAt])
 }
 
 model SystemHealth {
@@ -546,6 +636,7 @@ model Sensor {
   soilReadings SoilReading[]
 
   @@index([farmerId])
+  @@index([deletedAt])
 }
 
 model SoilReading {
@@ -566,6 +657,7 @@ model SoilReading {
   farmer FarmerProfile @relation(fields: [farmerId], references: [id], onDelete: Cascade)
 
   @@index([farmerId])
+  @@index([sensorId])
   @@index([readingAt])
   @@index([farmerId, readingAt])
 }
@@ -595,7 +687,7 @@ model WeatherReading {
 
 model Crop {
   id                        String    @id @default(uuid())
-  nameEn                    String
+  nameEn                    String    @unique
   nameRw                    String?
   nameFr                    String?
   category                  String
@@ -619,6 +711,7 @@ model Crop {
   priceAlerts  PriceAlert[]
 
   @@index([category])
+  @@index([deletedAt])
 }
 
 model FarmerCrop {
@@ -760,25 +853,42 @@ model FarmActivity {
   @@index([activityDate])
 }
 
+model FarmActivityType {
+  id        String   @id // slug, e.g. "fertilizing"
+  name      String   @unique // display label, matches FarmActivity.activityType verbatim
+  icon      String // lucide-react icon name, e.g. "Beaker"
+  category  String?  @default("Crop")
+  fields    Json     @default("[]") // extra fields to show, e.g. ["quantity","unit","costRwf"]
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
 model Report {
-  id            String    @id @default(uuid())
-  farmerId      String
+  id            String       @id @default(uuid())
+  farmerId      String?
   cooperativeId String?
   reportType    String
   periodStart   DateTime?
   periodEnd     DateTime?
   content       Json
   pdfUrl        String?
-  status        String    @default("draft")
-  createdAt     DateTime  @default(now())
+  status        String       @default("draft")
+  createdAt     DateTime     @default(now())
   approvedBy    String?
   approvedAt    DateTime?
+  generatedById String?
 
-  farmer      FarmerProfile @relation(fields: [farmerId], references: [id], onDelete: Cascade)
-  cooperative Cooperative?  @relation(fields: [cooperativeId], references: [id])
+  farmer      FarmerProfile?  @relation(fields: [farmerId], references: [id], onDelete: SetNull)
+  cooperative Cooperative?    @relation(fields: [cooperativeId], references: [id])
+  generatedBy User?           @relation(fields: [generatedById], references: [id])
 
   @@index([farmerId])
   @@index([reportType])
+  @@index([generatedById])
 }
 
 model FarmerFiles {
@@ -821,16 +931,50 @@ model Notification {
   userId    String
   title     String
   message   String
+  type      String    @default("system") // system, alert, community, etc.
+  priority  String    @default("normal") // low, normal, high, urgent
+  metadata  Json?     // Deep-linking data like farmId, postId
   channel   String    @default("app")
   sentAt    DateTime?
   status    String    @default("pending")
   createdAt DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
 
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
   @@index([userId, status])
+}
+
+enum DeliveryChannel {
+  IN_APP
+  SOCKET
+  FCM
+  SMS
+  EMAIL
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model NotificationDelivery {
+  id             String          @id @default(uuid())
+  notificationId String
+  channel        DeliveryChannel
+  status         DeliveryStatus  @default(PENDING)
+  deliveredAt    DateTime?
+  failedAt       DateTime?
+  failureReason  String?
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId])
 }
 
 model NotificationRule {
@@ -851,32 +995,108 @@ model NotificationRule {
   @@index([type])
 }
 
+enum PostStatus {
+  active
+  hidden
+  reported
+  archived
+}
+
+enum PostAudience {
+  GLOBAL
+  DISTRICT
+  COOPERATIVE
+  ASSIGNED_FARMERS // For extension officers
+}
+
+enum PostType {
+  COMMUNITY_POST
+  COMMUNITY_ADVISORY
+  COMMUNITY_ALERT
+  COMMUNITY_EMERGENCY
+}
+
 model ForumPost {
-  id            String   @id @default(uuid())
-  farmerId      String
-  cooperativeId String?
-  title         String?
-  content       String
-  category      String?
-  imageUrls     String[]
-  likesCount    Int      @default(0)
-  commentsCount Int      @default(0)
-  isPinned      Boolean  @default(false)
-  isAnswered    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String       @id @default(uuid())
+  authorId        String
+  cooperativeId   String? // Keeping for easy filtering
+  title           String?
+  content         String
+  category        String?
+  type            PostType     @default(COMMUNITY_POST)
+  priority        String       @default("normal") // low, normal, high, urgent
+  audienceType    PostAudience @default(GLOBAL)
+  audienceId      String? // district name or cooperative id
+  imageUrls       String[]
+  videoUrls       String[]
+  attachmentUrls  String[]
+  likesCount      Int          @default(0)
+  commentsCount   Int          @default(0)
+  viewsCount      Int          @default(0)
+  isPinned        Boolean      @default(false)
+  isAnswered      Boolean      @default(false)
+  isKnowledgeBase Boolean      @default(false)
+  status          PostStatus   @default(active)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  farmer   FarmerProfile  @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  author   User           @relation("UserPosts", fields: [authorId], references: [id], onDelete: Cascade)
   comments ForumComment[]
+  likes    PostLike[]
+  views    PostView[]
+  reports  PostReport[]
 
-  @@index([farmerId])
+  @@index([authorId])
   @@index([cooperativeId])
+  @@index([status])
+  @@index([type])
+  @@index([audienceType])
+}
+
+model PostReport {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  reason    String
+  createdAt DateTime @default(now())
+
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+}
+
+model PostView {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  viewedAt  DateTime @default(now())
+
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
 }
 
 model ForumComment {
   id               String   @id @default(uuid())
   postId           String
-  farmerId         String
+  authorId         String
   content          String
   parentCommentId  String?
   likesCount       Int      @default(0)
@@ -884,11 +1104,12 @@ model ForumComment {
   createdAt        DateTime @default(now())
 
   post    ForumPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  farmer  FarmerProfile  @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  author  User           @relation("UserComments", fields: [authorId], references: [id], onDelete: Cascade)
   parent  ForumComment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: SetNull)
   replies ForumComment[] @relation("CommentReplies")
 
   @@index([postId])
+  @@index([authorId])
 }
 
 model MarketPrice {
@@ -924,6 +1145,7 @@ model PriceAlert {
   alertType     String    @default("price_above")
   isActive      Boolean   @default(true)
   isTriggered   Boolean   @default(false)
+  smsEnabled    Boolean   @default(false)
   lastTriggered DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -1085,6 +1307,48 @@ model SystemSetting {
   updatedAt   DateTime @updatedAt
 }
 
+model UserMergeLog {
+  id              String   @id @default(cuid())
+  primaryUserId   String   @map("primary_user_id")
+  secondaryUserId String   @map("secondary_user_id")
+  mergedData      Json     @map("merged_data")
+  mergedBy        String   @map("merged_by")
+  mergedAt        DateTime @default(now()) @map("merged_at")
+
+  @@map("user_merge_logs")
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  enabled     Boolean  @default(false)
+  description String?
+  updatedBy   String?  @map("updated_by")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("feature_flags")
+}
+
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("password_histories")
+}
+
+model SecurityPolicy {
+  id         String   @id @default(cuid())
+  policyType String   @unique @map("policy_type")
+  config     Json
+  updatedBy  String?  @map("updated_by")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("security_policies")
+}
+
 model Certificate {
   id            String   @id @default(uuid())
   certNumber    String   @unique
@@ -1095,6 +1359,9 @@ model Certificate {
   status        String   @default("signed")
   signedAt      DateTime @default(now())
   payload       Json
+
+  farmer  FarmerProfile @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  officer User         @relation(fields: [officerId], references: [id], onDelete: Cascade)
 
   @@index([farmerId])
   @@index([officerId])
@@ -1115,7 +1382,7 @@ model Recommendation {
   generatedAt   DateTime @default(now())
   expiresAt     DateTime?
 
-  farmer        FarmerProfile @relation(fields: [farmerId], references: [id])
+  farmer        FarmerProfile @relation(fields: [farmerId], references: [id], onDelete: Cascade)
 
   @@index([farmerId])
   @@index([type])
@@ -1136,4 +1403,106 @@ model RecommendationRule {
 
   @@index([type])
   @@index([enabled])
+}
+
+model AdvisoryTemplate {
+  id             String   @id @default(uuid())
+  officerId      String
+  title          String
+  message        String
+  recommendation String?
+  severity       String   @default("info") // info, warning, critical
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  officer        User     @relation(fields: [officerId], references: [id], onDelete: Cascade)
+
+  @@index([officerId])
+}
+
+model Guide {
+  id              String   @id @default(uuid())
+  title           String
+  crop            String?
+  category        String
+  summary         String
+  content         String
+  readingTime     Int      @default(5)
+  waterRequirement String?
+  growthPeriod    String?
+  optimalTemp     String?
+  soilType        String?
+  icon            String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([crop])
+  @@index([category])
+  @@index([isActive])
+}
+
+model FieldVisitNote {
+  id            String   @id @default(uuid())
+  officerId     String
+  farmerId      String
+  visitDate     DateTime @default(now())
+  notes         String
+  actionItems   String?
+  followUpDate  DateTime?
+  status        String   @default("pending") // pending, completed, cancelled
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  officer       User           @relation(fields: [officerId], references: [id], onDelete: Cascade)
+  farmer        FarmerProfile  @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+
+  @@index([officerId])
+  @@index([farmerId])
+}
+
+model SmsInboundMessage {
+  id           String   @id @default(uuid())
+  providerId   String? // Africa's Talking message "id"
+  linkId       String?
+  fromPhone    String
+  toPhone      String?
+  text         String
+  receivedAt   DateTime?
+  rawPayload   Json
+  createdAt    DateTime @default(now())
+
+  @@index([fromPhone])
+  @@index([createdAt])
+}
+
+model UssdSessionEvent {
+  id              String   @id @default(uuid())
+  sessionId       String
+  phoneNumber     String
+  serviceCode     String?
+  networkCode     String?
+  status          String // e.g. Success, Aborted, Failed, Timeout
+  durationInMillis Int?
+  currencyCode    String?
+  amount          Float?
+  rawPayload      Json
+  createdAt       DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([phoneNumber])
+  @@index([createdAt])
+}
+
+model Season {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  startMonth  Int
+  endMonth    Int
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
 }

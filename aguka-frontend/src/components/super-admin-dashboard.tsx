@@ -2,13 +2,22 @@ import { PageHeader, StatCard } from "@/components/dashboard-ui";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Shield, Activity, Server, Loader2 } from "lucide-react";
-import { useSuperAdminDashboard, useSuperAdminAuditLogs, useSuperAdminSystemHealth } from "@/hooks/use-data";
+import {
+  useSuperAdminDashboard,
+  useSuperAdminAuditLogs,
+  useSuperAdminSystemHealth,
+} from "@/hooks/use-data";
 import { useNavigate } from "@tanstack/react-router";
+import { useI18n } from "@/i18n";
 
 export function SuperAdminDashboardComponent() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { data: dashboard, isLoading: loadingDashboard } = useSuperAdminDashboard();
-  const { data: auditData, isLoading: loadingAudit } = useSuperAdminAuditLogs({ page: 1, limit: 6 });
+  const { data: auditData, isLoading: loadingAudit } = useSuperAdminAuditLogs({
+    page: 1,
+    limit: 6,
+  });
   const { data: health, isLoading: loadingHealth } = useSuperAdminSystemHealth();
 
   const isLoading = loadingDashboard || loadingAudit || loadingHealth;
@@ -26,55 +35,58 @@ export function SuperAdminDashboardComponent() {
   const systemHealth = health;
 
   const roleStats = [
-    { role: "farmer", label: "Farmers", color: "bg-success" },
-    { role: "officer", label: "Officers", color: "bg-info" },
-    { role: "cooperative", label: "Coop Mgrs", color: "bg-primary" },
-    { role: "admin", label: "Admins", color: "bg-warning" },
-    { role: "super_admin", label: "Super Admins", color: "bg-destructive" },
+    { role: "farmer", label: t("role.farmer"), color: "bg-success" },
+    { role: "officer", label: t("role.officer"), color: "bg-info" },
+    { role: "cooperative", label: t("role.cooperative"), color: "bg-primary" },
+    { role: "admin", label: t("role.admin"), color: "bg-warning" },
+    { role: "super_admin", label: t("role.super_admin"), color: "bg-destructive" },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Super Admin Console"
-        subtitle="Full control over Aguka — users, roles, settings and infrastructure."
+        title={t("super_admin.console.title")}
+        subtitle={t("super_admin.console.subtitle")}
         action={
-          <Button className="bg-gradient-hero" onClick={() => navigate({ to: "/super-admin/health" })}>
+          <Button
+            className="bg-gradient-hero"
+            onClick={() => navigate({ to: "/super-admin/health" })}
+          >
             <Activity className="mr-2 h-4 w-4" />
-            System Health
+            {t("super_admin.system_health")}
           </Button>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total users"
+          label={t("super_admin.total_users")}
           value={stats?.totalUsers || 0}
           icon={Users}
           accent="primary"
-          trend={`${stats?.totalFarmers || 0} farmers`}
+          trend={`${stats?.totalFarmers || 0} ${t("common.farmers")}`}
           trendUp
         />
         <StatCard
-          label="Sensors active"
+          label={t("super_admin.sensors_active")}
           value={`${stats?.sensorUptime || 0}%`}
           icon={Activity}
           accent="success"
-          trend={`${stats?.activeSensors || 0}/${stats?.totalSensors || 0} online`}
+          trend={`${stats?.activeSensors || 0}/${stats?.totalSensors || 0} ${t("common.online")}`}
         />
         <StatCard
-          label="System uptime"
+          label={t("super_admin.system_uptime")}
           value={systemHealth?.api.uptime || "N/A"}
           icon={Server}
           accent="info"
           trend={systemHealth?.api.status || "N/A"}
         />
         <StatCard
-          label="Cooperatives"
+          label={t("super_admin.cooperatives")}
           value={stats?.totalCoops || 0}
           icon={Shield}
           accent="warning"
-          trend={`${stats?.totalCrops || 0} crop types`}
+          trend={`${stats?.totalCrops || 0} ${t("common.crop_types")}`}
         />
       </div>
 
@@ -82,10 +94,14 @@ export function SuperAdminDashboardComponent() {
         <Card className="lg:col-span-2 p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-display text-lg font-semibold flex items-center gap-2">
-              Recent audit logs
+              {t("super_admin.recent_audit_logs")}
             </h3>
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/super-admin/audit" })}>
-              View all
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate({ to: "/super-admin/audit" })}
+            >
+              {t("common.viewall")}
             </Button>
           </div>
           <div className="space-y-3">
@@ -116,18 +132,19 @@ export function SuperAdminDashboardComponent() {
               </div>
             ))}
             {logList.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">No audit records found.</div>
+              <div className="text-center py-8 text-muted-foreground">{t("super_admin.no_audit_records")}</div>
             )}
           </div>
         </Card>
 
         <Card className="p-6">
           <h3 className="mb-4 font-display text-lg font-semibold flex items-center gap-2">
-            Role distribution
+            {t("super_admin.role_distribution")}
           </h3>
           <div className="space-y-4">
             {roleStats.map((r) => {
-              const usersByRole = stats?.recentUsers?.filter((u: any) => u.role === r.role).length || 0;
+              const usersByRole =
+                stats?.recentUsers?.filter((u: any) => u.role === r.role).length || 0;
               const totalUsers = stats?.totalUsers || 1;
               const pct = Math.round((usersByRole / totalUsers) * 100);
               return (
@@ -150,14 +167,14 @@ export function SuperAdminDashboardComponent() {
       </div>
 
       <Card className="p-6">
-        <h3 className="mb-4 font-display text-lg font-semibold">Recently registered users</h3>
+        <h3 className="mb-4 font-display text-lg font-semibold">{t("super_admin.recently_registered")}</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b">
-                <th className="pb-3">Phone</th>
-                <th className="pb-3">Role</th>
-                <th className="pb-3">Joined At</th>
+                <th className="pb-3">{t("super_admin.phone")}</th>
+                <th className="pb-3">{t("super_admin.role_heading")}</th>
+                <th className="pb-3">{t("super_admin.joined_at")}</th>
               </tr>
             </thead>
             <tbody>
@@ -166,7 +183,7 @@ export function SuperAdminDashboardComponent() {
                   <td className="py-3 font-medium">{u.phone}</td>
                   <td className="py-3">
                     <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                      {u.role}
+                      {t(("role." + u.role) as any)}
                     </span>
                   </td>
                   <td className="py-3 text-muted-foreground">

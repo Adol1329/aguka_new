@@ -9,12 +9,24 @@ import 'package:aguka_mobile/features/community/presentation/community_page.dart
 import 'package:aguka_mobile/features/profile/presentation/profile_page.dart';
 import 'package:aguka_mobile/features/settings/presentation/settings_page.dart';
 import 'package:aguka_mobile/features/support/presentation/help_page.dart';
+import 'package:aguka_mobile/features/guidance/presentation/pages/guidance_page.dart';
+import 'package:aguka_mobile/features/market/presentation/market_page.dart';
+import 'package:aguka_mobile/features/reports/presentation/reports_page.dart';
+import 'package:aguka_mobile/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:aguka_mobile/features/telemetry/presentation/soil_page.dart';
+import 'package:aguka_mobile/features/telemetry/presentation/weather_page.dart';
+import 'package:aguka_mobile/features/irrigation/presentation/pages/irrigation_page.dart';
+import 'package:aguka_mobile/features/activities/presentation/pages/activities_page.dart';
+import 'package:aguka_mobile/features/crops/presentation/pages/crops_page.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthBloc>().state;
+    final role = authState is AuthAuthenticated ? authState.user.role : null;
+
     return Drawer(
       child: Column(
         children: [
@@ -22,81 +34,105 @@ class AppDrawer extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: [
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.people,
-                  label: 'community.title'.tr(),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const CommunityPage()),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.person,
-                  label: 'profile.title'.tr(),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ProfilePage()),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.settings,
-                  label: 'settings.title'.tr(),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const SettingsPage()),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.language,
-                  label: 'language.title'.tr(),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showLanguageDialog(context);
-                  },
-                ),
-                const Divider(),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.help_outline,
-                  label: 'help.title'.tr(),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HelpPage()),
-                    );
-                  },
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.logout,
-                  label: 'logout'.tr(),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.read<AuthBloc>().add(AuthLogoutRequested());
-                  },
-                ),
-              ],
+              children: _buildMenuItems(context, role),
             ),
           ),
           _buildFooter(context),
         ],
       ),
     );
+  }
+
+  List<Widget> _buildMenuItems(BuildContext context, String? role) {
+    switch (role) {
+      case 'farmer':
+        return _farmerMenu(context);
+      case 'extension_officer':
+        return _officerMenu(context);
+      case 'cooperative_manager':
+        return _cooperativeMenu(context);
+      default:
+        return _farmerMenu(context);
+    }
+  }
+
+  List<Widget> _farmerMenu(BuildContext context) {
+    return [
+      const _DrawerSectionHeader(label: 'My Farm'),
+      _drawerItem(context, Icons.eco, 'My Crops', () => _navigate(context, const CropsPage())),
+      _drawerItem(context, Icons.grass, 'soil.title'.tr(), () => _navigate(context, const SoilPage())),
+      _drawerItem(context, Icons.cloud, 'weather.title'.tr(), () => _navigate(context, const WeatherPage())),
+      _drawerItem(context, Icons.water_drop, 'irrigation.title'.tr(), () => _navigate(context, const IrrigationPage())),
+      _drawerItem(context, Icons.assignment, 'activities.title'.tr(), () => _navigate(context, const ActivitiesPage())),
+      _drawerItem(context, Icons.store, 'market.title'.tr(), () => _navigate(context, const MarketPage())),
+      _drawerItem(context, Icons.assessment, 'reports.title'.tr(), () => _navigate(context, const ReportsPage())),
+      _drawerItem(context, Icons.menu_book, 'guidance.title'.tr(), () => _navigate(context, const GuidancePage())),
+      const Divider(),
+      const _DrawerSectionHeader(label: 'Community'),
+      _drawerItem(context, Icons.people, 'community.title'.tr(), () => _navigate(context, const CommunityPage())),
+      _drawerItem(context, Icons.notifications, 'notifications.title'.tr(), () => _navigate(context, const NotificationsPage())),
+      const Divider(),
+      const _DrawerSectionHeader(label: 'Account'),
+      _drawerItem(context, Icons.person, 'profile.title'.tr(), () => _navigate(context, const ProfilePage())),
+      _drawerItem(context, Icons.settings, 'settings.title'.tr(), () => _navigate(context, const SettingsPage())),
+      _drawerItem(context, Icons.language, 'language.title'.tr(), () => _showLanguageDialog(context)),
+      _drawerItem(context, Icons.help_outline, 'help.title'.tr(), () => _navigate(context, const HelpPage())),
+      _drawerItem(context, Icons.logout, 'logout'.tr(), () {
+        Navigator.pop(context);
+        context.read<AuthBloc>().add(AuthLogoutRequested());
+      }),
+    ];
+  }
+
+  List<Widget> _officerMenu(BuildContext context) {
+    return [
+      const _DrawerSectionHeader(label: 'Operations'),
+      _drawerItem(context, Icons.grass, 'soil.title'.tr(), () => _navigate(context, const SoilPage())),
+      _drawerItem(context, Icons.cloud, 'weather.title'.tr(), () => _navigate(context, const WeatherPage())),
+      _drawerItem(context, Icons.water_drop, 'irrigation.title'.tr(), () => _navigate(context, const IrrigationPage())),
+      _drawerItem(context, Icons.assessment, 'reports.title'.tr(), () => _navigate(context, const ReportsPage())),
+      _drawerItem(context, Icons.menu_book, 'guidance.title'.tr(), () => _navigate(context, const GuidancePage())),
+      const Divider(),
+      const _DrawerSectionHeader(label: 'Community'),
+      _drawerItem(context, Icons.people, 'community.title'.tr(), () => _navigate(context, const CommunityPage())),
+      _drawerItem(context, Icons.notifications, 'notifications.title'.tr(), () => _navigate(context, const NotificationsPage())),
+      const Divider(),
+      const _DrawerSectionHeader(label: 'Account'),
+      _drawerItem(context, Icons.person, 'profile.title'.tr(), () => _navigate(context, const ProfilePage())),
+      _drawerItem(context, Icons.settings, 'settings.title'.tr(), () => _navigate(context, const SettingsPage())),
+      _drawerItem(context, Icons.language, 'language.title'.tr(), () => _showLanguageDialog(context)),
+      _drawerItem(context, Icons.help_outline, 'help.title'.tr(), () => _navigate(context, const HelpPage())),
+      _drawerItem(context, Icons.logout, 'logout'.tr(), () {
+        Navigator.pop(context);
+        context.read<AuthBloc>().add(AuthLogoutRequested());
+      }),
+    ];
+  }
+
+  List<Widget> _cooperativeMenu(BuildContext context) {
+    return [
+      const _DrawerSectionHeader(label: 'Management'),
+      _drawerItem(context, Icons.assessment, 'reports.title'.tr(), () => _navigate(context, const ReportsPage())),
+      const Divider(),
+      const _DrawerSectionHeader(label: 'Community'),
+      _drawerItem(context, Icons.people, 'community.title'.tr(), () => _navigate(context, const CommunityPage())),
+      _drawerItem(context, Icons.notifications, 'notifications.title'.tr(), () => _navigate(context, const NotificationsPage())),
+      const Divider(),
+      const _DrawerSectionHeader(label: 'Account'),
+      _drawerItem(context, Icons.person, 'profile.title'.tr(), () => _navigate(context, const ProfilePage())),
+      _drawerItem(context, Icons.settings, 'settings.title'.tr(), () => _navigate(context, const SettingsPage())),
+      _drawerItem(context, Icons.language, 'language.title'.tr(), () => _showLanguageDialog(context)),
+      _drawerItem(context, Icons.help_outline, 'help.title'.tr(), () => _navigate(context, const HelpPage())),
+      _drawerItem(context, Icons.logout, 'logout'.tr(), () {
+        Navigator.pop(context);
+        context.read<AuthBloc>().add(AuthLogoutRequested());
+      }),
+    ];
+  }
+
+  void _navigate(BuildContext context, Widget page) {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
   }
 
   void _showLanguageDialog(BuildContext context) {
@@ -107,17 +143,17 @@ class AppDrawer extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildLanguageOption(context, 'English', const Locale('en')),
-            _buildLanguageOption(context, 'Kinyarwanda', const Locale('rw')),
-            _buildLanguageOption(context, 'Français', const Locale('fr')),
+            _languageOption(context, 'English', const Locale('en')),
+            _languageOption(context, 'Kinyarwanda', const Locale('rw')),
+            _languageOption(context, 'Fran\u00e7ais', const Locale('fr')),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLanguageOption(BuildContext context, String name, Locale locale) {
-    final bool isSelected = context.locale == locale;
+  Widget _languageOption(BuildContext context, String name, Locale locale) {
+    final isSelected = context.locale == locale;
     return ListTile(
       title: Text(name),
       trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
@@ -133,9 +169,11 @@ class AppDrawer extends StatelessWidget {
       builder: (context, state) {
         String name = 'Farmer';
         String phone = '';
+        String? roleLabel;
         if (state is AuthAuthenticated) {
           name = state.user.fullName ?? 'Farmer';
           phone = state.user.phone;
+          roleLabel = _roleLabel(state.user.role);
         }
 
         return Container(
@@ -151,27 +189,37 @@ class AppDrawer extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CircleAvatar(
-                radius: 35,
-                backgroundColor: Colors.white24,
-                child: Icon(Icons.person, size: 40, color: Colors.white),
+              Semantics(
+                label: 'User avatar',
+                child: const CircleAvatar(
+                  radius: 35,
+                  backgroundColor: Colors.white24,
+                  child: Icon(Icons.person, size: 40, color: Colors.white),
+                ),
               ),
               const SizedBox(height: 15),
               Text(
                 name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Text(
                 phone,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
               ),
+              if (roleLabel != null) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    roleLabel,
+                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                  ),
+                ),
+              ],
             ],
           ),
         );
@@ -179,22 +227,34 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.green[700]),
-      title: Text(
-        label,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+  String? _roleLabel(String? role) {
+    switch (role) {
+      case 'farmer':
+        return 'Farmer';
+      case 'extension_officer':
+        return 'Extension Officer';
+      case 'cooperative_manager':
+        return 'Cooperative Manager';
+      case 'admin':
+        return 'Admin';
+      case 'super_admin':
+        return 'Super Admin';
+      default:
+        return null;
+    }
+  }
+
+  Widget _drawerItem(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return Semantics(
+      label: label,
+      child: ListTile(
+        leading: Icon(icon, color: Colors.green[700]),
+        title: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
       ),
-      onTap: () {
-      HapticFeedback.lightImpact();
-      onTap();
-    },
     );
   }
 
@@ -209,6 +269,27 @@ class AppDrawer extends StatelessWidget {
             style: TextStyle(color: Colors.grey[600], fontSize: 12),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DrawerSectionHeader extends StatelessWidget {
+  final String label;
+  const _DrawerSectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[600],
+          letterSpacing: 1.0,
+        ),
       ),
     );
   }

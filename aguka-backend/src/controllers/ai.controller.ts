@@ -1,20 +1,22 @@
-import { Request, Response } from "express";
+import { Response, NextFunction } from "express";
 import { aiEngine, SensorSnapshot } from "../services/ai-engine.service.js";
-import { logger } from "../utils/logger.js";
 import { prisma } from "../prisma.js";
+import { RequestWithUser } from "../types/index.js";
 
 export const aiController = {
-  /**
-   * POST /api/ai/analyze
-   * Analyze farm using latest live database records for the authenticated farmer.
-   */
-  async analyzeFarm(req: Request, res: Response) {
+  async analyzeFarm(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
-      const farmerId = (req as any).user?.id;
-      if (!farmerId) return res.status(401).json({ success: false, error: "Unauthorized" });
+      const farmerId = req.user?.sub;
+      if (!farmerId) {
+        res.status(401).json({
+          success: false,
+          error: { code: "UNAUTHORIZED", message: "Authentication required" },
+        });
+        return;
+      }
 
       const recommendations = await aiEngine.analyzeFarm(farmerId);
-      return res.json({
+      res.json({
         success: true,
         data: {
           recommendations,
@@ -23,24 +25,26 @@ export const aiController = {
         },
       });
     } catch (err) {
-      logger.error("aiController.analyzeFarm:", err);
-      return res.status(500).json({ success: false, error: "AI analysis failed" });
+      next(err);
     }
   },
 
-  /**
-   * POST /api/ai/recommendations
-   * Analyze a user-submitted IoT payload and return instant AI recommendations.
-   * Body: SensorSnapshot fields
-   */
-  async analyzePayload(req: Request, res: Response) {
+  async analyzePayload(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) {
     try {
-      const farmerId = (req as any).user?.id;
-      if (!farmerId) return res.status(401).json({ success: false, error: "Unauthorized" });
+      const farmerId = req.user?.sub;
+      if (!farmerId) {
+        res.status(401).json({
+          success: false,
+          error: { code: "UNAUTHORIZED", message: "Authentication required" },
+        });
+        return;
+      }
 
       const payload = req.body as SensorSnapshot;
-
-      // Basic validation
       const required: (keyof SensorSnapshot)[] = [
         "soilMoisture",
         "temperature",
@@ -48,12 +52,18 @@ export const aiController = {
         "rainfallProbability",
         "cropType",
       ];
-      const missing = required.filter((k) => payload[k] === undefined || payload[k] === null);
+      const missing = required.filter(
+        (k) => payload[k] === undefined || payload[k] === null,
+      );
       if (missing.length > 0) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
-          error: `Missing required fields: ${missing.join(", ")}`,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: `Missing required fields: ${missing.join(", ")}`,
+          },
         });
+        return;
       }
 
       const recommendations = aiEngine.analyzePayload(farmerId, {
@@ -62,7 +72,7 @@ export const aiController = {
         farmSize: payload.farmSize ?? 1,
       });
 
-      return res.json({
+      res.json({
         success: true,
         data: {
           recommendations,
@@ -72,24 +82,28 @@ export const aiController = {
         },
       });
     } catch (err) {
-      logger.error("aiController.analyzePayload:", err);
-      return res.status(500).json({ success: false, error: "AI analysis failed" });
+      next(err);
     }
   },
 
-  /**
-   * GET /api/ai/farm/:id
-   * Get the stored recommendations for a specific farm (admin/officer use).
-   */
-  async getFarmRecommendations(req: Request, res: Response) {
+  async getFarmRecommendations(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) {
     try {
       const targetFarmerId = req.params.id;
-      const user = (req as any).user;
-
-      // Only admin, officer, or the farmer themselves can access
+      const user = req.user;
       const allowedRoles = ["admin", "officer", "super_admin", "cooperative"];
-      if (user?.id !== targetFarmerId && !allowedRoles.includes(user?.role)) {
-        return res.status(403).json({ success: false, error: "Forbidden" });
+      if (
+        user?.sub !== targetFarmerId &&
+        !allowedRoles.includes(user?.role as string)
+      ) {
+        res.status(403).json({
+          success: false,
+          error: { code: "FORBIDDEN", message: "Insufficient permissions" },
+        });
+        return;
       }
 
       const stored = await prisma.recommendation.findMany({
@@ -100,44 +114,60 @@ export const aiController = {
         orderBy: { generatedAt: "desc" },
         take: 20,
       });
-
-      return res.json({ success: true, data: stored });
+      res.json({ success: true, data: stored });
     } catch (err) {
-      logger.error("aiController.getFarmRecommendations:", err);
-      return res.status(500).json({ success: false, error: "Failed to fetch recommendations" });
+      next(err);
     }
   },
 
-  /**
-   * GET /api/ai/cooperative-analysis
-   * Cooperative-level performance AI analytics.
-   * Officers and cooperative managers only.
-   */
-  async cooperativeAnalysis(req: Request, res: Response) {
+  async cooperativeAnalysis(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) {
     try {
-      const user = (req as any).user;
+      const user = req.user;
       const allowedRoles = ["admin", "officer", "super_admin", "cooperative"];
-      if (!allowedRoles.includes(user?.role)) {
-        return res.status(403).json({ success: false, error: "Forbidden" });
+      if (!allowedRoles.includes(user?.role as string)) {
+        res.status(403).json({
+          success: false,
+          error: { code: "FORBIDDEN", message: "Insufficient permissions" },
+        });
+        return;
       }
 
-      const cooperativeId = req.query.cooperativeId as string | undefined;
+      let cooperativeId = req.query.cooperativeId as string | undefined;
+
+      if (user?.role === "cooperative") {
+        // Cooperative managers can only ever see their own cooperative's data —
+        // ignore any cooperativeId they pass in and use the one from their session.
+        cooperativeId = user.cooperativeId;
+        if (!cooperativeId) {
+          res.status(404).json({
+            success: false,
+            error: { code: "NOT_FOUND", message: "You are not assigned to a cooperative" },
+          });
+          return;
+        }
+      }
+
       const result = await aiEngine.analyzeCooperative(cooperativeId);
-      return res.json({ success: true, data: result });
+      res.json({ success: true, data: result });
     } catch (err) {
-      logger.error("aiController.cooperativeAnalysis:", err);
-      return res.status(500).json({ success: false, error: "Cooperative analysis failed" });
+      next(err);
     }
   },
 
-  /**
-   * GET /api/ai/history
-   * Returns past AI recommendations for the authenticated farmer.
-   */
-  async getHistory(req: Request, res: Response) {
+  async getHistory(req: RequestWithUser, res: Response, next: NextFunction) {
     try {
-      const farmerId = (req as any).user?.id;
-      if (!farmerId) return res.status(401).json({ success: false, error: "Unauthorized" });
+      const farmerId = req.user?.sub;
+      if (!farmerId) {
+        res.status(401).json({
+          success: false,
+          error: { code: "UNAUTHORIZED", message: "Authentication required" },
+        });
+        return;
+      }
 
       const limit = Math.min(Number(req.query.limit ?? 10), 50);
       const category = req.query.category as string | undefined;
@@ -150,11 +180,9 @@ export const aiController = {
         orderBy: { generatedAt: "desc" },
         take: limit,
       });
-
-      return res.json({ success: true, data: history });
+      res.json({ success: true, data: history });
     } catch (err) {
-      logger.error("aiController.getHistory:", err);
-      return res.status(500).json({ success: false, error: "Failed to fetch history" });
+      next(err);
     }
   },
 };

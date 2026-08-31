@@ -13,7 +13,8 @@ export const globalRateLimiter = rateLimit({
     success: false,
     error: {
       code: "RATE_LIMIT_EXCEEDED",
-      message: "Too many requests from this IP, please try again after 15 minutes",
+      message:
+        "Too many requests from this IP, please try again after 15 minutes",
     },
   },
   skip: () => config.env === "development",
@@ -58,7 +59,10 @@ export const ussdRateLimiter = rateLimit({
 /**
  * Export a general rateLimiter factory for custom limits
  */
-export const rateLimiter = (options: { windowMs: number; maxRequests: number }) => {
+export const rateLimiter = (options: {
+  windowMs: number;
+  maxRequests: number;
+}) => {
   return rateLimit({
     windowMs: options.windowMs,
     max: options.maxRequests,

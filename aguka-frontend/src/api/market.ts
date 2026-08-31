@@ -1,8 +1,9 @@
-import { apiClient, ApiResponse } from './client';
+import { apiClient, ApiResponse } from "./client";
 
 export interface MarketPrice {
   id: string;
   cropId: string;
+  crop: { nameEn: string };
   marketId: string;
   marketName: string;
   district: string;
@@ -11,6 +12,26 @@ export interface MarketPrice {
   trend: string;
   trendPercentage: number;
   recordedAt: string;
+}
+
+export interface MarketInsight {
+  cropId: string;
+  cropName: string;
+  bestMarket: string;
+  bestPrice: number;
+  averagePrice: number;
+  priceTrend: "rising" | "falling" | "stable";
+  recommendation: string;
+  nextHarvestImpact: string;
+}
+
+export interface MarketRecommendation {
+  marketId: string;
+  marketName: string;
+  distance: string;
+  estimatedPrice: number;
+  transportCost: number;
+  recommendation: string;
 }
 
 export interface PriceAlert {
@@ -22,6 +43,8 @@ export interface PriceAlert {
   alertType: string;
   isActive: boolean;
   isTriggered: boolean;
+  smsEnabled: boolean;
+  lastTriggered?: string | null;
   crop?: { nameEn: string };
 }
 
@@ -37,20 +60,25 @@ function toParams(obj: Record<string, unknown>): Record<string, string> {
 
 export const marketApi = {
   getPrices: (filters?: { crop?: string; market?: string }) =>
-    apiClient.get<MarketPrice[]>('/market/prices', filters ? toParams(filters) : undefined),
+    apiClient.get<MarketPrice[]>("/market/prices", filters ? toParams(filters) : undefined),
 
   getPriceHistory: (params: { crop?: string; market?: string; days: number }) =>
-    apiClient.get<ApiResponse>('/market/prices/history', toParams(params)),
+    apiClient.get<ApiResponse>("/market/prices/history", toParams(params)),
 
-  getAlerts: () =>
-    apiClient.get<PriceAlert[]>('/market/alerts'),
+  getAlerts: () => apiClient.get<PriceAlert[]>("/market/alerts"),
 
-  createAlert: (data: { cropId: string; targetPrice: number; alertType: string; marketId?: string }) =>
-    apiClient.post<PriceAlert>('/market/alerts', data),
+  createAlert: (data: {
+    cropId: string;
+    targetPrice: number;
+    alertType: string;
+    marketId?: string;
+    smsEnabled?: boolean;
+  }) => apiClient.post<PriceAlert>("/market/alerts", data),
 
-  deleteAlert: (id: string) =>
-    apiClient.delete<ApiResponse>(`/market/alerts/${id}`),
+  deleteAlert: (id: string) => apiClient.delete<ApiResponse>(`/market/alerts/${id}`),
 
-  getInsights: () =>
-    apiClient.get<ApiResponse>('/market/insights'),
+  getInsights: () => apiClient.get<MarketInsight[]>("/market/insights"),
+
+  getRecommendedMarkets: (params: { cropId: string; quantity?: number }) =>
+    apiClient.get<MarketRecommendation[]>("/market/recommendations", toParams(params)),
 };

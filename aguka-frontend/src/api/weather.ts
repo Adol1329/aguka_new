@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient } from "./client";
 
 export interface WeatherReading {
   id: string;
@@ -26,9 +26,7 @@ export interface WeatherForecast {
 }
 
 export const weatherApi = {
-  getCurrent: () =>
-    apiClient.get<WeatherReading>('/weather/current'),
+  getCurrent: () => apiClient.get<WeatherReading>("/weather/current"),
 
-  getForecast: () =>
-    apiClient.get<WeatherForecast[]>('/weather/forecast'),
+  getForecast: () => apiClient.get<WeatherForecast[]>("/weather/forecast"),
 };

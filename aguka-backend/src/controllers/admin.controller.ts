@@ -214,18 +214,18 @@ export const getPendingUsers = async (
 ) => {
   try {
     const data = await prisma.user.findMany({
-      where: { status: 'pending_verification' },
+      where: { status: "pending_verification" },
       select: {
-        id:        true,
-        phone:     true,
-        email:     true,
-        role:      true,
+        id: true,
+        phone: true,
+        email: true,
+        role: true,
         createdAt: true,
         farmerProfile: {
-          select: { fullName: true, district: true }
+          select: { fullName: true, district: true },
         },
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
     return res.json({ success: true, data });
   } catch (error) {
@@ -255,7 +255,9 @@ export const rejectUser = async (
   try {
     const { reason } = req.body;
     if (!reason) {
-      return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Rejection reason is required" });
     }
     const adminId = (req as any).userId || (req as any).user?.sub;
     const data = await adminService.rejectUser(req.params.id, adminId, reason);

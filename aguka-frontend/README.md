@@ -3,6 +3,7 @@
 Web frontend for the Aguka Smart Farming Kit - React 19 + Vite + TanStack Router + TailwindCSS.
 
 ## Prerequisites
+
 - Node.js (version compatible with Vite 7.3.1)
 - npm or yarn
 

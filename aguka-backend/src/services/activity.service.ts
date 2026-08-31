@@ -2,6 +2,7 @@ import { prisma } from "../prisma.js";
 import {
   NotFoundError,
   ForbiddenError,
+  ValidationError,
 } from "../middleware/error.middleware.js";
 
 export class ActivityService {
@@ -136,22 +137,21 @@ export class ActivityService {
     return activity;
   }
 
-  async getActivityTypes(userId: string) {
-    const farmerProfile = await prisma.farmerProfile.findFirst({
-      where: { userId },
+  async getActivityTypes() {
+    return prisma.farmActivityType.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+    });
+  }
+
+  private async assertValidActivityType(activityType: string) {
+    const type = await prisma.farmActivityType.findFirst({
+      where: { name: activityType, isActive: true },
     });
 
-    if (!farmerProfile) {
-      throw new NotFoundError("Farmer profile");
+    if (!type) {
+      throw new ValidationError(`Unknown or inactive activity type: ${activityType}`);
     }
-
-    const rows = await prisma.farmActivity.findMany({
-      distinct: ["activityType"],
-      select: { activityType: true },
-      orderBy: { activityType: "asc" },
-    });
-
-    return rows.map((row) => row.activityType);
   }
 
   async createActivity(farmerId: string, data: Record<string, unknown>) {
@@ -163,6 +163,8 @@ export class ActivityService {
     if (!farmerProfile) {
       throw new NotFoundError("Farmer profile");
     }
+
+    await this.assertValidActivityType(data.activityType as string);
 
     const activity = await prisma.farmActivity.create({
       data: {
@@ -199,6 +201,10 @@ export class ActivityService {
     // Check if the activity belongs to the farmer
     if (activity.farmerId !== farmerId) {
       throw new ForbiddenError("You can only update your own activities");
+    }
+
+    if (data.activityType) {
+      await this.assertValidActivityType(data.activityType as string);
     }
 
     const updatedActivity = await prisma.farmActivity.update({

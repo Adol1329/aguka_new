@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.middleware.js";
+import { rateLimiter } from "../middleware/rateLimiter.middleware.js";
 import {
   initiatePayment,
   confirmPayment,
@@ -19,10 +20,18 @@ router.post("/callback", handleMobileMoneyCallback);
 router.use(authenticate);
 
 // Initiate a new payment
-router.post("/initiate", initiatePayment);
+router.post(
+  "/initiate",
+  rateLimiter({ windowMs: 15 * 60 * 1000, maxRequests: 5 }),
+  initiatePayment,
+);
 
 // Confirm payment with OTP
-router.post("/:paymentId/confirm", confirmPayment);
+router.post(
+  "/:paymentId/confirm",
+  rateLimiter({ windowMs: 15 * 60 * 1000, maxRequests: 5 }),
+  confirmPayment,
+);
 
 // Get payment status
 router.get("/:paymentId/status", getPaymentStatus);
@@ -31,7 +40,11 @@ router.get("/:paymentId/status", getPaymentStatus);
 router.get("/history", getUserPayments);
 
 // Refund a payment
-router.post("/:paymentId/refund", refundPayment);
+router.post(
+  "/:paymentId/refund",
+  rateLimiter({ windowMs: 60 * 60 * 1000, maxRequests: 3 }),
+  refundPayment,
+);
 
 // Get available payment methods
 router.get("/methods", getPaymentMethods);

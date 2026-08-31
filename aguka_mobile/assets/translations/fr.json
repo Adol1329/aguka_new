@@ -85,10 +85,17 @@
     "optimal": "Optimal",
     "low": "Faible",
     "high": "Élevé",
+    "status_moderate": "Modéré",
+    "status_normal": "Normal",
+    "status_extreme": "Extrême",
+    "status_healthy": "Sain",
+    "status_needs_attention": "Nécessite attention",
     "nitrogen": "Azote",
     "phosphorus": "Phosphore",
     "potassium": "Potassium",
-    "trend_7day": "Tendance sur 7 jours"
+    "trend_7day": "Tendance sur 7 jours",
+    "temp": "Température du sol",
+    "ph": "pH du sol"
   },
   "weather": {
     "title": "Météo locale",
@@ -127,7 +134,10 @@
     "saved": "Économisé",
     "manual_override": "Commande manuelle",
     "smart_schedule": "Programme intelligent",
-    "command_queued": "Commande de pompe mise en file d'attente."
+    "command_queued": "Commande de pompe mise en file d'attente.",
+    "pump_started": "Pompe démarrée.",
+    "pump_stopped": "Pompe arrêtée.",
+    "command_failed": "Échec de la commande. Veuillez réessayer."
   },
   "profile": {
     "title": "Profil",
@@ -154,6 +164,8 @@
   },
   "community": {
     "title": "Coopérative",
+    "section_title": "Communauté",
+    "farmer_community": "Communauté d'agriculteurs",
     "announcements": "Annonces",
     "market_prices": "Prix du Marché",
     "urgent": "URGENT",
@@ -167,7 +179,65 @@
     "add": "Ajouter",
     "success": "Succès",
     "error": "Erreur",
-    "basic_info": "Informations de base"
+    "hello": "Bonjour",
+    "basic_info": "Informations de base",
+    "save": "Enregistrer",
+    "view_all": "Voir tout",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "days_ago": "il y a {n} jours"
+  },
+  "farmer": {
+    "title": "Agriculteur"
+  },
+  "crops": {
+    "title": "Mes Cultures",
+    "empty": "Aucune culture enregistrée.",
+    "planted_days_ago": "Planté il y a {n}j",
+    "of_id": "Culture #{id}"
+  },
+  "monitoring": {
+    "title": "Surveillance",
+    "soil_trend": "Tendance d'humidité du sol",
+    "forecast": "Prévisions sur 7 jours"
+  },
+  "quick_actions": {
+    "title": "Actions Rapides",
+    "my_crops": "Mes Cultures",
+    "expert_guides": "Guides d'experts"
+  },
+  "recent_activities": {
+    "title": "Activités Récentes",
+    "empty": "Aucune activité récente."
+  },
+  "onboarding": {
+    "slide1": {
+      "title": "Surveillance Intelligente du Sol",
+      "desc": "Suivez les niveaux d'azote, de phosphore et de potassium en temps réel pour optimiser votre rendement."
+    },
+    "slide2": {
+      "title": "Irrigation de Précision",
+      "desc": "Contrôlez votre pompe à distance et économisez jusqu'à 40 % d'eau grâce à des capteurs intelligents."
+    },
+    "slide3": {
+      "title": "Prix du Marché Local",
+      "desc": "Obtenez les derniers prix de Kigali, Musanze et ailleurs pour vendre votre récolte au meilleur prix."
+    },
+    "next": "SUIVANT",
+    "get_started": "COMMENCER",
+    "skip": "PASSER"
+  },
+  "activities": {
+    "title": "Activités"
+  },
+  "guidance": {
+    "title": "Conseils"
+  },
+  "cooperatives": {
+    "title": "Coopérative"
+  },
+  "reports": {
+    "title": "Rapports"
   },
   "auth": {
     "validation": {

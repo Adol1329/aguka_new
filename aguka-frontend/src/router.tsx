@@ -1,4 +1,5 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
+import { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
 import { setUnauthorizedHandler } from "@/api/client";
 
@@ -55,12 +56,12 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
   );
 }
 
-export const getRouter = () => {
+export const getRouter = (queryClient?: QueryClient) => {
   const router = createRouter({
     routeTree,
     context: {
       user: null as any,
-      queryClient: null as any,
+      queryClient: queryClient ?? (null as any),
     },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,

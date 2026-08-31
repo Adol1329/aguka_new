@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SuperAdminRouteImport } from './routes/super-admin'
-import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as OfficerRouteImport } from './routes/officer'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FarmerRouteImport } from './routes/farmer'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -25,25 +25,22 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccessDeniedRouteImport } from './routes/access-denied'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SuperAdminIndexRouteImport } from './routes/super-admin.index'
-import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as OfficerIndexRouteImport } from './routes/officer.index'
 import { Route as FarmerIndexRouteImport } from './routes/farmer.index'
 import { Route as CooperativeIndexRouteImport } from './routes/cooperative.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SuperAdminUsersRouteImport } from './routes/super-admin.users'
 import { Route as SuperAdminSettingsRouteImport } from './routes/super-admin.settings'
-import { Route as SuperAdminRolesRouteImport } from './routes/super-admin.roles'
+import { Route as SuperAdminSecurityRouteImport } from './routes/super-admin.security'
 import { Route as SuperAdminHealthRouteImport } from './routes/super-admin.health'
 import { Route as SuperAdminBackupsRouteImport } from './routes/super-admin.backups'
 import { Route as SuperAdminAuditRouteImport } from './routes/super-admin.audit'
-import { Route as ReportsWeatherRouteImport } from './routes/reports.weather'
-import { Route as ReportsSoilRouteImport } from './routes/reports.soil'
-import { Route as ReportsIrrigationRouteImport } from './routes/reports.irrigation'
-import { Route as ReportsActivitiesRouteImport } from './routes/reports.activities'
+import { Route as OfficerTemplatesRouteImport } from './routes/officer.templates'
 import { Route as OfficerRisksRouteImport } from './routes/officer.risks'
-import { Route as OfficerReportsRouteImport } from './routes/officer.reports'
 import { Route as OfficerPestDiseaseRouteImport } from './routes/officer.pest-disease'
+import { Route as OfficerFieldWorkRouteImport } from './routes/officer.field-work'
 import { Route as OfficerFarmsRouteImport } from './routes/officer.farms'
+import { Route as OfficerFarmerDetailRouteImport } from './routes/officer.farmer-detail'
 import { Route as OfficerAnalysisRouteImport } from './routes/officer/analysis'
 import { Route as OfficerAdvisoriesRouteImport } from './routes/officer.advisories'
 import { Route as ForgotPasswordVerifyRouteImport } from './routes/forgot-password.verify'
@@ -51,26 +48,70 @@ import { Route as ForgotPasswordSupportRouteImport } from './routes/forgot-passw
 import { Route as ForgotPasswordResetRouteImport } from './routes/forgot-password.reset'
 import { Route as FarmerWeatherRouteImport } from './routes/farmer.weather'
 import { Route as FarmerSoilRouteImport } from './routes/farmer.soil'
+import { Route as FarmerResourcesRouteImport } from './routes/farmer.resources'
 import { Route as FarmerRecommendationsRouteImport } from './routes/farmer/recommendations'
 import { Route as FarmerProfileRouteImport } from './routes/farmer.profile'
+import { Route as FarmerPestDiseaseRouteImport } from './routes/farmer.pest-disease'
 import { Route as FarmerNotificationsRouteImport } from './routes/farmer.notifications'
 import { Route as FarmerMarketRouteImport } from './routes/farmer.market'
+import { Route as FarmerLivestockRouteImport } from './routes/farmer.livestock'
 import { Route as FarmerIrrigationRouteImport } from './routes/farmer.irrigation'
 import { Route as FarmerGuidanceRouteImport } from './routes/farmer.guidance'
 import { Route as FarmerCropsRouteImport } from './routes/farmer.crops'
+import { Route as FarmerCooperativeRouteImport } from './routes/farmer.cooperative'
 import { Route as FarmerCommunityRouteImport } from './routes/farmer.community'
 import { Route as FarmerAiRouteImport } from './routes/farmer.ai'
 import { Route as FarmerActivitiesRouteImport } from './routes/farmer.activities'
 import { Route as CooperativeResourcesRouteImport } from './routes/cooperative.resources'
-import { Route as CooperativeReportsRouteImport } from './routes/cooperative.reports'
+import { Route as CooperativeProfileRouteImport } from './routes/cooperative.profile'
 import { Route as CooperativePerformanceRouteImport } from './routes/cooperative.performance'
+import { Route as CooperativeJoinRequestsRouteImport } from './routes/cooperative.join-requests'
 import { Route as CooperativeFarmersRouteImport } from './routes/cooperative.farmers'
+import { Route as CooperativeFarmerDetailRouteImport } from './routes/cooperative.farmer-detail'
+import { Route as CooperativeExpensesRouteImport } from './routes/cooperative.expenses'
 import { Route as CooperativeEventsRouteImport } from './routes/cooperative.events'
+import { Route as CooperativeDuesRouteImport } from './routes/cooperative.dues'
+import { Route as CooperativeDistributionsRouteImport } from './routes/cooperative.distributions'
+import { Route as CooperativeAnalyticsRouteImport } from './routes/cooperative.analytics'
 import { Route as CooperativeAiRouteImport } from './routes/cooperative.ai'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminSecurityRouteImport } from './routes/admin.security'
+import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminFarmsRouteImport } from './routes/admin.farms'
+import { Route as AdminCooperativesRouteImport } from './routes/admin.cooperatives'
+import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as SuperAdminReportsV2IndexRouteImport } from './routes/super-admin.reports-v2.index'
+import { Route as OfficerReportsV2IndexRouteImport } from './routes/officer.reports-v2.index'
+import { Route as FarmerReportsV2IndexRouteImport } from './routes/farmer.reports-v2.index'
+import { Route as CooperativeReportsV2IndexRouteImport } from './routes/cooperative.reports-v2.index'
+import { Route as AdminReportsV2IndexRouteImport } from './routes/admin.reports-v2.index'
+import { Route as SuperAdminReportsV2SystemHealthRouteImport } from './routes/super-admin.reports-v2.system-health'
+import { Route as SuperAdminReportsV2SecurityRouteImport } from './routes/super-admin.reports-v2.security'
+import { Route as SuperAdminReportsV2NationalRouteImport } from './routes/super-admin.reports-v2.national'
+import { Route as SuperAdminReportsV2BackupRouteImport } from './routes/super-admin.reports-v2.backup'
+import { Route as SuperAdminReportsV2AuditRouteImport } from './routes/super-admin.reports-v2.audit'
+import { Route as OfficerReportsV2RiskRouteImport } from './routes/officer.reports-v2.risk'
+import { Route as OfficerReportsV2PerformanceComparisonRouteImport } from './routes/officer.reports-v2.performance-comparison'
+import { Route as OfficerReportsV2MonthlySummaryRouteImport } from './routes/officer.reports-v2.monthly-summary'
+import { Route as OfficerReportsV2AssignedFarmersRouteImport } from './routes/officer.reports-v2.assigned-farmers'
+import { Route as OfficerReportsV2AdvisoryRouteImport } from './routes/officer.reports-v2.advisory'
+import { Route as FarmerReportsV2YieldProductivityRouteImport } from './routes/farmer.reports-v2.yield-productivity'
+import { Route as FarmerReportsV2SoilIrrigationRouteImport } from './routes/farmer.reports-v2.soil-irrigation'
+import { Route as FarmerReportsV2SeasonalRouteImport } from './routes/farmer.reports-v2.seasonal'
+import { Route as FarmerReportsV2PerformanceRouteImport } from './routes/farmer.reports-v2.performance'
+import { Route as FarmerReportsV2AiRecommendationRouteImport } from './routes/farmer.reports-v2.ai-recommendation'
+import { Route as CooperativeReportsV2ResourceDistributionRouteImport } from './routes/cooperative.reports-v2.resource-distribution'
+import { Route as CooperativeReportsV2RecommendationRouteImport } from './routes/cooperative.reports-v2.recommendation'
+import { Route as CooperativeReportsV2ProductionRouteImport } from './routes/cooperative.reports-v2.production'
+import { Route as CooperativeReportsV2PerformanceRouteImport } from './routes/cooperative.reports-v2.performance'
+import { Route as CooperativeReportsV2FarmerComparisonRouteImport } from './routes/cooperative.reports-v2.farmer-comparison'
+import { Route as AdminReportsV2UserActivityRouteImport } from './routes/admin.reports-v2.user-activity'
+import { Route as AdminReportsV2SystemUsageRouteImport } from './routes/admin.reports-v2.system-usage'
+import { Route as AdminReportsV2FinancialRouteImport } from './routes/admin.reports-v2.financial'
+import { Route as AdminReportsV2DataValidationRouteImport } from './routes/admin.reports-v2.data-validation'
+import { Route as AdminReportsV2AnalyticsDashboardRouteImport } from './routes/admin.reports-v2.analytics-dashboard'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -80,11 +121,6 @@ const TermsRoute = TermsRouteImport.update({
 const SuperAdminRoute = SuperAdminRouteImport.update({
   id: '/super-admin',
   path: '/super-admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -100,6 +136,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const OfficerRoute = OfficerRouteImport.update({
   id: '/officer',
   path: '/officer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -152,11 +193,6 @@ const SuperAdminIndexRoute = SuperAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SuperAdminRoute,
 } as any)
-const ReportsIndexRoute = ReportsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ReportsRoute,
-} as any)
 const OfficerIndexRoute = OfficerIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -187,9 +223,9 @@ const SuperAdminSettingsRoute = SuperAdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => SuperAdminRoute,
 } as any)
-const SuperAdminRolesRoute = SuperAdminRolesRouteImport.update({
-  id: '/roles',
-  path: '/roles',
+const SuperAdminSecurityRoute = SuperAdminSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => SuperAdminRoute,
 } as any)
 const SuperAdminHealthRoute = SuperAdminHealthRouteImport.update({
@@ -207,34 +243,14 @@ const SuperAdminAuditRoute = SuperAdminAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => SuperAdminRoute,
 } as any)
-const ReportsWeatherRoute = ReportsWeatherRouteImport.update({
-  id: '/weather',
-  path: '/weather',
-  getParentRoute: () => ReportsRoute,
-} as any)
-const ReportsSoilRoute = ReportsSoilRouteImport.update({
-  id: '/soil',
-  path: '/soil',
-  getParentRoute: () => ReportsRoute,
-} as any)
-const ReportsIrrigationRoute = ReportsIrrigationRouteImport.update({
-  id: '/irrigation',
-  path: '/irrigation',
-  getParentRoute: () => ReportsRoute,
-} as any)
-const ReportsActivitiesRoute = ReportsActivitiesRouteImport.update({
-  id: '/activities',
-  path: '/activities',
-  getParentRoute: () => ReportsRoute,
+const OfficerTemplatesRoute = OfficerTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => OfficerRoute,
 } as any)
 const OfficerRisksRoute = OfficerRisksRouteImport.update({
   id: '/risks',
   path: '/risks',
-  getParentRoute: () => OfficerRoute,
-} as any)
-const OfficerReportsRoute = OfficerReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
   getParentRoute: () => OfficerRoute,
 } as any)
 const OfficerPestDiseaseRoute = OfficerPestDiseaseRouteImport.update({
@@ -242,9 +258,19 @@ const OfficerPestDiseaseRoute = OfficerPestDiseaseRouteImport.update({
   path: '/pest-disease',
   getParentRoute: () => OfficerRoute,
 } as any)
+const OfficerFieldWorkRoute = OfficerFieldWorkRouteImport.update({
+  id: '/field-work',
+  path: '/field-work',
+  getParentRoute: () => OfficerRoute,
+} as any)
 const OfficerFarmsRoute = OfficerFarmsRouteImport.update({
   id: '/farms',
   path: '/farms',
+  getParentRoute: () => OfficerRoute,
+} as any)
+const OfficerFarmerDetailRoute = OfficerFarmerDetailRouteImport.update({
+  id: '/farmer-detail',
+  path: '/farmer-detail',
   getParentRoute: () => OfficerRoute,
 } as any)
 const OfficerAnalysisRoute = OfficerAnalysisRouteImport.update({
@@ -282,6 +308,11 @@ const FarmerSoilRoute = FarmerSoilRouteImport.update({
   path: '/soil',
   getParentRoute: () => FarmerRoute,
 } as any)
+const FarmerResourcesRoute = FarmerResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => FarmerRoute,
+} as any)
 const FarmerRecommendationsRoute = FarmerRecommendationsRouteImport.update({
   id: '/recommendations',
   path: '/recommendations',
@@ -292,6 +323,11 @@ const FarmerProfileRoute = FarmerProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => FarmerRoute,
 } as any)
+const FarmerPestDiseaseRoute = FarmerPestDiseaseRouteImport.update({
+  id: '/pest-disease',
+  path: '/pest-disease',
+  getParentRoute: () => FarmerRoute,
+} as any)
 const FarmerNotificationsRoute = FarmerNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -300,6 +336,11 @@ const FarmerNotificationsRoute = FarmerNotificationsRouteImport.update({
 const FarmerMarketRoute = FarmerMarketRouteImport.update({
   id: '/market',
   path: '/market',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerLivestockRoute = FarmerLivestockRouteImport.update({
+  id: '/livestock',
+  path: '/livestock',
   getParentRoute: () => FarmerRoute,
 } as any)
 const FarmerIrrigationRoute = FarmerIrrigationRouteImport.update({
@@ -315,6 +356,11 @@ const FarmerGuidanceRoute = FarmerGuidanceRouteImport.update({
 const FarmerCropsRoute = FarmerCropsRouteImport.update({
   id: '/crops',
   path: '/crops',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerCooperativeRoute = FarmerCooperativeRouteImport.update({
+  id: '/cooperative',
+  path: '/cooperative',
   getParentRoute: () => FarmerRoute,
 } as any)
 const FarmerCommunityRoute = FarmerCommunityRouteImport.update({
@@ -337,9 +383,9 @@ const CooperativeResourcesRoute = CooperativeResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => CooperativeRoute,
 } as any)
-const CooperativeReportsRoute = CooperativeReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+const CooperativeProfileRoute = CooperativeProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => CooperativeRoute,
 } as any)
 const CooperativePerformanceRoute = CooperativePerformanceRouteImport.update({
@@ -347,14 +393,45 @@ const CooperativePerformanceRoute = CooperativePerformanceRouteImport.update({
   path: '/performance',
   getParentRoute: () => CooperativeRoute,
 } as any)
+const CooperativeJoinRequestsRoute = CooperativeJoinRequestsRouteImport.update({
+  id: '/join-requests',
+  path: '/join-requests',
+  getParentRoute: () => CooperativeRoute,
+} as any)
 const CooperativeFarmersRoute = CooperativeFarmersRouteImport.update({
   id: '/farmers',
   path: '/farmers',
   getParentRoute: () => CooperativeRoute,
 } as any)
+const CooperativeFarmerDetailRoute = CooperativeFarmerDetailRouteImport.update({
+  id: '/farmer-detail',
+  path: '/farmer-detail',
+  getParentRoute: () => CooperativeRoute,
+} as any)
+const CooperativeExpensesRoute = CooperativeExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => CooperativeRoute,
+} as any)
 const CooperativeEventsRoute = CooperativeEventsRouteImport.update({
   id: '/events',
   path: '/events',
+  getParentRoute: () => CooperativeRoute,
+} as any)
+const CooperativeDuesRoute = CooperativeDuesRouteImport.update({
+  id: '/dues',
+  path: '/dues',
+  getParentRoute: () => CooperativeRoute,
+} as any)
+const CooperativeDistributionsRoute =
+  CooperativeDistributionsRouteImport.update({
+    id: '/distributions',
+    path: '/distributions',
+    getParentRoute: () => CooperativeRoute,
+  } as any)
+const CooperativeAnalyticsRoute = CooperativeAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => CooperativeRoute,
 } as any)
 const CooperativeAiRoute = CooperativeAiRouteImport.update({
@@ -372,9 +449,14 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+const AdminSecurityRoute = AdminSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminHealthRoute = AdminHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminFarmsRoute = AdminFarmsRouteImport.update({
@@ -382,6 +464,195 @@ const AdminFarmsRoute = AdminFarmsRouteImport.update({
   path: '/farms',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCooperativesRoute = AdminCooperativesRouteImport.update({
+  id: '/cooperatives',
+  path: '/cooperatives',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBackupsRoute = AdminBackupsRouteImport.update({
+  id: '/backups',
+  path: '/backups',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
+const SuperAdminReportsV2IndexRoute =
+  SuperAdminReportsV2IndexRouteImport.update({
+    id: '/reports-v2/',
+    path: '/reports-v2/',
+    getParentRoute: () => SuperAdminRoute,
+  } as any)
+const OfficerReportsV2IndexRoute = OfficerReportsV2IndexRouteImport.update({
+  id: '/reports-v2/',
+  path: '/reports-v2/',
+  getParentRoute: () => OfficerRoute,
+} as any)
+const FarmerReportsV2IndexRoute = FarmerReportsV2IndexRouteImport.update({
+  id: '/reports-v2/',
+  path: '/reports-v2/',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const CooperativeReportsV2IndexRoute =
+  CooperativeReportsV2IndexRouteImport.update({
+    id: '/reports-v2/',
+    path: '/reports-v2/',
+    getParentRoute: () => CooperativeRoute,
+  } as any)
+const AdminReportsV2IndexRoute = AdminReportsV2IndexRouteImport.update({
+  id: '/reports-v2/',
+  path: '/reports-v2/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const SuperAdminReportsV2SystemHealthRoute =
+  SuperAdminReportsV2SystemHealthRouteImport.update({
+    id: '/reports-v2/system-health',
+    path: '/reports-v2/system-health',
+    getParentRoute: () => SuperAdminRoute,
+  } as any)
+const SuperAdminReportsV2SecurityRoute =
+  SuperAdminReportsV2SecurityRouteImport.update({
+    id: '/reports-v2/security',
+    path: '/reports-v2/security',
+    getParentRoute: () => SuperAdminRoute,
+  } as any)
+const SuperAdminReportsV2NationalRoute =
+  SuperAdminReportsV2NationalRouteImport.update({
+    id: '/reports-v2/national',
+    path: '/reports-v2/national',
+    getParentRoute: () => SuperAdminRoute,
+  } as any)
+const SuperAdminReportsV2BackupRoute =
+  SuperAdminReportsV2BackupRouteImport.update({
+    id: '/reports-v2/backup',
+    path: '/reports-v2/backup',
+    getParentRoute: () => SuperAdminRoute,
+  } as any)
+const SuperAdminReportsV2AuditRoute =
+  SuperAdminReportsV2AuditRouteImport.update({
+    id: '/reports-v2/audit',
+    path: '/reports-v2/audit',
+    getParentRoute: () => SuperAdminRoute,
+  } as any)
+const OfficerReportsV2RiskRoute = OfficerReportsV2RiskRouteImport.update({
+  id: '/reports-v2/risk',
+  path: '/reports-v2/risk',
+  getParentRoute: () => OfficerRoute,
+} as any)
+const OfficerReportsV2PerformanceComparisonRoute =
+  OfficerReportsV2PerformanceComparisonRouteImport.update({
+    id: '/reports-v2/performance-comparison',
+    path: '/reports-v2/performance-comparison',
+    getParentRoute: () => OfficerRoute,
+  } as any)
+const OfficerReportsV2MonthlySummaryRoute =
+  OfficerReportsV2MonthlySummaryRouteImport.update({
+    id: '/reports-v2/monthly-summary',
+    path: '/reports-v2/monthly-summary',
+    getParentRoute: () => OfficerRoute,
+  } as any)
+const OfficerReportsV2AssignedFarmersRoute =
+  OfficerReportsV2AssignedFarmersRouteImport.update({
+    id: '/reports-v2/assigned-farmers',
+    path: '/reports-v2/assigned-farmers',
+    getParentRoute: () => OfficerRoute,
+  } as any)
+const OfficerReportsV2AdvisoryRoute =
+  OfficerReportsV2AdvisoryRouteImport.update({
+    id: '/reports-v2/advisory',
+    path: '/reports-v2/advisory',
+    getParentRoute: () => OfficerRoute,
+  } as any)
+const FarmerReportsV2YieldProductivityRoute =
+  FarmerReportsV2YieldProductivityRouteImport.update({
+    id: '/reports-v2/yield-productivity',
+    path: '/reports-v2/yield-productivity',
+    getParentRoute: () => FarmerRoute,
+  } as any)
+const FarmerReportsV2SoilIrrigationRoute =
+  FarmerReportsV2SoilIrrigationRouteImport.update({
+    id: '/reports-v2/soil-irrigation',
+    path: '/reports-v2/soil-irrigation',
+    getParentRoute: () => FarmerRoute,
+  } as any)
+const FarmerReportsV2SeasonalRoute = FarmerReportsV2SeasonalRouteImport.update({
+  id: '/reports-v2/seasonal',
+  path: '/reports-v2/seasonal',
+  getParentRoute: () => FarmerRoute,
+} as any)
+const FarmerReportsV2PerformanceRoute =
+  FarmerReportsV2PerformanceRouteImport.update({
+    id: '/reports-v2/performance',
+    path: '/reports-v2/performance',
+    getParentRoute: () => FarmerRoute,
+  } as any)
+const FarmerReportsV2AiRecommendationRoute =
+  FarmerReportsV2AiRecommendationRouteImport.update({
+    id: '/reports-v2/ai-recommendation',
+    path: '/reports-v2/ai-recommendation',
+    getParentRoute: () => FarmerRoute,
+  } as any)
+const CooperativeReportsV2ResourceDistributionRoute =
+  CooperativeReportsV2ResourceDistributionRouteImport.update({
+    id: '/reports-v2/resource-distribution',
+    path: '/reports-v2/resource-distribution',
+    getParentRoute: () => CooperativeRoute,
+  } as any)
+const CooperativeReportsV2RecommendationRoute =
+  CooperativeReportsV2RecommendationRouteImport.update({
+    id: '/reports-v2/recommendation',
+    path: '/reports-v2/recommendation',
+    getParentRoute: () => CooperativeRoute,
+  } as any)
+const CooperativeReportsV2ProductionRoute =
+  CooperativeReportsV2ProductionRouteImport.update({
+    id: '/reports-v2/production',
+    path: '/reports-v2/production',
+    getParentRoute: () => CooperativeRoute,
+  } as any)
+const CooperativeReportsV2PerformanceRoute =
+  CooperativeReportsV2PerformanceRouteImport.update({
+    id: '/reports-v2/performance',
+    path: '/reports-v2/performance',
+    getParentRoute: () => CooperativeRoute,
+  } as any)
+const CooperativeReportsV2FarmerComparisonRoute =
+  CooperativeReportsV2FarmerComparisonRouteImport.update({
+    id: '/reports-v2/farmer-comparison',
+    path: '/reports-v2/farmer-comparison',
+    getParentRoute: () => CooperativeRoute,
+  } as any)
+const AdminReportsV2UserActivityRoute =
+  AdminReportsV2UserActivityRouteImport.update({
+    id: '/reports-v2/user-activity',
+    path: '/reports-v2/user-activity',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminReportsV2SystemUsageRoute =
+  AdminReportsV2SystemUsageRouteImport.update({
+    id: '/reports-v2/system-usage',
+    path: '/reports-v2/system-usage',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminReportsV2FinancialRoute = AdminReportsV2FinancialRouteImport.update({
+  id: '/reports-v2/financial',
+  path: '/reports-v2/financial',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsV2DataValidationRoute =
+  AdminReportsV2DataValidationRouteImport.update({
+    id: '/reports-v2/data-validation',
+    path: '/reports-v2/data-validation',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminReportsV2AnalyticsDashboardRoute =
+  AdminReportsV2AnalyticsDashboardRouteImport.update({
+    id: '/reports-v2/analytics-dashboard',
+    path: '/reports-v2/analytics-dashboard',
+    getParentRoute: () => AdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -393,32 +664,46 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/farmer': typeof FarmerRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRouteWithChildren
+  '/notifications': typeof NotificationsRoute
   '/officer': typeof OfficerRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/reports': typeof ReportsRouteWithChildren
   '/super-admin': typeof SuperAdminRouteWithChildren
   '/terms': typeof TermsRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/backups': typeof AdminBackupsRoute
+  '/admin/cooperatives': typeof AdminCooperativesRoute
   '/admin/farms': typeof AdminFarmsRoute
-  '/admin/reports': typeof AdminReportsRoute
+  '/admin/health': typeof AdminHealthRoute
+  '/admin/security': typeof AdminSecurityRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/cooperative/ai': typeof CooperativeAiRoute
+  '/cooperative/analytics': typeof CooperativeAnalyticsRoute
+  '/cooperative/distributions': typeof CooperativeDistributionsRoute
+  '/cooperative/dues': typeof CooperativeDuesRoute
   '/cooperative/events': typeof CooperativeEventsRoute
+  '/cooperative/expenses': typeof CooperativeExpensesRoute
+  '/cooperative/farmer-detail': typeof CooperativeFarmerDetailRoute
   '/cooperative/farmers': typeof CooperativeFarmersRoute
+  '/cooperative/join-requests': typeof CooperativeJoinRequestsRoute
   '/cooperative/performance': typeof CooperativePerformanceRoute
-  '/cooperative/reports': typeof CooperativeReportsRoute
+  '/cooperative/profile': typeof CooperativeProfileRoute
   '/cooperative/resources': typeof CooperativeResourcesRoute
   '/farmer/activities': typeof FarmerActivitiesRoute
   '/farmer/ai': typeof FarmerAiRoute
   '/farmer/community': typeof FarmerCommunityRoute
+  '/farmer/cooperative': typeof FarmerCooperativeRoute
   '/farmer/crops': typeof FarmerCropsRoute
   '/farmer/guidance': typeof FarmerGuidanceRoute
   '/farmer/irrigation': typeof FarmerIrrigationRoute
+  '/farmer/livestock': typeof FarmerLivestockRoute
   '/farmer/market': typeof FarmerMarketRoute
   '/farmer/notifications': typeof FarmerNotificationsRoute
+  '/farmer/pest-disease': typeof FarmerPestDiseaseRoute
   '/farmer/profile': typeof FarmerProfileRoute
   '/farmer/recommendations': typeof FarmerRecommendationsRoute
+  '/farmer/resources': typeof FarmerResourcesRoute
   '/farmer/soil': typeof FarmerSoilRoute
   '/farmer/weather': typeof FarmerWeatherRoute
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
@@ -426,26 +711,53 @@ export interface FileRoutesByFullPath {
   '/forgot-password/verify': typeof ForgotPasswordVerifyRoute
   '/officer/advisories': typeof OfficerAdvisoriesRoute
   '/officer/analysis': typeof OfficerAnalysisRoute
+  '/officer/farmer-detail': typeof OfficerFarmerDetailRoute
   '/officer/farms': typeof OfficerFarmsRoute
+  '/officer/field-work': typeof OfficerFieldWorkRoute
   '/officer/pest-disease': typeof OfficerPestDiseaseRoute
-  '/officer/reports': typeof OfficerReportsRoute
   '/officer/risks': typeof OfficerRisksRoute
-  '/reports/activities': typeof ReportsActivitiesRoute
-  '/reports/irrigation': typeof ReportsIrrigationRoute
-  '/reports/soil': typeof ReportsSoilRoute
-  '/reports/weather': typeof ReportsWeatherRoute
+  '/officer/templates': typeof OfficerTemplatesRoute
   '/super-admin/audit': typeof SuperAdminAuditRoute
   '/super-admin/backups': typeof SuperAdminBackupsRoute
   '/super-admin/health': typeof SuperAdminHealthRoute
-  '/super-admin/roles': typeof SuperAdminRolesRoute
+  '/super-admin/security': typeof SuperAdminSecurityRoute
   '/super-admin/settings': typeof SuperAdminSettingsRoute
   '/super-admin/users': typeof SuperAdminUsersRoute
   '/admin/': typeof AdminIndexRoute
   '/cooperative/': typeof CooperativeIndexRoute
   '/farmer/': typeof FarmerIndexRoute
   '/officer/': typeof OfficerIndexRoute
-  '/reports/': typeof ReportsIndexRoute
   '/super-admin/': typeof SuperAdminIndexRoute
+  '/admin/reports-v2/analytics-dashboard': typeof AdminReportsV2AnalyticsDashboardRoute
+  '/admin/reports-v2/data-validation': typeof AdminReportsV2DataValidationRoute
+  '/admin/reports-v2/financial': typeof AdminReportsV2FinancialRoute
+  '/admin/reports-v2/system-usage': typeof AdminReportsV2SystemUsageRoute
+  '/admin/reports-v2/user-activity': typeof AdminReportsV2UserActivityRoute
+  '/cooperative/reports-v2/farmer-comparison': typeof CooperativeReportsV2FarmerComparisonRoute
+  '/cooperative/reports-v2/performance': typeof CooperativeReportsV2PerformanceRoute
+  '/cooperative/reports-v2/production': typeof CooperativeReportsV2ProductionRoute
+  '/cooperative/reports-v2/recommendation': typeof CooperativeReportsV2RecommendationRoute
+  '/cooperative/reports-v2/resource-distribution': typeof CooperativeReportsV2ResourceDistributionRoute
+  '/farmer/reports-v2/ai-recommendation': typeof FarmerReportsV2AiRecommendationRoute
+  '/farmer/reports-v2/performance': typeof FarmerReportsV2PerformanceRoute
+  '/farmer/reports-v2/seasonal': typeof FarmerReportsV2SeasonalRoute
+  '/farmer/reports-v2/soil-irrigation': typeof FarmerReportsV2SoilIrrigationRoute
+  '/farmer/reports-v2/yield-productivity': typeof FarmerReportsV2YieldProductivityRoute
+  '/officer/reports-v2/advisory': typeof OfficerReportsV2AdvisoryRoute
+  '/officer/reports-v2/assigned-farmers': typeof OfficerReportsV2AssignedFarmersRoute
+  '/officer/reports-v2/monthly-summary': typeof OfficerReportsV2MonthlySummaryRoute
+  '/officer/reports-v2/performance-comparison': typeof OfficerReportsV2PerformanceComparisonRoute
+  '/officer/reports-v2/risk': typeof OfficerReportsV2RiskRoute
+  '/super-admin/reports-v2/audit': typeof SuperAdminReportsV2AuditRoute
+  '/super-admin/reports-v2/backup': typeof SuperAdminReportsV2BackupRoute
+  '/super-admin/reports-v2/national': typeof SuperAdminReportsV2NationalRoute
+  '/super-admin/reports-v2/security': typeof SuperAdminReportsV2SecurityRoute
+  '/super-admin/reports-v2/system-health': typeof SuperAdminReportsV2SystemHealthRoute
+  '/admin/reports-v2/': typeof AdminReportsV2IndexRoute
+  '/cooperative/reports-v2/': typeof CooperativeReportsV2IndexRoute
+  '/farmer/reports-v2/': typeof FarmerReportsV2IndexRoute
+  '/officer/reports-v2/': typeof OfficerReportsV2IndexRoute
+  '/super-admin/reports-v2/': typeof SuperAdminReportsV2IndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -454,29 +766,44 @@ export interface FileRoutesByTo {
   '/change-password': typeof ChangePasswordRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRouteWithChildren
+  '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/terms': typeof TermsRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/backups': typeof AdminBackupsRoute
+  '/admin/cooperatives': typeof AdminCooperativesRoute
   '/admin/farms': typeof AdminFarmsRoute
-  '/admin/reports': typeof AdminReportsRoute
+  '/admin/health': typeof AdminHealthRoute
+  '/admin/security': typeof AdminSecurityRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/cooperative/ai': typeof CooperativeAiRoute
+  '/cooperative/analytics': typeof CooperativeAnalyticsRoute
+  '/cooperative/distributions': typeof CooperativeDistributionsRoute
+  '/cooperative/dues': typeof CooperativeDuesRoute
   '/cooperative/events': typeof CooperativeEventsRoute
+  '/cooperative/expenses': typeof CooperativeExpensesRoute
+  '/cooperative/farmer-detail': typeof CooperativeFarmerDetailRoute
   '/cooperative/farmers': typeof CooperativeFarmersRoute
+  '/cooperative/join-requests': typeof CooperativeJoinRequestsRoute
   '/cooperative/performance': typeof CooperativePerformanceRoute
-  '/cooperative/reports': typeof CooperativeReportsRoute
+  '/cooperative/profile': typeof CooperativeProfileRoute
   '/cooperative/resources': typeof CooperativeResourcesRoute
   '/farmer/activities': typeof FarmerActivitiesRoute
   '/farmer/ai': typeof FarmerAiRoute
   '/farmer/community': typeof FarmerCommunityRoute
+  '/farmer/cooperative': typeof FarmerCooperativeRoute
   '/farmer/crops': typeof FarmerCropsRoute
   '/farmer/guidance': typeof FarmerGuidanceRoute
   '/farmer/irrigation': typeof FarmerIrrigationRoute
+  '/farmer/livestock': typeof FarmerLivestockRoute
   '/farmer/market': typeof FarmerMarketRoute
   '/farmer/notifications': typeof FarmerNotificationsRoute
+  '/farmer/pest-disease': typeof FarmerPestDiseaseRoute
   '/farmer/profile': typeof FarmerProfileRoute
   '/farmer/recommendations': typeof FarmerRecommendationsRoute
+  '/farmer/resources': typeof FarmerResourcesRoute
   '/farmer/soil': typeof FarmerSoilRoute
   '/farmer/weather': typeof FarmerWeatherRoute
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
@@ -484,26 +811,53 @@ export interface FileRoutesByTo {
   '/forgot-password/verify': typeof ForgotPasswordVerifyRoute
   '/officer/advisories': typeof OfficerAdvisoriesRoute
   '/officer/analysis': typeof OfficerAnalysisRoute
+  '/officer/farmer-detail': typeof OfficerFarmerDetailRoute
   '/officer/farms': typeof OfficerFarmsRoute
+  '/officer/field-work': typeof OfficerFieldWorkRoute
   '/officer/pest-disease': typeof OfficerPestDiseaseRoute
-  '/officer/reports': typeof OfficerReportsRoute
   '/officer/risks': typeof OfficerRisksRoute
-  '/reports/activities': typeof ReportsActivitiesRoute
-  '/reports/irrigation': typeof ReportsIrrigationRoute
-  '/reports/soil': typeof ReportsSoilRoute
-  '/reports/weather': typeof ReportsWeatherRoute
+  '/officer/templates': typeof OfficerTemplatesRoute
   '/super-admin/audit': typeof SuperAdminAuditRoute
   '/super-admin/backups': typeof SuperAdminBackupsRoute
   '/super-admin/health': typeof SuperAdminHealthRoute
-  '/super-admin/roles': typeof SuperAdminRolesRoute
+  '/super-admin/security': typeof SuperAdminSecurityRoute
   '/super-admin/settings': typeof SuperAdminSettingsRoute
   '/super-admin/users': typeof SuperAdminUsersRoute
   '/admin': typeof AdminIndexRoute
   '/cooperative': typeof CooperativeIndexRoute
   '/farmer': typeof FarmerIndexRoute
   '/officer': typeof OfficerIndexRoute
-  '/reports': typeof ReportsIndexRoute
   '/super-admin': typeof SuperAdminIndexRoute
+  '/admin/reports-v2/analytics-dashboard': typeof AdminReportsV2AnalyticsDashboardRoute
+  '/admin/reports-v2/data-validation': typeof AdminReportsV2DataValidationRoute
+  '/admin/reports-v2/financial': typeof AdminReportsV2FinancialRoute
+  '/admin/reports-v2/system-usage': typeof AdminReportsV2SystemUsageRoute
+  '/admin/reports-v2/user-activity': typeof AdminReportsV2UserActivityRoute
+  '/cooperative/reports-v2/farmer-comparison': typeof CooperativeReportsV2FarmerComparisonRoute
+  '/cooperative/reports-v2/performance': typeof CooperativeReportsV2PerformanceRoute
+  '/cooperative/reports-v2/production': typeof CooperativeReportsV2ProductionRoute
+  '/cooperative/reports-v2/recommendation': typeof CooperativeReportsV2RecommendationRoute
+  '/cooperative/reports-v2/resource-distribution': typeof CooperativeReportsV2ResourceDistributionRoute
+  '/farmer/reports-v2/ai-recommendation': typeof FarmerReportsV2AiRecommendationRoute
+  '/farmer/reports-v2/performance': typeof FarmerReportsV2PerformanceRoute
+  '/farmer/reports-v2/seasonal': typeof FarmerReportsV2SeasonalRoute
+  '/farmer/reports-v2/soil-irrigation': typeof FarmerReportsV2SoilIrrigationRoute
+  '/farmer/reports-v2/yield-productivity': typeof FarmerReportsV2YieldProductivityRoute
+  '/officer/reports-v2/advisory': typeof OfficerReportsV2AdvisoryRoute
+  '/officer/reports-v2/assigned-farmers': typeof OfficerReportsV2AssignedFarmersRoute
+  '/officer/reports-v2/monthly-summary': typeof OfficerReportsV2MonthlySummaryRoute
+  '/officer/reports-v2/performance-comparison': typeof OfficerReportsV2PerformanceComparisonRoute
+  '/officer/reports-v2/risk': typeof OfficerReportsV2RiskRoute
+  '/super-admin/reports-v2/audit': typeof SuperAdminReportsV2AuditRoute
+  '/super-admin/reports-v2/backup': typeof SuperAdminReportsV2BackupRoute
+  '/super-admin/reports-v2/national': typeof SuperAdminReportsV2NationalRoute
+  '/super-admin/reports-v2/security': typeof SuperAdminReportsV2SecurityRoute
+  '/super-admin/reports-v2/system-health': typeof SuperAdminReportsV2SystemHealthRoute
+  '/admin/reports-v2': typeof AdminReportsV2IndexRoute
+  '/cooperative/reports-v2': typeof CooperativeReportsV2IndexRoute
+  '/farmer/reports-v2': typeof FarmerReportsV2IndexRoute
+  '/officer/reports-v2': typeof OfficerReportsV2IndexRoute
+  '/super-admin/reports-v2': typeof SuperAdminReportsV2IndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -516,32 +870,46 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/farmer': typeof FarmerRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRouteWithChildren
+  '/notifications': typeof NotificationsRoute
   '/officer': typeof OfficerRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
-  '/reports': typeof ReportsRouteWithChildren
   '/super-admin': typeof SuperAdminRouteWithChildren
   '/terms': typeof TermsRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/backups': typeof AdminBackupsRoute
+  '/admin/cooperatives': typeof AdminCooperativesRoute
   '/admin/farms': typeof AdminFarmsRoute
-  '/admin/reports': typeof AdminReportsRoute
+  '/admin/health': typeof AdminHealthRoute
+  '/admin/security': typeof AdminSecurityRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/cooperative/ai': typeof CooperativeAiRoute
+  '/cooperative/analytics': typeof CooperativeAnalyticsRoute
+  '/cooperative/distributions': typeof CooperativeDistributionsRoute
+  '/cooperative/dues': typeof CooperativeDuesRoute
   '/cooperative/events': typeof CooperativeEventsRoute
+  '/cooperative/expenses': typeof CooperativeExpensesRoute
+  '/cooperative/farmer-detail': typeof CooperativeFarmerDetailRoute
   '/cooperative/farmers': typeof CooperativeFarmersRoute
+  '/cooperative/join-requests': typeof CooperativeJoinRequestsRoute
   '/cooperative/performance': typeof CooperativePerformanceRoute
-  '/cooperative/reports': typeof CooperativeReportsRoute
+  '/cooperative/profile': typeof CooperativeProfileRoute
   '/cooperative/resources': typeof CooperativeResourcesRoute
   '/farmer/activities': typeof FarmerActivitiesRoute
   '/farmer/ai': typeof FarmerAiRoute
   '/farmer/community': typeof FarmerCommunityRoute
+  '/farmer/cooperative': typeof FarmerCooperativeRoute
   '/farmer/crops': typeof FarmerCropsRoute
   '/farmer/guidance': typeof FarmerGuidanceRoute
   '/farmer/irrigation': typeof FarmerIrrigationRoute
+  '/farmer/livestock': typeof FarmerLivestockRoute
   '/farmer/market': typeof FarmerMarketRoute
   '/farmer/notifications': typeof FarmerNotificationsRoute
+  '/farmer/pest-disease': typeof FarmerPestDiseaseRoute
   '/farmer/profile': typeof FarmerProfileRoute
   '/farmer/recommendations': typeof FarmerRecommendationsRoute
+  '/farmer/resources': typeof FarmerResourcesRoute
   '/farmer/soil': typeof FarmerSoilRoute
   '/farmer/weather': typeof FarmerWeatherRoute
   '/forgot-password/reset': typeof ForgotPasswordResetRoute
@@ -549,26 +917,53 @@ export interface FileRoutesById {
   '/forgot-password/verify': typeof ForgotPasswordVerifyRoute
   '/officer/advisories': typeof OfficerAdvisoriesRoute
   '/officer/analysis': typeof OfficerAnalysisRoute
+  '/officer/farmer-detail': typeof OfficerFarmerDetailRoute
   '/officer/farms': typeof OfficerFarmsRoute
+  '/officer/field-work': typeof OfficerFieldWorkRoute
   '/officer/pest-disease': typeof OfficerPestDiseaseRoute
-  '/officer/reports': typeof OfficerReportsRoute
   '/officer/risks': typeof OfficerRisksRoute
-  '/reports/activities': typeof ReportsActivitiesRoute
-  '/reports/irrigation': typeof ReportsIrrigationRoute
-  '/reports/soil': typeof ReportsSoilRoute
-  '/reports/weather': typeof ReportsWeatherRoute
+  '/officer/templates': typeof OfficerTemplatesRoute
   '/super-admin/audit': typeof SuperAdminAuditRoute
   '/super-admin/backups': typeof SuperAdminBackupsRoute
   '/super-admin/health': typeof SuperAdminHealthRoute
-  '/super-admin/roles': typeof SuperAdminRolesRoute
+  '/super-admin/security': typeof SuperAdminSecurityRoute
   '/super-admin/settings': typeof SuperAdminSettingsRoute
   '/super-admin/users': typeof SuperAdminUsersRoute
   '/admin/': typeof AdminIndexRoute
   '/cooperative/': typeof CooperativeIndexRoute
   '/farmer/': typeof FarmerIndexRoute
   '/officer/': typeof OfficerIndexRoute
-  '/reports/': typeof ReportsIndexRoute
   '/super-admin/': typeof SuperAdminIndexRoute
+  '/admin/reports-v2/analytics-dashboard': typeof AdminReportsV2AnalyticsDashboardRoute
+  '/admin/reports-v2/data-validation': typeof AdminReportsV2DataValidationRoute
+  '/admin/reports-v2/financial': typeof AdminReportsV2FinancialRoute
+  '/admin/reports-v2/system-usage': typeof AdminReportsV2SystemUsageRoute
+  '/admin/reports-v2/user-activity': typeof AdminReportsV2UserActivityRoute
+  '/cooperative/reports-v2/farmer-comparison': typeof CooperativeReportsV2FarmerComparisonRoute
+  '/cooperative/reports-v2/performance': typeof CooperativeReportsV2PerformanceRoute
+  '/cooperative/reports-v2/production': typeof CooperativeReportsV2ProductionRoute
+  '/cooperative/reports-v2/recommendation': typeof CooperativeReportsV2RecommendationRoute
+  '/cooperative/reports-v2/resource-distribution': typeof CooperativeReportsV2ResourceDistributionRoute
+  '/farmer/reports-v2/ai-recommendation': typeof FarmerReportsV2AiRecommendationRoute
+  '/farmer/reports-v2/performance': typeof FarmerReportsV2PerformanceRoute
+  '/farmer/reports-v2/seasonal': typeof FarmerReportsV2SeasonalRoute
+  '/farmer/reports-v2/soil-irrigation': typeof FarmerReportsV2SoilIrrigationRoute
+  '/farmer/reports-v2/yield-productivity': typeof FarmerReportsV2YieldProductivityRoute
+  '/officer/reports-v2/advisory': typeof OfficerReportsV2AdvisoryRoute
+  '/officer/reports-v2/assigned-farmers': typeof OfficerReportsV2AssignedFarmersRoute
+  '/officer/reports-v2/monthly-summary': typeof OfficerReportsV2MonthlySummaryRoute
+  '/officer/reports-v2/performance-comparison': typeof OfficerReportsV2PerformanceComparisonRoute
+  '/officer/reports-v2/risk': typeof OfficerReportsV2RiskRoute
+  '/super-admin/reports-v2/audit': typeof SuperAdminReportsV2AuditRoute
+  '/super-admin/reports-v2/backup': typeof SuperAdminReportsV2BackupRoute
+  '/super-admin/reports-v2/national': typeof SuperAdminReportsV2NationalRoute
+  '/super-admin/reports-v2/security': typeof SuperAdminReportsV2SecurityRoute
+  '/super-admin/reports-v2/system-health': typeof SuperAdminReportsV2SystemHealthRoute
+  '/admin/reports-v2/': typeof AdminReportsV2IndexRoute
+  '/cooperative/reports-v2/': typeof CooperativeReportsV2IndexRoute
+  '/farmer/reports-v2/': typeof FarmerReportsV2IndexRoute
+  '/officer/reports-v2/': typeof OfficerReportsV2IndexRoute
+  '/super-admin/reports-v2/': typeof SuperAdminReportsV2IndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -582,32 +977,46 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/farmer'
     | '/forgot-password'
+    | '/notifications'
     | '/officer'
     | '/onboarding'
     | '/profile'
-    | '/reports'
     | '/super-admin'
     | '/terms'
+    | '/admin/audit'
+    | '/admin/backups'
+    | '/admin/cooperatives'
     | '/admin/farms'
-    | '/admin/reports'
+    | '/admin/health'
+    | '/admin/security'
     | '/admin/settings'
     | '/admin/users'
     | '/cooperative/ai'
+    | '/cooperative/analytics'
+    | '/cooperative/distributions'
+    | '/cooperative/dues'
     | '/cooperative/events'
+    | '/cooperative/expenses'
+    | '/cooperative/farmer-detail'
     | '/cooperative/farmers'
+    | '/cooperative/join-requests'
     | '/cooperative/performance'
-    | '/cooperative/reports'
+    | '/cooperative/profile'
     | '/cooperative/resources'
     | '/farmer/activities'
     | '/farmer/ai'
     | '/farmer/community'
+    | '/farmer/cooperative'
     | '/farmer/crops'
     | '/farmer/guidance'
     | '/farmer/irrigation'
+    | '/farmer/livestock'
     | '/farmer/market'
     | '/farmer/notifications'
+    | '/farmer/pest-disease'
     | '/farmer/profile'
     | '/farmer/recommendations'
+    | '/farmer/resources'
     | '/farmer/soil'
     | '/farmer/weather'
     | '/forgot-password/reset'
@@ -615,26 +1024,53 @@ export interface FileRouteTypes {
     | '/forgot-password/verify'
     | '/officer/advisories'
     | '/officer/analysis'
+    | '/officer/farmer-detail'
     | '/officer/farms'
+    | '/officer/field-work'
     | '/officer/pest-disease'
-    | '/officer/reports'
     | '/officer/risks'
-    | '/reports/activities'
-    | '/reports/irrigation'
-    | '/reports/soil'
-    | '/reports/weather'
+    | '/officer/templates'
     | '/super-admin/audit'
     | '/super-admin/backups'
     | '/super-admin/health'
-    | '/super-admin/roles'
+    | '/super-admin/security'
     | '/super-admin/settings'
     | '/super-admin/users'
     | '/admin/'
     | '/cooperative/'
     | '/farmer/'
     | '/officer/'
-    | '/reports/'
     | '/super-admin/'
+    | '/admin/reports-v2/analytics-dashboard'
+    | '/admin/reports-v2/data-validation'
+    | '/admin/reports-v2/financial'
+    | '/admin/reports-v2/system-usage'
+    | '/admin/reports-v2/user-activity'
+    | '/cooperative/reports-v2/farmer-comparison'
+    | '/cooperative/reports-v2/performance'
+    | '/cooperative/reports-v2/production'
+    | '/cooperative/reports-v2/recommendation'
+    | '/cooperative/reports-v2/resource-distribution'
+    | '/farmer/reports-v2/ai-recommendation'
+    | '/farmer/reports-v2/performance'
+    | '/farmer/reports-v2/seasonal'
+    | '/farmer/reports-v2/soil-irrigation'
+    | '/farmer/reports-v2/yield-productivity'
+    | '/officer/reports-v2/advisory'
+    | '/officer/reports-v2/assigned-farmers'
+    | '/officer/reports-v2/monthly-summary'
+    | '/officer/reports-v2/performance-comparison'
+    | '/officer/reports-v2/risk'
+    | '/super-admin/reports-v2/audit'
+    | '/super-admin/reports-v2/backup'
+    | '/super-admin/reports-v2/national'
+    | '/super-admin/reports-v2/security'
+    | '/super-admin/reports-v2/system-health'
+    | '/admin/reports-v2/'
+    | '/cooperative/reports-v2/'
+    | '/farmer/reports-v2/'
+    | '/officer/reports-v2/'
+    | '/super-admin/reports-v2/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -643,29 +1079,44 @@ export interface FileRouteTypes {
     | '/change-password'
     | '/dashboard'
     | '/forgot-password'
+    | '/notifications'
     | '/onboarding'
     | '/profile'
     | '/terms'
+    | '/admin/audit'
+    | '/admin/backups'
+    | '/admin/cooperatives'
     | '/admin/farms'
-    | '/admin/reports'
+    | '/admin/health'
+    | '/admin/security'
     | '/admin/settings'
     | '/admin/users'
     | '/cooperative/ai'
+    | '/cooperative/analytics'
+    | '/cooperative/distributions'
+    | '/cooperative/dues'
     | '/cooperative/events'
+    | '/cooperative/expenses'
+    | '/cooperative/farmer-detail'
     | '/cooperative/farmers'
+    | '/cooperative/join-requests'
     | '/cooperative/performance'
-    | '/cooperative/reports'
+    | '/cooperative/profile'
     | '/cooperative/resources'
     | '/farmer/activities'
     | '/farmer/ai'
     | '/farmer/community'
+    | '/farmer/cooperative'
     | '/farmer/crops'
     | '/farmer/guidance'
     | '/farmer/irrigation'
+    | '/farmer/livestock'
     | '/farmer/market'
     | '/farmer/notifications'
+    | '/farmer/pest-disease'
     | '/farmer/profile'
     | '/farmer/recommendations'
+    | '/farmer/resources'
     | '/farmer/soil'
     | '/farmer/weather'
     | '/forgot-password/reset'
@@ -673,26 +1124,53 @@ export interface FileRouteTypes {
     | '/forgot-password/verify'
     | '/officer/advisories'
     | '/officer/analysis'
+    | '/officer/farmer-detail'
     | '/officer/farms'
+    | '/officer/field-work'
     | '/officer/pest-disease'
-    | '/officer/reports'
     | '/officer/risks'
-    | '/reports/activities'
-    | '/reports/irrigation'
-    | '/reports/soil'
-    | '/reports/weather'
+    | '/officer/templates'
     | '/super-admin/audit'
     | '/super-admin/backups'
     | '/super-admin/health'
-    | '/super-admin/roles'
+    | '/super-admin/security'
     | '/super-admin/settings'
     | '/super-admin/users'
     | '/admin'
     | '/cooperative'
     | '/farmer'
     | '/officer'
-    | '/reports'
     | '/super-admin'
+    | '/admin/reports-v2/analytics-dashboard'
+    | '/admin/reports-v2/data-validation'
+    | '/admin/reports-v2/financial'
+    | '/admin/reports-v2/system-usage'
+    | '/admin/reports-v2/user-activity'
+    | '/cooperative/reports-v2/farmer-comparison'
+    | '/cooperative/reports-v2/performance'
+    | '/cooperative/reports-v2/production'
+    | '/cooperative/reports-v2/recommendation'
+    | '/cooperative/reports-v2/resource-distribution'
+    | '/farmer/reports-v2/ai-recommendation'
+    | '/farmer/reports-v2/performance'
+    | '/farmer/reports-v2/seasonal'
+    | '/farmer/reports-v2/soil-irrigation'
+    | '/farmer/reports-v2/yield-productivity'
+    | '/officer/reports-v2/advisory'
+    | '/officer/reports-v2/assigned-farmers'
+    | '/officer/reports-v2/monthly-summary'
+    | '/officer/reports-v2/performance-comparison'
+    | '/officer/reports-v2/risk'
+    | '/super-admin/reports-v2/audit'
+    | '/super-admin/reports-v2/backup'
+    | '/super-admin/reports-v2/national'
+    | '/super-admin/reports-v2/security'
+    | '/super-admin/reports-v2/system-health'
+    | '/admin/reports-v2'
+    | '/cooperative/reports-v2'
+    | '/farmer/reports-v2'
+    | '/officer/reports-v2'
+    | '/super-admin/reports-v2'
   id:
     | '__root__'
     | '/'
@@ -704,32 +1182,46 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/farmer'
     | '/forgot-password'
+    | '/notifications'
     | '/officer'
     | '/onboarding'
     | '/profile'
-    | '/reports'
     | '/super-admin'
     | '/terms'
+    | '/admin/audit'
+    | '/admin/backups'
+    | '/admin/cooperatives'
     | '/admin/farms'
-    | '/admin/reports'
+    | '/admin/health'
+    | '/admin/security'
     | '/admin/settings'
     | '/admin/users'
     | '/cooperative/ai'
+    | '/cooperative/analytics'
+    | '/cooperative/distributions'
+    | '/cooperative/dues'
     | '/cooperative/events'
+    | '/cooperative/expenses'
+    | '/cooperative/farmer-detail'
     | '/cooperative/farmers'
+    | '/cooperative/join-requests'
     | '/cooperative/performance'
-    | '/cooperative/reports'
+    | '/cooperative/profile'
     | '/cooperative/resources'
     | '/farmer/activities'
     | '/farmer/ai'
     | '/farmer/community'
+    | '/farmer/cooperative'
     | '/farmer/crops'
     | '/farmer/guidance'
     | '/farmer/irrigation'
+    | '/farmer/livestock'
     | '/farmer/market'
     | '/farmer/notifications'
+    | '/farmer/pest-disease'
     | '/farmer/profile'
     | '/farmer/recommendations'
+    | '/farmer/resources'
     | '/farmer/soil'
     | '/farmer/weather'
     | '/forgot-password/reset'
@@ -737,26 +1229,53 @@ export interface FileRouteTypes {
     | '/forgot-password/verify'
     | '/officer/advisories'
     | '/officer/analysis'
+    | '/officer/farmer-detail'
     | '/officer/farms'
+    | '/officer/field-work'
     | '/officer/pest-disease'
-    | '/officer/reports'
     | '/officer/risks'
-    | '/reports/activities'
-    | '/reports/irrigation'
-    | '/reports/soil'
-    | '/reports/weather'
+    | '/officer/templates'
     | '/super-admin/audit'
     | '/super-admin/backups'
     | '/super-admin/health'
-    | '/super-admin/roles'
+    | '/super-admin/security'
     | '/super-admin/settings'
     | '/super-admin/users'
     | '/admin/'
     | '/cooperative/'
     | '/farmer/'
     | '/officer/'
-    | '/reports/'
     | '/super-admin/'
+    | '/admin/reports-v2/analytics-dashboard'
+    | '/admin/reports-v2/data-validation'
+    | '/admin/reports-v2/financial'
+    | '/admin/reports-v2/system-usage'
+    | '/admin/reports-v2/user-activity'
+    | '/cooperative/reports-v2/farmer-comparison'
+    | '/cooperative/reports-v2/performance'
+    | '/cooperative/reports-v2/production'
+    | '/cooperative/reports-v2/recommendation'
+    | '/cooperative/reports-v2/resource-distribution'
+    | '/farmer/reports-v2/ai-recommendation'
+    | '/farmer/reports-v2/performance'
+    | '/farmer/reports-v2/seasonal'
+    | '/farmer/reports-v2/soil-irrigation'
+    | '/farmer/reports-v2/yield-productivity'
+    | '/officer/reports-v2/advisory'
+    | '/officer/reports-v2/assigned-farmers'
+    | '/officer/reports-v2/monthly-summary'
+    | '/officer/reports-v2/performance-comparison'
+    | '/officer/reports-v2/risk'
+    | '/super-admin/reports-v2/audit'
+    | '/super-admin/reports-v2/backup'
+    | '/super-admin/reports-v2/national'
+    | '/super-admin/reports-v2/security'
+    | '/super-admin/reports-v2/system-health'
+    | '/admin/reports-v2/'
+    | '/cooperative/reports-v2/'
+    | '/farmer/reports-v2/'
+    | '/officer/reports-v2/'
+    | '/super-admin/reports-v2/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -769,10 +1288,10 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   FarmerRoute: typeof FarmerRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRouteWithChildren
+  NotificationsRoute: typeof NotificationsRoute
   OfficerRoute: typeof OfficerRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
-  ReportsRoute: typeof ReportsRouteWithChildren
   SuperAdminRoute: typeof SuperAdminRouteWithChildren
   TermsRoute: typeof TermsRoute
 }
@@ -791,13 +1310,6 @@ declare module '@tanstack/react-router' {
       path: '/super-admin'
       fullPath: '/super-admin'
       preLoaderRoute: typeof SuperAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -819,6 +1331,13 @@ declare module '@tanstack/react-router' {
       path: '/officer'
       fullPath: '/officer'
       preLoaderRoute: typeof OfficerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -891,13 +1410,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminIndexRouteImport
       parentRoute: typeof SuperAdminRoute
     }
-    '/reports/': {
-      id: '/reports/'
-      path: '/'
-      fullPath: '/reports/'
-      preLoaderRoute: typeof ReportsIndexRouteImport
-      parentRoute: typeof ReportsRoute
-    }
     '/officer/': {
       id: '/officer/'
       path: '/'
@@ -940,11 +1452,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminSettingsRouteImport
       parentRoute: typeof SuperAdminRoute
     }
-    '/super-admin/roles': {
-      id: '/super-admin/roles'
-      path: '/roles'
-      fullPath: '/super-admin/roles'
-      preLoaderRoute: typeof SuperAdminRolesRouteImport
+    '/super-admin/security': {
+      id: '/super-admin/security'
+      path: '/security'
+      fullPath: '/super-admin/security'
+      preLoaderRoute: typeof SuperAdminSecurityRouteImport
       parentRoute: typeof SuperAdminRoute
     }
     '/super-admin/health': {
@@ -968,46 +1480,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminAuditRouteImport
       parentRoute: typeof SuperAdminRoute
     }
-    '/reports/weather': {
-      id: '/reports/weather'
-      path: '/weather'
-      fullPath: '/reports/weather'
-      preLoaderRoute: typeof ReportsWeatherRouteImport
-      parentRoute: typeof ReportsRoute
-    }
-    '/reports/soil': {
-      id: '/reports/soil'
-      path: '/soil'
-      fullPath: '/reports/soil'
-      preLoaderRoute: typeof ReportsSoilRouteImport
-      parentRoute: typeof ReportsRoute
-    }
-    '/reports/irrigation': {
-      id: '/reports/irrigation'
-      path: '/irrigation'
-      fullPath: '/reports/irrigation'
-      preLoaderRoute: typeof ReportsIrrigationRouteImport
-      parentRoute: typeof ReportsRoute
-    }
-    '/reports/activities': {
-      id: '/reports/activities'
-      path: '/activities'
-      fullPath: '/reports/activities'
-      preLoaderRoute: typeof ReportsActivitiesRouteImport
-      parentRoute: typeof ReportsRoute
+    '/officer/templates': {
+      id: '/officer/templates'
+      path: '/templates'
+      fullPath: '/officer/templates'
+      preLoaderRoute: typeof OfficerTemplatesRouteImport
+      parentRoute: typeof OfficerRoute
     }
     '/officer/risks': {
       id: '/officer/risks'
       path: '/risks'
       fullPath: '/officer/risks'
       preLoaderRoute: typeof OfficerRisksRouteImport
-      parentRoute: typeof OfficerRoute
-    }
-    '/officer/reports': {
-      id: '/officer/reports'
-      path: '/reports'
-      fullPath: '/officer/reports'
-      preLoaderRoute: typeof OfficerReportsRouteImport
       parentRoute: typeof OfficerRoute
     }
     '/officer/pest-disease': {
@@ -1017,11 +1501,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfficerPestDiseaseRouteImport
       parentRoute: typeof OfficerRoute
     }
+    '/officer/field-work': {
+      id: '/officer/field-work'
+      path: '/field-work'
+      fullPath: '/officer/field-work'
+      preLoaderRoute: typeof OfficerFieldWorkRouteImport
+      parentRoute: typeof OfficerRoute
+    }
     '/officer/farms': {
       id: '/officer/farms'
       path: '/farms'
       fullPath: '/officer/farms'
       preLoaderRoute: typeof OfficerFarmsRouteImport
+      parentRoute: typeof OfficerRoute
+    }
+    '/officer/farmer-detail': {
+      id: '/officer/farmer-detail'
+      path: '/farmer-detail'
+      fullPath: '/officer/farmer-detail'
+      preLoaderRoute: typeof OfficerFarmerDetailRouteImport
       parentRoute: typeof OfficerRoute
     }
     '/officer/analysis': {
@@ -1073,6 +1571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FarmerSoilRouteImport
       parentRoute: typeof FarmerRoute
     }
+    '/farmer/resources': {
+      id: '/farmer/resources'
+      path: '/resources'
+      fullPath: '/farmer/resources'
+      preLoaderRoute: typeof FarmerResourcesRouteImport
+      parentRoute: typeof FarmerRoute
+    }
     '/farmer/recommendations': {
       id: '/farmer/recommendations'
       path: '/recommendations'
@@ -1087,6 +1592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FarmerProfileRouteImport
       parentRoute: typeof FarmerRoute
     }
+    '/farmer/pest-disease': {
+      id: '/farmer/pest-disease'
+      path: '/pest-disease'
+      fullPath: '/farmer/pest-disease'
+      preLoaderRoute: typeof FarmerPestDiseaseRouteImport
+      parentRoute: typeof FarmerRoute
+    }
     '/farmer/notifications': {
       id: '/farmer/notifications'
       path: '/notifications'
@@ -1099,6 +1611,13 @@ declare module '@tanstack/react-router' {
       path: '/market'
       fullPath: '/farmer/market'
       preLoaderRoute: typeof FarmerMarketRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/livestock': {
+      id: '/farmer/livestock'
+      path: '/livestock'
+      fullPath: '/farmer/livestock'
+      preLoaderRoute: typeof FarmerLivestockRouteImport
       parentRoute: typeof FarmerRoute
     }
     '/farmer/irrigation': {
@@ -1120,6 +1639,13 @@ declare module '@tanstack/react-router' {
       path: '/crops'
       fullPath: '/farmer/crops'
       preLoaderRoute: typeof FarmerCropsRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/cooperative': {
+      id: '/farmer/cooperative'
+      path: '/cooperative'
+      fullPath: '/farmer/cooperative'
+      preLoaderRoute: typeof FarmerCooperativeRouteImport
       parentRoute: typeof FarmerRoute
     }
     '/farmer/community': {
@@ -1150,11 +1676,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CooperativeResourcesRouteImport
       parentRoute: typeof CooperativeRoute
     }
-    '/cooperative/reports': {
-      id: '/cooperative/reports'
-      path: '/reports'
-      fullPath: '/cooperative/reports'
-      preLoaderRoute: typeof CooperativeReportsRouteImport
+    '/cooperative/profile': {
+      id: '/cooperative/profile'
+      path: '/profile'
+      fullPath: '/cooperative/profile'
+      preLoaderRoute: typeof CooperativeProfileRouteImport
       parentRoute: typeof CooperativeRoute
     }
     '/cooperative/performance': {
@@ -1164,6 +1690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CooperativePerformanceRouteImport
       parentRoute: typeof CooperativeRoute
     }
+    '/cooperative/join-requests': {
+      id: '/cooperative/join-requests'
+      path: '/join-requests'
+      fullPath: '/cooperative/join-requests'
+      preLoaderRoute: typeof CooperativeJoinRequestsRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
     '/cooperative/farmers': {
       id: '/cooperative/farmers'
       path: '/farmers'
@@ -1171,11 +1704,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CooperativeFarmersRouteImport
       parentRoute: typeof CooperativeRoute
     }
+    '/cooperative/farmer-detail': {
+      id: '/cooperative/farmer-detail'
+      path: '/farmer-detail'
+      fullPath: '/cooperative/farmer-detail'
+      preLoaderRoute: typeof CooperativeFarmerDetailRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/expenses': {
+      id: '/cooperative/expenses'
+      path: '/expenses'
+      fullPath: '/cooperative/expenses'
+      preLoaderRoute: typeof CooperativeExpensesRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
     '/cooperative/events': {
       id: '/cooperative/events'
       path: '/events'
       fullPath: '/cooperative/events'
       preLoaderRoute: typeof CooperativeEventsRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/dues': {
+      id: '/cooperative/dues'
+      path: '/dues'
+      fullPath: '/cooperative/dues'
+      preLoaderRoute: typeof CooperativeDuesRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/distributions': {
+      id: '/cooperative/distributions'
+      path: '/distributions'
+      fullPath: '/cooperative/distributions'
+      preLoaderRoute: typeof CooperativeDistributionsRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/analytics': {
+      id: '/cooperative/analytics'
+      path: '/analytics'
+      fullPath: '/cooperative/analytics'
+      preLoaderRoute: typeof CooperativeAnalyticsRouteImport
       parentRoute: typeof CooperativeRoute
     }
     '/cooperative/ai': {
@@ -1199,11 +1767,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
+    '/admin/security': {
+      id: '/admin/security'
+      path: '/security'
+      fullPath: '/admin/security'
+      preLoaderRoute: typeof AdminSecurityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/health': {
+      id: '/admin/health'
+      path: '/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AdminHealthRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/farms': {
@@ -1213,45 +1788,323 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFarmsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/cooperatives': {
+      id: '/admin/cooperatives'
+      path: '/cooperatives'
+      fullPath: '/admin/cooperatives'
+      preLoaderRoute: typeof AdminCooperativesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/backups': {
+      id: '/admin/backups'
+      path: '/backups'
+      fullPath: '/admin/backups'
+      preLoaderRoute: typeof AdminBackupsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/super-admin/reports-v2/': {
+      id: '/super-admin/reports-v2/'
+      path: '/reports-v2'
+      fullPath: '/super-admin/reports-v2/'
+      preLoaderRoute: typeof SuperAdminReportsV2IndexRouteImport
+      parentRoute: typeof SuperAdminRoute
+    }
+    '/officer/reports-v2/': {
+      id: '/officer/reports-v2/'
+      path: '/reports-v2'
+      fullPath: '/officer/reports-v2/'
+      preLoaderRoute: typeof OfficerReportsV2IndexRouteImport
+      parentRoute: typeof OfficerRoute
+    }
+    '/farmer/reports-v2/': {
+      id: '/farmer/reports-v2/'
+      path: '/reports-v2'
+      fullPath: '/farmer/reports-v2/'
+      preLoaderRoute: typeof FarmerReportsV2IndexRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/cooperative/reports-v2/': {
+      id: '/cooperative/reports-v2/'
+      path: '/reports-v2'
+      fullPath: '/cooperative/reports-v2/'
+      preLoaderRoute: typeof CooperativeReportsV2IndexRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/admin/reports-v2/': {
+      id: '/admin/reports-v2/'
+      path: '/reports-v2'
+      fullPath: '/admin/reports-v2/'
+      preLoaderRoute: typeof AdminReportsV2IndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/super-admin/reports-v2/system-health': {
+      id: '/super-admin/reports-v2/system-health'
+      path: '/reports-v2/system-health'
+      fullPath: '/super-admin/reports-v2/system-health'
+      preLoaderRoute: typeof SuperAdminReportsV2SystemHealthRouteImport
+      parentRoute: typeof SuperAdminRoute
+    }
+    '/super-admin/reports-v2/security': {
+      id: '/super-admin/reports-v2/security'
+      path: '/reports-v2/security'
+      fullPath: '/super-admin/reports-v2/security'
+      preLoaderRoute: typeof SuperAdminReportsV2SecurityRouteImport
+      parentRoute: typeof SuperAdminRoute
+    }
+    '/super-admin/reports-v2/national': {
+      id: '/super-admin/reports-v2/national'
+      path: '/reports-v2/national'
+      fullPath: '/super-admin/reports-v2/national'
+      preLoaderRoute: typeof SuperAdminReportsV2NationalRouteImport
+      parentRoute: typeof SuperAdminRoute
+    }
+    '/super-admin/reports-v2/backup': {
+      id: '/super-admin/reports-v2/backup'
+      path: '/reports-v2/backup'
+      fullPath: '/super-admin/reports-v2/backup'
+      preLoaderRoute: typeof SuperAdminReportsV2BackupRouteImport
+      parentRoute: typeof SuperAdminRoute
+    }
+    '/super-admin/reports-v2/audit': {
+      id: '/super-admin/reports-v2/audit'
+      path: '/reports-v2/audit'
+      fullPath: '/super-admin/reports-v2/audit'
+      preLoaderRoute: typeof SuperAdminReportsV2AuditRouteImport
+      parentRoute: typeof SuperAdminRoute
+    }
+    '/officer/reports-v2/risk': {
+      id: '/officer/reports-v2/risk'
+      path: '/reports-v2/risk'
+      fullPath: '/officer/reports-v2/risk'
+      preLoaderRoute: typeof OfficerReportsV2RiskRouteImport
+      parentRoute: typeof OfficerRoute
+    }
+    '/officer/reports-v2/performance-comparison': {
+      id: '/officer/reports-v2/performance-comparison'
+      path: '/reports-v2/performance-comparison'
+      fullPath: '/officer/reports-v2/performance-comparison'
+      preLoaderRoute: typeof OfficerReportsV2PerformanceComparisonRouteImport
+      parentRoute: typeof OfficerRoute
+    }
+    '/officer/reports-v2/monthly-summary': {
+      id: '/officer/reports-v2/monthly-summary'
+      path: '/reports-v2/monthly-summary'
+      fullPath: '/officer/reports-v2/monthly-summary'
+      preLoaderRoute: typeof OfficerReportsV2MonthlySummaryRouteImport
+      parentRoute: typeof OfficerRoute
+    }
+    '/officer/reports-v2/assigned-farmers': {
+      id: '/officer/reports-v2/assigned-farmers'
+      path: '/reports-v2/assigned-farmers'
+      fullPath: '/officer/reports-v2/assigned-farmers'
+      preLoaderRoute: typeof OfficerReportsV2AssignedFarmersRouteImport
+      parentRoute: typeof OfficerRoute
+    }
+    '/officer/reports-v2/advisory': {
+      id: '/officer/reports-v2/advisory'
+      path: '/reports-v2/advisory'
+      fullPath: '/officer/reports-v2/advisory'
+      preLoaderRoute: typeof OfficerReportsV2AdvisoryRouteImport
+      parentRoute: typeof OfficerRoute
+    }
+    '/farmer/reports-v2/yield-productivity': {
+      id: '/farmer/reports-v2/yield-productivity'
+      path: '/reports-v2/yield-productivity'
+      fullPath: '/farmer/reports-v2/yield-productivity'
+      preLoaderRoute: typeof FarmerReportsV2YieldProductivityRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/reports-v2/soil-irrigation': {
+      id: '/farmer/reports-v2/soil-irrigation'
+      path: '/reports-v2/soil-irrigation'
+      fullPath: '/farmer/reports-v2/soil-irrigation'
+      preLoaderRoute: typeof FarmerReportsV2SoilIrrigationRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/reports-v2/seasonal': {
+      id: '/farmer/reports-v2/seasonal'
+      path: '/reports-v2/seasonal'
+      fullPath: '/farmer/reports-v2/seasonal'
+      preLoaderRoute: typeof FarmerReportsV2SeasonalRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/reports-v2/performance': {
+      id: '/farmer/reports-v2/performance'
+      path: '/reports-v2/performance'
+      fullPath: '/farmer/reports-v2/performance'
+      preLoaderRoute: typeof FarmerReportsV2PerformanceRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/farmer/reports-v2/ai-recommendation': {
+      id: '/farmer/reports-v2/ai-recommendation'
+      path: '/reports-v2/ai-recommendation'
+      fullPath: '/farmer/reports-v2/ai-recommendation'
+      preLoaderRoute: typeof FarmerReportsV2AiRecommendationRouteImport
+      parentRoute: typeof FarmerRoute
+    }
+    '/cooperative/reports-v2/resource-distribution': {
+      id: '/cooperative/reports-v2/resource-distribution'
+      path: '/reports-v2/resource-distribution'
+      fullPath: '/cooperative/reports-v2/resource-distribution'
+      preLoaderRoute: typeof CooperativeReportsV2ResourceDistributionRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/reports-v2/recommendation': {
+      id: '/cooperative/reports-v2/recommendation'
+      path: '/reports-v2/recommendation'
+      fullPath: '/cooperative/reports-v2/recommendation'
+      preLoaderRoute: typeof CooperativeReportsV2RecommendationRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/reports-v2/production': {
+      id: '/cooperative/reports-v2/production'
+      path: '/reports-v2/production'
+      fullPath: '/cooperative/reports-v2/production'
+      preLoaderRoute: typeof CooperativeReportsV2ProductionRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/reports-v2/performance': {
+      id: '/cooperative/reports-v2/performance'
+      path: '/reports-v2/performance'
+      fullPath: '/cooperative/reports-v2/performance'
+      preLoaderRoute: typeof CooperativeReportsV2PerformanceRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/cooperative/reports-v2/farmer-comparison': {
+      id: '/cooperative/reports-v2/farmer-comparison'
+      path: '/reports-v2/farmer-comparison'
+      fullPath: '/cooperative/reports-v2/farmer-comparison'
+      preLoaderRoute: typeof CooperativeReportsV2FarmerComparisonRouteImport
+      parentRoute: typeof CooperativeRoute
+    }
+    '/admin/reports-v2/user-activity': {
+      id: '/admin/reports-v2/user-activity'
+      path: '/reports-v2/user-activity'
+      fullPath: '/admin/reports-v2/user-activity'
+      preLoaderRoute: typeof AdminReportsV2UserActivityRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports-v2/system-usage': {
+      id: '/admin/reports-v2/system-usage'
+      path: '/reports-v2/system-usage'
+      fullPath: '/admin/reports-v2/system-usage'
+      preLoaderRoute: typeof AdminReportsV2SystemUsageRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports-v2/financial': {
+      id: '/admin/reports-v2/financial'
+      path: '/reports-v2/financial'
+      fullPath: '/admin/reports-v2/financial'
+      preLoaderRoute: typeof AdminReportsV2FinancialRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports-v2/data-validation': {
+      id: '/admin/reports-v2/data-validation'
+      path: '/reports-v2/data-validation'
+      fullPath: '/admin/reports-v2/data-validation'
+      preLoaderRoute: typeof AdminReportsV2DataValidationRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports-v2/analytics-dashboard': {
+      id: '/admin/reports-v2/analytics-dashboard'
+      path: '/reports-v2/analytics-dashboard'
+      fullPath: '/admin/reports-v2/analytics-dashboard'
+      preLoaderRoute: typeof AdminReportsV2AnalyticsDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminBackupsRoute: typeof AdminBackupsRoute
+  AdminCooperativesRoute: typeof AdminCooperativesRoute
   AdminFarmsRoute: typeof AdminFarmsRoute
-  AdminReportsRoute: typeof AdminReportsRoute
+  AdminHealthRoute: typeof AdminHealthRoute
+  AdminSecurityRoute: typeof AdminSecurityRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminReportsV2AnalyticsDashboardRoute: typeof AdminReportsV2AnalyticsDashboardRoute
+  AdminReportsV2DataValidationRoute: typeof AdminReportsV2DataValidationRoute
+  AdminReportsV2FinancialRoute: typeof AdminReportsV2FinancialRoute
+  AdminReportsV2SystemUsageRoute: typeof AdminReportsV2SystemUsageRoute
+  AdminReportsV2UserActivityRoute: typeof AdminReportsV2UserActivityRoute
+  AdminReportsV2IndexRoute: typeof AdminReportsV2IndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
+  AdminBackupsRoute: AdminBackupsRoute,
+  AdminCooperativesRoute: AdminCooperativesRoute,
   AdminFarmsRoute: AdminFarmsRoute,
-  AdminReportsRoute: AdminReportsRoute,
+  AdminHealthRoute: AdminHealthRoute,
+  AdminSecurityRoute: AdminSecurityRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminReportsV2AnalyticsDashboardRoute: AdminReportsV2AnalyticsDashboardRoute,
+  AdminReportsV2DataValidationRoute: AdminReportsV2DataValidationRoute,
+  AdminReportsV2FinancialRoute: AdminReportsV2FinancialRoute,
+  AdminReportsV2SystemUsageRoute: AdminReportsV2SystemUsageRoute,
+  AdminReportsV2UserActivityRoute: AdminReportsV2UserActivityRoute,
+  AdminReportsV2IndexRoute: AdminReportsV2IndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CooperativeRouteChildren {
   CooperativeAiRoute: typeof CooperativeAiRoute
+  CooperativeAnalyticsRoute: typeof CooperativeAnalyticsRoute
+  CooperativeDistributionsRoute: typeof CooperativeDistributionsRoute
+  CooperativeDuesRoute: typeof CooperativeDuesRoute
   CooperativeEventsRoute: typeof CooperativeEventsRoute
+  CooperativeExpensesRoute: typeof CooperativeExpensesRoute
+  CooperativeFarmerDetailRoute: typeof CooperativeFarmerDetailRoute
   CooperativeFarmersRoute: typeof CooperativeFarmersRoute
+  CooperativeJoinRequestsRoute: typeof CooperativeJoinRequestsRoute
   CooperativePerformanceRoute: typeof CooperativePerformanceRoute
-  CooperativeReportsRoute: typeof CooperativeReportsRoute
+  CooperativeProfileRoute: typeof CooperativeProfileRoute
   CooperativeResourcesRoute: typeof CooperativeResourcesRoute
   CooperativeIndexRoute: typeof CooperativeIndexRoute
+  CooperativeReportsV2FarmerComparisonRoute: typeof CooperativeReportsV2FarmerComparisonRoute
+  CooperativeReportsV2PerformanceRoute: typeof CooperativeReportsV2PerformanceRoute
+  CooperativeReportsV2ProductionRoute: typeof CooperativeReportsV2ProductionRoute
+  CooperativeReportsV2RecommendationRoute: typeof CooperativeReportsV2RecommendationRoute
+  CooperativeReportsV2ResourceDistributionRoute: typeof CooperativeReportsV2ResourceDistributionRoute
+  CooperativeReportsV2IndexRoute: typeof CooperativeReportsV2IndexRoute
 }
 
 const CooperativeRouteChildren: CooperativeRouteChildren = {
   CooperativeAiRoute: CooperativeAiRoute,
+  CooperativeAnalyticsRoute: CooperativeAnalyticsRoute,
+  CooperativeDistributionsRoute: CooperativeDistributionsRoute,
+  CooperativeDuesRoute: CooperativeDuesRoute,
   CooperativeEventsRoute: CooperativeEventsRoute,
+  CooperativeExpensesRoute: CooperativeExpensesRoute,
+  CooperativeFarmerDetailRoute: CooperativeFarmerDetailRoute,
   CooperativeFarmersRoute: CooperativeFarmersRoute,
+  CooperativeJoinRequestsRoute: CooperativeJoinRequestsRoute,
   CooperativePerformanceRoute: CooperativePerformanceRoute,
-  CooperativeReportsRoute: CooperativeReportsRoute,
+  CooperativeProfileRoute: CooperativeProfileRoute,
   CooperativeResourcesRoute: CooperativeResourcesRoute,
   CooperativeIndexRoute: CooperativeIndexRoute,
+  CooperativeReportsV2FarmerComparisonRoute:
+    CooperativeReportsV2FarmerComparisonRoute,
+  CooperativeReportsV2PerformanceRoute: CooperativeReportsV2PerformanceRoute,
+  CooperativeReportsV2ProductionRoute: CooperativeReportsV2ProductionRoute,
+  CooperativeReportsV2RecommendationRoute:
+    CooperativeReportsV2RecommendationRoute,
+  CooperativeReportsV2ResourceDistributionRoute:
+    CooperativeReportsV2ResourceDistributionRoute,
+  CooperativeReportsV2IndexRoute: CooperativeReportsV2IndexRoute,
 }
 
 const CooperativeRouteWithChildren = CooperativeRoute._addFileChildren(
@@ -1262,32 +2115,52 @@ interface FarmerRouteChildren {
   FarmerActivitiesRoute: typeof FarmerActivitiesRoute
   FarmerAiRoute: typeof FarmerAiRoute
   FarmerCommunityRoute: typeof FarmerCommunityRoute
+  FarmerCooperativeRoute: typeof FarmerCooperativeRoute
   FarmerCropsRoute: typeof FarmerCropsRoute
   FarmerGuidanceRoute: typeof FarmerGuidanceRoute
   FarmerIrrigationRoute: typeof FarmerIrrigationRoute
+  FarmerLivestockRoute: typeof FarmerLivestockRoute
   FarmerMarketRoute: typeof FarmerMarketRoute
   FarmerNotificationsRoute: typeof FarmerNotificationsRoute
+  FarmerPestDiseaseRoute: typeof FarmerPestDiseaseRoute
   FarmerProfileRoute: typeof FarmerProfileRoute
   FarmerRecommendationsRoute: typeof FarmerRecommendationsRoute
+  FarmerResourcesRoute: typeof FarmerResourcesRoute
   FarmerSoilRoute: typeof FarmerSoilRoute
   FarmerWeatherRoute: typeof FarmerWeatherRoute
   FarmerIndexRoute: typeof FarmerIndexRoute
+  FarmerReportsV2AiRecommendationRoute: typeof FarmerReportsV2AiRecommendationRoute
+  FarmerReportsV2PerformanceRoute: typeof FarmerReportsV2PerformanceRoute
+  FarmerReportsV2SeasonalRoute: typeof FarmerReportsV2SeasonalRoute
+  FarmerReportsV2SoilIrrigationRoute: typeof FarmerReportsV2SoilIrrigationRoute
+  FarmerReportsV2YieldProductivityRoute: typeof FarmerReportsV2YieldProductivityRoute
+  FarmerReportsV2IndexRoute: typeof FarmerReportsV2IndexRoute
 }
 
 const FarmerRouteChildren: FarmerRouteChildren = {
   FarmerActivitiesRoute: FarmerActivitiesRoute,
   FarmerAiRoute: FarmerAiRoute,
   FarmerCommunityRoute: FarmerCommunityRoute,
+  FarmerCooperativeRoute: FarmerCooperativeRoute,
   FarmerCropsRoute: FarmerCropsRoute,
   FarmerGuidanceRoute: FarmerGuidanceRoute,
   FarmerIrrigationRoute: FarmerIrrigationRoute,
+  FarmerLivestockRoute: FarmerLivestockRoute,
   FarmerMarketRoute: FarmerMarketRoute,
   FarmerNotificationsRoute: FarmerNotificationsRoute,
+  FarmerPestDiseaseRoute: FarmerPestDiseaseRoute,
   FarmerProfileRoute: FarmerProfileRoute,
   FarmerRecommendationsRoute: FarmerRecommendationsRoute,
+  FarmerResourcesRoute: FarmerResourcesRoute,
   FarmerSoilRoute: FarmerSoilRoute,
   FarmerWeatherRoute: FarmerWeatherRoute,
   FarmerIndexRoute: FarmerIndexRoute,
+  FarmerReportsV2AiRecommendationRoute: FarmerReportsV2AiRecommendationRoute,
+  FarmerReportsV2PerformanceRoute: FarmerReportsV2PerformanceRoute,
+  FarmerReportsV2SeasonalRoute: FarmerReportsV2SeasonalRoute,
+  FarmerReportsV2SoilIrrigationRoute: FarmerReportsV2SoilIrrigationRoute,
+  FarmerReportsV2YieldProductivityRoute: FarmerReportsV2YieldProductivityRoute,
+  FarmerReportsV2IndexRoute: FarmerReportsV2IndexRoute,
 }
 
 const FarmerRouteWithChildren =
@@ -1312,63 +2185,73 @@ const ForgotPasswordRouteWithChildren = ForgotPasswordRoute._addFileChildren(
 interface OfficerRouteChildren {
   OfficerAdvisoriesRoute: typeof OfficerAdvisoriesRoute
   OfficerAnalysisRoute: typeof OfficerAnalysisRoute
+  OfficerFarmerDetailRoute: typeof OfficerFarmerDetailRoute
   OfficerFarmsRoute: typeof OfficerFarmsRoute
+  OfficerFieldWorkRoute: typeof OfficerFieldWorkRoute
   OfficerPestDiseaseRoute: typeof OfficerPestDiseaseRoute
-  OfficerReportsRoute: typeof OfficerReportsRoute
   OfficerRisksRoute: typeof OfficerRisksRoute
+  OfficerTemplatesRoute: typeof OfficerTemplatesRoute
   OfficerIndexRoute: typeof OfficerIndexRoute
+  OfficerReportsV2AdvisoryRoute: typeof OfficerReportsV2AdvisoryRoute
+  OfficerReportsV2AssignedFarmersRoute: typeof OfficerReportsV2AssignedFarmersRoute
+  OfficerReportsV2MonthlySummaryRoute: typeof OfficerReportsV2MonthlySummaryRoute
+  OfficerReportsV2PerformanceComparisonRoute: typeof OfficerReportsV2PerformanceComparisonRoute
+  OfficerReportsV2RiskRoute: typeof OfficerReportsV2RiskRoute
+  OfficerReportsV2IndexRoute: typeof OfficerReportsV2IndexRoute
 }
 
 const OfficerRouteChildren: OfficerRouteChildren = {
   OfficerAdvisoriesRoute: OfficerAdvisoriesRoute,
   OfficerAnalysisRoute: OfficerAnalysisRoute,
+  OfficerFarmerDetailRoute: OfficerFarmerDetailRoute,
   OfficerFarmsRoute: OfficerFarmsRoute,
+  OfficerFieldWorkRoute: OfficerFieldWorkRoute,
   OfficerPestDiseaseRoute: OfficerPestDiseaseRoute,
-  OfficerReportsRoute: OfficerReportsRoute,
   OfficerRisksRoute: OfficerRisksRoute,
+  OfficerTemplatesRoute: OfficerTemplatesRoute,
   OfficerIndexRoute: OfficerIndexRoute,
+  OfficerReportsV2AdvisoryRoute: OfficerReportsV2AdvisoryRoute,
+  OfficerReportsV2AssignedFarmersRoute: OfficerReportsV2AssignedFarmersRoute,
+  OfficerReportsV2MonthlySummaryRoute: OfficerReportsV2MonthlySummaryRoute,
+  OfficerReportsV2PerformanceComparisonRoute:
+    OfficerReportsV2PerformanceComparisonRoute,
+  OfficerReportsV2RiskRoute: OfficerReportsV2RiskRoute,
+  OfficerReportsV2IndexRoute: OfficerReportsV2IndexRoute,
 }
 
 const OfficerRouteWithChildren =
   OfficerRoute._addFileChildren(OfficerRouteChildren)
 
-interface ReportsRouteChildren {
-  ReportsActivitiesRoute: typeof ReportsActivitiesRoute
-  ReportsIrrigationRoute: typeof ReportsIrrigationRoute
-  ReportsSoilRoute: typeof ReportsSoilRoute
-  ReportsWeatherRoute: typeof ReportsWeatherRoute
-  ReportsIndexRoute: typeof ReportsIndexRoute
-}
-
-const ReportsRouteChildren: ReportsRouteChildren = {
-  ReportsActivitiesRoute: ReportsActivitiesRoute,
-  ReportsIrrigationRoute: ReportsIrrigationRoute,
-  ReportsSoilRoute: ReportsSoilRoute,
-  ReportsWeatherRoute: ReportsWeatherRoute,
-  ReportsIndexRoute: ReportsIndexRoute,
-}
-
-const ReportsRouteWithChildren =
-  ReportsRoute._addFileChildren(ReportsRouteChildren)
-
 interface SuperAdminRouteChildren {
   SuperAdminAuditRoute: typeof SuperAdminAuditRoute
   SuperAdminBackupsRoute: typeof SuperAdminBackupsRoute
   SuperAdminHealthRoute: typeof SuperAdminHealthRoute
-  SuperAdminRolesRoute: typeof SuperAdminRolesRoute
+  SuperAdminSecurityRoute: typeof SuperAdminSecurityRoute
   SuperAdminSettingsRoute: typeof SuperAdminSettingsRoute
   SuperAdminUsersRoute: typeof SuperAdminUsersRoute
   SuperAdminIndexRoute: typeof SuperAdminIndexRoute
+  SuperAdminReportsV2AuditRoute: typeof SuperAdminReportsV2AuditRoute
+  SuperAdminReportsV2BackupRoute: typeof SuperAdminReportsV2BackupRoute
+  SuperAdminReportsV2NationalRoute: typeof SuperAdminReportsV2NationalRoute
+  SuperAdminReportsV2SecurityRoute: typeof SuperAdminReportsV2SecurityRoute
+  SuperAdminReportsV2SystemHealthRoute: typeof SuperAdminReportsV2SystemHealthRoute
+  SuperAdminReportsV2IndexRoute: typeof SuperAdminReportsV2IndexRoute
 }
 
 const SuperAdminRouteChildren: SuperAdminRouteChildren = {
   SuperAdminAuditRoute: SuperAdminAuditRoute,
   SuperAdminBackupsRoute: SuperAdminBackupsRoute,
   SuperAdminHealthRoute: SuperAdminHealthRoute,
-  SuperAdminRolesRoute: SuperAdminRolesRoute,
+  SuperAdminSecurityRoute: SuperAdminSecurityRoute,
   SuperAdminSettingsRoute: SuperAdminSettingsRoute,
   SuperAdminUsersRoute: SuperAdminUsersRoute,
   SuperAdminIndexRoute: SuperAdminIndexRoute,
+  SuperAdminReportsV2AuditRoute: SuperAdminReportsV2AuditRoute,
+  SuperAdminReportsV2BackupRoute: SuperAdminReportsV2BackupRoute,
+  SuperAdminReportsV2NationalRoute: SuperAdminReportsV2NationalRoute,
+  SuperAdminReportsV2SecurityRoute: SuperAdminReportsV2SecurityRoute,
+  SuperAdminReportsV2SystemHealthRoute: SuperAdminReportsV2SystemHealthRoute,
+  SuperAdminReportsV2IndexRoute: SuperAdminReportsV2IndexRoute,
 }
 
 const SuperAdminRouteWithChildren = SuperAdminRoute._addFileChildren(
@@ -1385,10 +2268,10 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   FarmerRoute: FarmerRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRouteWithChildren,
+  NotificationsRoute: NotificationsRoute,
   OfficerRoute: OfficerRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
-  ReportsRoute: ReportsRouteWithChildren,
   SuperAdminRoute: SuperAdminRouteWithChildren,
   TermsRoute: TermsRoute,
 }

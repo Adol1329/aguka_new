@@ -12,17 +12,23 @@ export const createSensorSchema = z.object({
   ]),
   serialNumber: z.string().min(1).max(100),
   locationOnFarm: z.string().max(100).optional(),
-  installationDate: z.coerce.date().optional(),
+  installationDate: z.coerce.date()
+    .refine((d) => d <= new Date(), { message: "Installation date must be in the past" })
+    .optional(),
 });
 
 export const updateSensorSchema = z.object({
   locationOnFarm: z.string().max(100).optional(),
-  calibrationDate: z.coerce.date().optional(),
+  calibrationDate: z.coerce.date()
+    .refine((d) => d <= new Date(), { message: "Calibration date must be in the past" })
+    .optional(),
   isActive: z.boolean().optional(),
 });
 
 export const calibrateSensorSchema = z.object({
-  calibrationDate: z.coerce.date(),
+  calibrationDate: z.coerce.date().refine((d) => d <= new Date(), {
+    message: "Calibration date must be in the past",
+  }),
 });
 
 export type CreateSensorInput = z.infer<typeof createSensorSchema>;

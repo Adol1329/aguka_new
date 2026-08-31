@@ -3,6 +3,7 @@ import { apiClient, ApiResponse } from "./client";
 export interface UserProfile {
   id: string;
   userId: string;
+  farmerCode?: string;
   fullName: string;
   farmName?: string;
   location: string;
@@ -51,6 +52,56 @@ export interface FarmerCrop {
   };
 }
 
+export interface CropType {
+  id: string;
+  nameEn: string;
+  nameRw?: string;
+  nameFr?: string;
+  category: string;
+}
+
+export interface CropGuidance {
+  crop: {
+    id: string;
+    nameEn: string;
+    nameRw?: string;
+    nameFr?: string;
+    category: string;
+  };
+  farmerCrop: {
+    id: string;
+    plantedDate: string;
+    expectedHarvestDate?: string;
+    actualHarvestDate?: string;
+    plotSizeHectares?: number;
+    status: string;
+    estimatedYieldKg?: number;
+    actualYieldKg?: number;
+    notes?: string;
+  };
+  growingPeriodDays: number | null;
+  waterRequirementMm: string | null;
+  nitrogenRequirementKgha: string | null;
+  phosphorusRequirementKgha: string | null;
+  potassiumRequirementKgha: string | null;
+  optimalPhMin: string | null;
+  optimalPhMax: string | null;
+  optimalTempMinCelsius: string | null;
+  optimalTempMaxCelsius: string | null;
+  rootDepthCm: number | null;
+  cropCoefficient: string | null;
+}
+
+export interface FarmGuidanceResponse {
+  crops: Array<{ crop: FarmerCrop; guidance: CropGuidance }>;
+  livestock: Array<{
+    id: string;
+    animalType: string;
+    breed: string | null;
+    healthStatus: string;
+  }>;
+}
+
 export interface FarmerListResponse {
   data: Array<{
     id: string;
@@ -85,12 +136,21 @@ export const farmersApi = {
 
   getCrops: () => apiClient.get<FarmerCrop[]>("/farmers/crops"),
 
-  listFarmers: (params?: { page?: number; limit?: number; search?: string; district?: string }) => {
+  getCropTypes: () => apiClient.get<CropType[]>("/farmers/crop-types"),
+
+  listFarmers: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    district?: string;
+    cooperativeId?: string;
+  }) => {
     const qs: Record<string, string> = {};
     if (params?.page) qs.page = String(params.page);
     if (params?.limit) qs.limit = String(params.limit);
     if (params?.search) qs.search = params.search;
     if (params?.district) qs.district = params.district;
+    if (params?.cooperativeId) qs.cooperativeId = params.cooperativeId;
     return apiClient.get<FarmerListResponse>("/farmers", Object.keys(qs).length ? qs : undefined);
   },
 
@@ -107,6 +167,10 @@ export const farmersApi = {
   createCrop: (data: Partial<FarmerCrop>) => apiClient.post<FarmerCrop>("/farmers/crops", data),
 
   verifyFarmer: (id: string) => apiClient.patch(`/farmers/${id}/verify`),
-  
+
   bulkVerifyFarmers: (ids: string[]) => apiClient.patch(`/farmers/bulk-verify`, { ids }),
+
+  getFarmGuidance: () => apiClient.get<FarmGuidanceResponse>("/farmers/guidance"),
+
+  getMyDistributions: () => apiClient.get<any[]>("/farmers/distributions"),
 };

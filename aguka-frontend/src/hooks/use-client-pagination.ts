@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from "react";
 
 /**
  * A hook to handle client-side pagination for an array of items.
@@ -14,7 +14,7 @@ export function useClientPagination<T>(items: T[], pageSize: number = 10) {
   }, [items.length]);
 
   const totalPages = Math.ceil(items.length / pageSize);
-  
+
   const paginatedItems = useMemo(() => {
     const start = (page - 1) * pageSize;
     const end = start + pageSize;

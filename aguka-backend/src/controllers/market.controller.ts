@@ -66,16 +66,34 @@ export const createPriceAlert = async (
 ) => {
   try {
     const userId = req.user!.sub;
-    const { cropId, targetPrice, alertType, marketId } = req.body;
+    const { cropId, targetPrice, alertType, marketId, smsEnabled } = req.body;
 
     const alert = await marketService.createPriceAlert(userId, {
       cropId,
       targetPrice,
       alertType,
       marketId,
+      smsEnabled,
     });
 
     return res.status(201).json({ success: true, data: alert });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const deletePriceAlert = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.user!.sub;
+    const { id } = req.params;
+
+    await marketService.deletePriceAlert(id, userId);
+
+    return res.json({ success: true, message: "Price alert deleted" });
   } catch (error) {
     return next(error);
   }

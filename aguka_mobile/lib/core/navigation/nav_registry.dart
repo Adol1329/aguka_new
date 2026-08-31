@@ -47,14 +47,14 @@ class NavRegistry {
          item: NavItem.activities,
          icon: Icons.assignment_outlined,
          activeIcon: Icons.assignment_rounded,
-         labelKey: 'Activities',
+         labelKey: 'activities.title',
          page: ActivitiesPage(),
        ),
        NavTabConfig(
          item: NavItem.guidance,
          icon: Icons.menu_book_outlined,
          activeIcon: Icons.menu_book_rounded,
-         labelKey: 'Guidance',
+         labelKey: 'guidance.title',
          page: GuidancePage(),
        ),
        NavTabConfig(
@@ -95,48 +95,96 @@ class NavRegistry {
      ];
    }
 
-   static List<NavTabConfig> getTabsForRole(String? role) {
-     final allTabs = getAllTabs();
-     final roleItems = _getItemsForRole(role);
-     return allTabs.where((tab) => roleItems.contains(tab.item)).toList();
-   }
+  static List<NavTabConfig> getTabsForRole(String? role) {
+    final allTabs = getAllTabs();
+    final roleItems = _getItemsForRole(role);
+    return allTabs.where((tab) => roleItems.contains(tab.item)).toList();
+  }
 
-   static List<NavItem> _getItemsForRole(String? role) {
-     final lowerCaseRole = role?.toLowerCase();
-     switch (lowerCaseRole) {
-       case 'farmer':
-         return [
-           NavItem.dashboard,
-           NavItem.soil,
-           NavItem.weather,
-           NavItem.irrigation,
-           NavItem.activities,
-           NavItem.guidance,
-           NavItem.market,
-           NavItem.community,
-           NavItem.notifications,
-         ];
-       case 'extension_officer':
-         return [
-           NavItem.dashboard,
-           NavItem.soil,
-           NavItem.reports,
-           NavItem.community,
-           NavItem.notifications,
-         ];
-       case 'cooperative_manager':
-         return [
-           NavItem.dashboard,
-           NavItem.cooperatives,
-           NavItem.market,
-           NavItem.reports,
-           NavItem.notifications,
-         ];
-       case 'admin':
-       case 'super_admin':
-         return NavItem.values;
-       default:
-         return [NavItem.dashboard, NavItem.notifications];
-     }
-   }
+  /// Returns a subset of up to 5 core tabs for the bottom navigation bar.
+  /// Remaining tabs (guidance, market, community, reports, notifications)
+  /// are accessible via the drawer menu or app bar notification icon.
+  static List<NavItem> getBottomNavItems(String? role) {
+    final lowerCaseRole = role?.toLowerCase();
+    switch (lowerCaseRole) {
+      case 'farmer':
+        return [
+          NavItem.dashboard,
+          NavItem.soil,
+          NavItem.irrigation,
+          NavItem.weather,
+          NavItem.cooperatives,
+        ];
+      case 'extension_officer':
+        return [
+          NavItem.dashboard,
+          NavItem.soil,
+          NavItem.reports,
+          NavItem.community,
+          NavItem.notifications,
+        ];
+      case 'cooperative_manager':
+        return [
+          NavItem.dashboard,
+          NavItem.cooperatives,
+          NavItem.market,
+          NavItem.reports,
+          NavItem.notifications,
+        ];
+      case 'admin':
+      case 'super_admin':
+        return [
+          NavItem.dashboard,
+          NavItem.soil,
+          NavItem.irrigation,
+          NavItem.weather,
+          NavItem.community,
+        ];
+      default:
+        return [NavItem.dashboard, NavItem.notifications];
+    }
+  }
+
+  static List<NavItem> _getItemsForRole(String? role) {
+    final lowerCaseRole = role?.toLowerCase();
+    switch (lowerCaseRole) {
+      case 'farmer':
+        return [
+          NavItem.dashboard,
+          NavItem.soil,
+          NavItem.weather,
+          NavItem.irrigation,
+          NavItem.activities,
+          NavItem.guidance,
+          NavItem.market,
+          NavItem.community,
+          NavItem.notifications,
+          NavItem.cooperatives,
+        ];
+      case 'extension_officer':
+        return [
+          NavItem.dashboard,
+          NavItem.soil,
+          NavItem.reports,
+          NavItem.community,
+          NavItem.notifications,
+        ];
+      case 'cooperative_manager':
+        return [
+          NavItem.dashboard,
+          NavItem.cooperatives,
+          NavItem.market,
+          NavItem.reports,
+          NavItem.notifications,
+        ];
+      case 'admin':
+      case 'super_admin':
+        // Cooperatives nav is excluded — admin/super_admin use the web dashboard
+        return NavItem.values
+            .where((item) => item != NavItem.cooperatives)
+            .toList();
+      default:
+        return [NavItem.dashboard, NavItem.notifications];
+    }
+  }
 }

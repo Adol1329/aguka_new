@@ -7,7 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { Leaf, Users, Sprout, ArrowRight, Eye, EyeOff, Check, CheckCircle2, ArrowLeft } from "lucide-react";
+import {
+  Leaf,
+  Users,
+  Sprout,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Check,
+  CheckCircle2,
+  ArrowLeft,
+} from "lucide-react";
 import { toast } from "sonner";
 import { authApi } from "@/api/auth";
 import { BASE_URL } from "@/api/client";
@@ -15,7 +25,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { normalizeRwandaPhone, validateRwandaPhone } from "@/utils/phoneUtils";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>): { mode: "signup" | "signin"; redirect?: string } => ({
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { mode: "signup" | "signin"; redirect?: string } => ({
     mode: (s.mode as string) === "signup" ? "signup" : "signin",
     redirect: s.redirect ? String(s.redirect) : undefined,
   }),
@@ -27,12 +39,6 @@ export const Route = createFileRoute("/auth")({
   },
   component: AuthPage,
 });
-
-const ROLE_LABELS = {
-  farmer: "Farmer",
-  officer: "Extension Officer",
-  cooperative: "Cooperative Manager",
-};
 
 const ROLE_ICONS = {
   farmer: Leaf,
@@ -86,21 +92,39 @@ function AuthPage() {
   }, []);
 
   // Validation
-  const showPhoneError = phone.length > 0 && (phoneTouched || phone.length >= 10) && !validateRwandaPhone(phone);
+  const showPhoneError =
+    phone.length > 0 && (phoneTouched || phone.length >= 10) && !validateRwandaPhone(phone);
 
   // Password strength checker
   const getPasswordStrength = (pwd: string) => {
-    if (!pwd) return { label: "", color: "bg-muted", width: "w-0", textColor: "text-muted-foreground" };
-    if (pwd.length < 6) return { label: t("auth.password_strength.weak"), color: "bg-destructive", width: "w-1/3", textColor: "text-destructive" };
-    
+    if (!pwd)
+      return { label: "", color: "bg-muted", width: "w-0", textColor: "text-muted-foreground" };
+    if (pwd.length < 6)
+      return {
+        label: t("auth.password_strength.weak"),
+        color: "bg-destructive",
+        width: "w-1/3",
+        textColor: "text-destructive",
+      };
+
     const hasLetters = /[a-zA-Z]/.test(pwd);
     const hasNumbers = /[0-9]/.test(pwd);
     const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
-    
+
     if (pwd.length >= 8 && hasLetters && hasNumbers && hasSpecial) {
-      return { label: t("auth.password_strength.strong"), color: "bg-success", width: "w-full", textColor: "text-success" };
+      return {
+        label: t("auth.password_strength.strong"),
+        color: "bg-success",
+        width: "w-full",
+        textColor: "text-success",
+      };
     }
-    return { label: t("auth.password_strength.medium"), color: "bg-warning", width: "w-2/3", textColor: "text-warning" };
+    return {
+      label: t("auth.password_strength.medium"),
+      color: "bg-warning",
+      width: "w-2/3",
+      textColor: "text-warning",
+    };
   };
 
   const strength = getPasswordStrength(password);
@@ -124,12 +148,13 @@ function AuthPage() {
       const user = mapBackendUserToAuth(authData.user, authData.accessToken, authData.refreshToken);
       signIn(user);
       toast.success((t("common.welcome") || "Welcome") + ", " + user.name);
+      const needsOnboarding = !user.isOnboarded && user.role !== "admin" && user.role !== "super_admin";
       navigate({
         to: user.requiresPasswordChange
           ? "/change-password"
-          : user.isOnboarded
-            ? ROLE_HOME[user.role]
-            : "/onboarding",
+          : needsOnboarding
+            ? "/onboarding"
+            : ROLE_HOME[user.role],
       });
     } catch (err: any) {
       toast.error(err.message || t("auth.error.login_failed"));
@@ -179,11 +204,6 @@ function AuthPage() {
         password,
         role,
         fullName: name,
-        provinceCode: "1",
-        districtCode: "11",
-        sectorCode: "010101",
-        cellCode: "1101",
-        villageCode: "110101",
       });
       const authData = res.data!;
       const user = mapBackendUserToAuth(authData.user, authData.accessToken, authData.refreshToken);
@@ -205,8 +225,8 @@ function AuthPage() {
         <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-info/20 blur-3xl" />
 
         <Link to="/" className="relative flex items-center gap-2 text-primary-foreground">
-          <img src="/aguka-logo.png" alt="Aguka Logo" className="h-10 w-10 object-contain" />
-          <span className="font-display text-xl font-bold">{t("app.name") || "Aguka"}</span>
+          <img src="/imbaraga-logo.png" alt="AGUKA" className="h-10 w-10 object-contain" />
+          <span className="font-display text-xl font-bold">{t("app.name") || "AGUKA"}</span>
         </Link>
 
         <div className="relative space-y-6">
@@ -225,7 +245,8 @@ function AuthPage() {
                 <Check className="h-3.5 w-3.5 text-emerald-300 stroke-[3]" />
               </div>
               <span>
-                {statsLoading ? "---" : (stats?.totalFarmers ?? "")} {t("auth.stats.active_farmers")}
+                {statsLoading ? "---" : (stats?.totalFarmers ?? "")}{" "}
+                {t("auth.stats.active_farmers")}
               </span>
             </div>
 
@@ -235,7 +256,8 @@ function AuthPage() {
                 <Check className="h-3.5 w-3.5 text-emerald-300 stroke-[3]" />
               </div>
               <span>
-                {statsLoading ? "---" : (stats?.totalCooperatives ?? "")} {t("auth.stats.cooperatives_connected")}
+                {statsLoading ? "---" : (stats?.totalCooperatives ?? "")}{" "}
+                {t("auth.stats.cooperatives_connected")}
               </span>
             </div>
 
@@ -245,7 +267,8 @@ function AuthPage() {
                 <Check className="h-3.5 w-3.5 text-emerald-300 stroke-[3]" />
               </div>
               <span>
-                {statsLoading ? "---" : (stats?.districtsCount ?? "")} {t("auth.stats.districts_covered")}
+                {statsLoading ? "---" : (stats?.districtsCount ?? "")}{" "}
+                {t("auth.stats.districts_covered")}
               </span>
             </div>
           </div>
@@ -260,8 +283,8 @@ function AuthPage() {
       <div className="flex flex-col bg-background">
         <div className="flex items-center justify-between p-4 lg:p-6">
           <Link to="/" className="flex items-center gap-2 lg:hidden">
-            <img src="/aguka-logo.png" alt="Aguka Logo" className="h-8 w-8 object-contain" />
-            <span className="font-display font-bold">{t("app.name") || "Aguka"}</span>
+            <img src="/imbaraga-logo.png" alt="AGUKA" className="h-8 w-8 object-contain" />
+            <span className="font-display font-bold">{t("app.name") || "AGUKA"}</span>
           </Link>
           <div className="ml-auto">
             <LanguageSwitcher />
@@ -274,7 +297,11 @@ function AuthPage() {
             <div className="mb-6 space-y-2 animate-in fade-in duration-300">
               <div className="flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-wide">
                 <span>{t("auth.step.progress", { current: signupStep, total: 2 })}</span>
-                <span className="text-primary">{signupStep === 1 ? t("auth.step.personal_info") : t("auth.step.security_details")}</span>
+                <span className="text-primary">
+                  {signupStep === 1
+                    ? t("auth.step.personal_info")
+                    : t("auth.step.security_details")}
+                </span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
@@ -286,7 +313,7 @@ function AuthPage() {
           )}
 
           <h1 className="font-display text-3xl font-bold text-foreground">
-            {isSignup ? t("auth.create_account") : (t("auth.signin") || "Sign In")}
+            {isSignup ? t("auth.create_account") : t("auth.signin") || "Sign In"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
             {isSignup ? t("auth.signup.subtitle") : t("auth.signin.subtitle")}
@@ -366,7 +393,10 @@ function AuthPage() {
             <div className="mt-8">
               {signupStep === 1 ? (
                 /* Step 1: Personal Info + Role Selection */
-                <form onSubmit={handleNextStep} className="space-y-4 animate-in fade-in duration-200">
+                <form
+                  onSubmit={handleNextStep}
+                  className="space-y-4 animate-in fade-in duration-200"
+                >
                   <div className="space-y-2">
                     <Label htmlFor="name">{t("auth.full_name")}</Label>
                     <Input
@@ -397,7 +427,7 @@ function AuthPage() {
                     <div className="grid grid-cols-3 gap-2">
                       {(["farmer", "officer", "cooperative"] as const).map((r) => {
                         const Icon = ROLE_ICONS[r];
-                        const label = ROLE_LABELS[r];
+                        const label = t(("role." + r) as any);
                         const active = role === r;
                         return (
                           <button
@@ -428,7 +458,10 @@ function AuthPage() {
                 </form>
               ) : (
                 /* Step 2: Account Security */
-                <form onSubmit={handleSignupSubmit} className="space-y-4 animate-in fade-in duration-200">
+                <form
+                  onSubmit={handleSignupSubmit}
+                  className="space-y-4 animate-in fade-in duration-200"
+                >
                   {/* Phone Field */}
                   <div className="space-y-2">
                     <Label htmlFor="phone">{t("auth.phone_plus250")}</Label>
@@ -469,7 +502,11 @@ function AuthPage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
 
@@ -481,7 +518,9 @@ function AuthPage() {
                           <span className={strength.textColor}>{strength.label}</span>
                         </div>
                         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                          <div className={`h-full ${strength.color} ${strength.width} transition-all duration-300`} />
+                          <div
+                            className={`h-full ${strength.color} ${strength.width} transition-all duration-300`}
+                          />
                         </div>
                       </div>
                     )}
@@ -505,7 +544,11 @@ function AuthPage() {
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
                       >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                       {passwordsMatch && (
                         <CheckCircle2 className="absolute right-9 top-1/2 -translate-y-1/2 h-4 w-4 text-success animate-in zoom-in duration-200" />
@@ -522,7 +565,10 @@ function AuthPage() {
                       className="mt-0.5"
                       required
                     />
-                    <Label htmlFor="terms" className="text-xs text-muted-foreground font-medium leading-relaxed">
+                    <Label
+                      htmlFor="terms"
+                      className="text-xs text-muted-foreground font-medium leading-relaxed"
+                    >
                       {t("auth.terms.prefix")}{" "}
                       <a
                         href="/terms"

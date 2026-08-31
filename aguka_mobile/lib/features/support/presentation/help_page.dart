@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:aguka_mobile/widgets/aguka_app_bar.dart';
+import 'package:aguka_mobile/features/community/presentation/community_page.dart';
+import 'package:aguka_mobile/features/support/presentation/guides_page.dart';
 
 class HelpPage extends StatelessWidget {
   const HelpPage({Key? key}) : super(key: key);
@@ -34,28 +37,34 @@ class HelpPage extends StatelessWidget {
               icon: Icons.article_outlined,
               title: 'help.guides'.tr(),
               subtitle: 'help.guides_subtitle'.tr(),
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GuidesPage()),
+              ),
             ),
             _buildHelpItem(
               context,
-              icon: Icons.chat_outlined,
+              icon: Icons.groups_outlined,
               title: 'help.live_chat'.tr(),
               subtitle: 'help.live_chat_subtitle'.tr(),
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CommunityPage()),
+              ),
             ),
             _buildHelpItem(
               context,
               icon: Icons.phone_outlined,
               title: 'help.call_support'.tr(),
               subtitle: '+250 788 000 000',
-              onTap: () {},
+              onTap: () => _launchUri(context, Uri(scheme: 'tel', path: '+250788000000')),
             ),
             _buildHelpItem(
               context,
               icon: Icons.email_outlined,
               title: 'help.email_support'.tr(),
               subtitle: 'support@aguka.rw',
-              onTap: () {},
+              onTap: () => _launchUri(context, Uri(scheme: 'mailto', path: 'support@aguka.rw')),
             ),
             const SizedBox(height: 40),
             const Text(
@@ -69,6 +78,15 @@ class HelpPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _launchUri(BuildContext context, Uri uri) async {
+    final launched = await launchUrl(uri);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open ${uri.scheme == 'tel' ? 'dialer' : 'email app'}.')),
+      );
+    }
   }
 
   Widget _buildHelpItem(

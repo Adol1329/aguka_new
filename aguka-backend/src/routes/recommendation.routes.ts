@@ -9,21 +9,27 @@ const router = Router();
 router.get(
   "/",
   authenticate,
-  asyncHandler(recommendationController.getRecommendations),
+  asyncHandler((req, res, next) =>
+    recommendationController.getRecommendations(req, res, next),
+  ),
 );
 
 // Accept a recommendation
 router.post(
   "/accept",
   authenticate,
-  asyncHandler(recommendationController.acceptRecommendation),
+  asyncHandler((req, res, next) =>
+    recommendationController.acceptRecommendation(req, res, next),
+  ),
 );
 
 // Dismiss a recommendation
 router.post(
   "/dismiss",
   authenticate,
-  asyncHandler(recommendationController.dismissRecommendation),
+  asyncHandler((req, res, next) =>
+    recommendationController.dismissRecommendation(req, res, next),
+  ),
 );
 
 export default router;

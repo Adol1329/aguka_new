@@ -2,6 +2,7 @@ import {
   NotFoundError,
   ForbiddenError,
   ValidationError,
+  ConflictError,
 } from "../middleware/error.middleware.js";
 import { PaginationParams, FilterParams, UserRole } from "../types/index.js";
 import { prisma } from "../prisma.js";
@@ -122,6 +123,21 @@ export class FarmerService {
       },
     });
 
+    // Sync base location fields to User model
+    const userUpdate: any = {};
+    if (data.province !== undefined) userUpdate.province = data.province;
+    if (data.district !== undefined) userUpdate.district = data.district;
+    if (data.sector !== undefined) userUpdate.sector = data.sector;
+    if (data.cell !== undefined) userUpdate.cell = data.cell;
+    if (data.village !== undefined) userUpdate.village = data.village;
+
+    if (Object.keys(userUpdate).length > 0) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: userUpdate,
+      });
+    }
+
     console.log(
       "[FarmerService] Saved profile:",
       JSON.stringify({
@@ -133,6 +149,22 @@ export class FarmerService {
       }),
     );
     return this.formatProfile(updated);
+  }
+
+  /**
+   * FarmerProfile.farmerCode is @unique, so generate against it directly.
+   */
+  private async generateFarmerCode(): Promise<string> {
+    const year = new Date().getFullYear();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const candidate = `FRM-${year}-${suffix}`;
+      const existing = await prisma.farmerProfile.findFirst({
+        where: { farmerCode: candidate },
+      });
+      if (!existing) return candidate;
+    }
+    throw new Error("Failed to generate a unique farmer code");
   }
 
   async createProfile(userId: string, data: Record<string, unknown>) {
@@ -148,9 +180,12 @@ export class FarmerService {
       where: { id: userId },
     });
 
+    const farmerCode = await this.generateFarmerCode();
+
     const profile = await prisma.farmerProfile.create({
       data: {
         userId,
+        farmerCode,
         fullName:
           (data.fullName as string) ||
           user?.fullName ||
@@ -189,8 +224,65 @@ export class FarmerService {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { isOnboarded: true },
+      data: {
+        isOnboarded: true,
+        province: (data.province as string) || null,
+        district: (data.district as string) || null,
+        sector: (data.sector as string) || null,
+        cell: (data.cell as string) || null,
+        village: (data.village as string) || null,
+      },
     });
+
+    // Auto-assign to cooperative by location
+    const district = (data.district as string) || "";
+    const sector = (data.sector as string) || "";
+    if (district) {
+      let cooperative = null;
+
+      if (sector) {
+        cooperative = await prisma.cooperative.findFirst({
+          where: {
+            district: { equals: district, mode: "insensitive" },
+            sector: { equals: sector, mode: "insensitive" },
+            isActive: true,
+            deletedAt: null,
+          },
+        });
+      }
+
+      if (!cooperative) {
+        cooperative = await prisma.cooperative.findFirst({
+          where: {
+            district: { equals: district, mode: "insensitive" },
+            isActive: true,
+            deletedAt: null,
+          },
+        });
+      }
+
+      if (cooperative) {
+        await prisma.farmerProfile.update({
+          where: { id: profile.id },
+          data: { cooperativeId: cooperative.id },
+        });
+
+        const existingMember = await prisma.cooperativeMember.findUnique({
+          where: { userId },
+        });
+
+        if (!existingMember) {
+          await prisma.cooperativeMember.create({
+            data: {
+              userId,
+              cooperativeId: cooperative.id,
+              role: "member",
+              status: "active",
+            },
+          });
+        }
+      }
+    }
 
     return this.formatProfile(profile);
   }
@@ -407,6 +499,18 @@ export class FarmerService {
       throw new NotFoundError("Farmer profile");
     }
 
+    const existing = await prisma.farmerCrop.findFirst({
+      where: {
+        farmerId: profile.id,
+        cropId: data.cropId,
+        status: { notIn: ["harvested", "failed"] },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictError("An active registration for this crop");
+    }
+
     const farmerCrop = await prisma.farmerCrop.create({
       data: {
         farmerId: profile.id,
@@ -418,6 +522,13 @@ export class FarmerService {
     });
 
     return farmerCrop;
+  }
+
+  async getCropCatalog() {
+    return prisma.crop.findMany({
+      where: { isActive: true, deletedAt: null },
+      orderBy: { nameEn: "asc" },
+    });
   }
 
   async getCrops(userId: string) {
@@ -520,10 +631,10 @@ export class FarmerService {
 
   async bulkVerifyFarmers(farmerIds: string[], verifiedBy: string) {
     const verificationDate = new Date();
-    
+
     // Update all farmer profiles
     const updatedProfiles = await prisma.$transaction(
-      farmerIds.map(id =>
+      farmerIds.map((id) =>
         prisma.farmerProfile.update({
           where: { id },
           data: {
@@ -531,13 +642,13 @@ export class FarmerService {
             verifiedBy,
             verifiedAt: verificationDate,
           },
-        })
-      )
+        }),
+      ),
     );
 
     // Also activate the user accounts
     const userIds = updatedProfiles
-      .map(profile => profile.userId)
+      .map((profile) => profile.userId)
       .filter((id): id is string => id !== null);
 
     if (userIds.length > 0) {
@@ -580,6 +691,7 @@ export class FarmerService {
     return {
       id: p.id,
       userId: p.userId || u?.id,
+      farmerCode: p.farmerCode,
       fullName: resolvedFullName,
       farmName: p.farmName,
       location: p.location,

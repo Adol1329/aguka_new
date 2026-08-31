@@ -135,6 +135,36 @@ export const bulkUpdateStatus = async (
   }
 };
 
+export const updateUserByAdmin = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const user = await userService.updateUserByAdmin(
+      req.params.id,
+      req.body,
+      req.user!.sub,
+    );
+    return res.json({ success: true, data: user });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const deleteUser = async (
+  req: RequestWithUser,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await userService.deleteUser(req.params.id, req.user!.sub);
+    return res.json(result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 export const uploadAvatarController = async (
   req: RequestWithUser,
   res: Response,

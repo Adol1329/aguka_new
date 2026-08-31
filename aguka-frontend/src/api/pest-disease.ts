@@ -10,9 +10,8 @@ export const pestDiseaseApi = {
     const query: Record<string, string> = {};
     if (params?.severity) query.severity = params.severity;
     if (params?.limit) query.limit = String(params.limit);
-    const endpoint = params?.cooperativeId
-      ? `/pest-disease/${params.cooperativeId}/alerts`
-      : "/pest-disease/alerts";
+    const id = params?.cooperativeId || params?.farmerId;
+    const endpoint = id ? `/pest-disease/${id}/alerts` : "/pest-disease/alerts";
     return apiClient.get(endpoint, query);
   },
 

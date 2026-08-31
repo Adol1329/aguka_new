@@ -1,151 +1,818 @@
 import { prisma } from "../prisma.js";
 import crypto from "crypto";
-import puppeteer from "puppeteer-core";
-import fs from "fs";
-import path from "path";
-
-interface ReportSection {
-  heading: string;
-  icon?: string;
-  content?: string | string[];
-  table?: Array<{ label: string; value: string }>;
-  isPerformanceBox?: boolean;
-}
-
-interface ReportData {
-  title: string;
-  subtitle: string;
-  date: Date;
-  certificateNo: string;
-  season: string;
-  qrCodeData: string;
-  sections: ReportSection[];
-  isCertificate?: boolean;
-  isPerformanceBox?: boolean;
-  signingInfo?: {
-    officerName: string;
-    signedAt: Date;
-    signatureHash: string;
-    fingerprint: string;
-  };
-}
-
-interface FinancialReportFilters {
-  startDate: Date;
-  endDate: Date;
-  cooperativeId?: string;
-}
-
-interface FinancialReportContent {
-  summary: {
-    totalRevenue: number;
-    totalRefunds: number;
-    netRevenue: number;
-    transactionCount: number;
-  };
-  payments: Array<{
-    id: string;
-    amount: number;
-    currency: string;
-    provider: string;
-    paymentType: string;
-    status: string;
-    phoneNumber: string;
-    createdAt: Date;
-    user?: { id: string; phone: string; fullName?: string | null };
-  }>;
-  refunds: Array<{
-    id: string;
-    amount: number;
-    reason: string;
-    status: string;
-    createdAt: Date;
-    paymentId: string;
-  }>;
-}
-const CHROME_PATH =
-  process.env.CHROME_PATH ||
-  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const LOGO_PATH = path.join(
-  process.cwd(),
-  "..",
-  "aguka-frontend",
-  "public",
-  "aguka-logo.png",
-);
-
-const SIGNATURE_PATH = path.join(
-  process.cwd(),
-  "..",
-  "aguka-frontend",
-  "public",
-  "signature.png",
-);
+import { logger } from "../utils/logger.js";
+import { NotFoundError } from "../middleware/error.middleware.js";
+import { reportPdfEngine, ReportData } from "./report-pdf-engine.js";
+import { BrandingMetadata } from "./report-branding.service.js";
+import {
+  reportCsvEngine,
+  FinancialReportFilters,
+  FinancialReportContent,
+} from "./report-csv-engine.js";
+import { reportAnalytics } from "./report-analytics.js";
 
 export class ReportService {
-  private getSignatureBase64(): string {
-    try {
-      if (fs.existsSync(SIGNATURE_PATH)) {
-        const sigBuffer = fs.readFileSync(SIGNATURE_PATH);
-        return `data:image/png;base64,${sigBuffer.toString("base64")}`;
+  private getBaseReportStyles() {
+    return `
+      :root {
+        --primary: #1D9E75;
+        --secondary: #0F6E56;
+        --text-main: #1f2937;
+        --text-muted: #6b7280;
+        --bg-alt: #f9fafb;
+        --border: #e5e7eb;
+        --success-bg: #dcfce7;
+        --success-text: #166534;
+        --error-bg: #fee2e2;
+        --error-text: #991b1b;
+        --warn-bg: #fef3c7;
+        --warn-text: #92400e;
       }
-      return "";
-    } catch (error) {
-      return "";
-    }
-  }
-  private getLogoBase64(): string {
-    try {
-      if (fs.existsSync(LOGO_PATH)) {
-        const logoBuffer = fs.readFileSync(LOGO_PATH);
-        return `data:image/png;base64,${logoBuffer.toString("base64")}`;
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        color: var(--text-main);
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
       }
-      return "";
-    } catch (error) {
-      return "";
-    }
+      .container { padding: 0; }
+      .section { margin-top: 32px; }
+      .section-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--secondary);
+        border-left: 4px solid var(--primary);
+        padding-left: 12px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .stat-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .stat-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        font-weight: bold;
+      }
+      .stat-value {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--primary);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 12px;
+      }
+      th {
+        background: var(--bg-alt);
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 2px solid var(--border);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.025em;
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      tr:nth-child(even) { background: var(--bg-alt); }
+      .hash-block {
+        margin-top: 40px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 16px;
+        page-break-inside: avoid;
+      }
+      .hash-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      .hash-value {
+        font-family: monospace;
+        font-size: 11px;
+        word-break: break-all;
+        color: #374151;
+      }
+    `;
   }
 
-  private async convertHtmlToPdf(html: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      executablePath: CHROME_PATH,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "domcontentloaded" });
-      const pdf = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: { top: "20px", right: "40px", bottom: "60px", left: "40px" },
-        displayHeaderFooter: true,
-        headerTemplate: "<div></div>",
-        footerTemplate: `
-          <div style="width: 100%; font-size: 9px; padding: 10px 40px; border-top: 1.5px solid #1a6b2a; display: flex; justify-content: space-between; align-items: center; font-family: Arial, sans-serif; color: #444; background: white;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <img src="${this.getLogoBase64()}" style="height: 20px;" />
-              <div style="font-size: 7px; font-weight: 900; line-height: 1; color: #1a6b2a; text-transform: uppercase;">Aguka<br>Official</div>
-            </div>
-            <div style="text-align: center;">
-              <strong>Aguka Smart Farming Kit</strong> &copy; 2026 | <span style="color: #1a6b2a;">www.aguka.rw</span>
-            </div>
-            <div style="text-align: right;">
-              Page <span class="pageNumber"></span> of <span class="totalPages"></span><br>
-              <span style="font-size: 8px; color: #999;">Generated: ${new Date().toLocaleDateString()}</span>
+  async exportAuditReportPdf(data: any, meta?: BrandingMetadata) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">SUMMARY OVERVIEW</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Logs</div>
+                <div class="stat-value">${data.summary.totalLogs.toLocaleString()}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Active Users</div>
+                <div class="stat-value">${data.summary.uniqueUsers}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Success Rate</div>
+                <div class="stat-value">${data.summary.successRate.toFixed(1)}%</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Reporting Period</div>
+                <div class="stat-value" style="font-size: 12px;">
+                  ${reportPdfEngine.formatReportDate(data.summary.dateRange.from).split(",")[0]} - 
+                  ${reportPdfEngine.formatReportDate(data.summary.dateRange.to).split(",")[0]}
+                </div>
+              </div>
             </div>
           </div>
-        `,
-      });
-      return Buffer.from(pdf);
-    } finally {
-      await browser.close();
-    }
+
+          <div class="section">
+            <div class="section-title">TOP USERS BY ACTIVITY</div>
+            <table>
+              <colgroup>
+                <col style="width: 70%">
+                <col style="width: 30%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>User Email</th>
+                  <th>Total Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.topUsers
+                  .map(
+                    (u: any) => `
+                  <tr>
+                    <td>${reportPdfEngine.truncate(u.userName, 50)}</td>
+                    <td>${u.actionCount}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">RECENT SYSTEM LOGS</div>
+            <table>
+              <colgroup>
+                <col style="width: 22%">
+                <col style="width: 25%">
+                <col style="width: 33%">
+                <col style="width: 20%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Time (UTC)</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.recentLogs
+                  .map(
+                    (l: any) => `
+                  <tr>
+                    <td>${reportPdfEngine.formatReportDate(l.timestamp).replace(", ", "<br>")}</td>
+                    <td>${reportPdfEngine.truncate(l.user, 28)}</td>
+                    <td>${reportPdfEngine.truncate(l.action, 32)}</td>
+                    <td>${reportPdfEngine.statusBadge(l.status)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="hash-block">
+            <div class="hash-label">Document Integrity Hash (SHA-256)</div>
+            <div class="hash-value">${data.reportHash}</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "Audit Log Report",
+      ...meta,
+    });
+  }
+
+  async exportBackupReportPdf(data: any, meta?: BrandingMetadata) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">BACKUP SUMMARY</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Backups</div>
+                <div class="stat-value">${data.summary.totalBackups}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Total Storage</div>
+                <div class="stat-value">${data.summary.totalSize}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Last Status</div>
+                <div class="stat-value" style="font-size: 16px;">
+                  ${reportPdfEngine.statusBadge(data.summary.lastBackup.status)}
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Next Scheduled</div>
+                <div class="stat-value" style="font-size: 12px;">
+                  ${reportPdfEngine.formatReportDate(data.summary.nextScheduledBackup)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">BACKUP HISTORY</div>
+            <table>
+              <colgroup>
+                <col style="width: 30%">
+                <col style="width: 12%">
+                <col style="width: 12%">
+                <col style="width: 28%">
+                <col style="width: 18%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Backup Name</th>
+                  <th>Type</th>
+                  <th>Size</th>
+                  <th>Created At</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.backupHistory
+                  .map(
+                    (b: any) => `
+                  <tr>
+                    <td>${reportPdfEngine.truncate(b.name.split("/").pop().split("\\").pop(), 30)}</td>
+                    <td>${b.type}</td>
+                    <td>${b.size}</td>
+                    <td>${reportPdfEngine.formatReportDate(b.createdAt)}</td>
+                    <td>${reportPdfEngine.statusBadge(b.status)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "Backup & Recovery Report",
+      ...meta,
+    });
+  }
+
+  async exportFinancialReportPdf(
+    data: any,
+    reportId: string,
+    meta?: BrandingMetadata,
+  ) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">FINANCIAL SUMMARY</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value">${data.summary.totalRevenue.toLocaleString()} RWF</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Total Refunds</div>
+                <div class="stat-value">${data.summary.totalRefunds.toLocaleString()} RWF</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Net Revenue</div>
+                <div class="stat-value">${data.summary.netRevenue.toLocaleString()} RWF</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Transactions</div>
+                <div class="stat-value">${data.summary.transactionCount}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">RECENT TRANSACTIONS</div>
+            <table>
+              <colgroup>
+                <col style="width: 25%">
+                <col style="width: 25%">
+                <col style="width: 15%">
+                <col style="width: 15%">
+                <col style="width: 20%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Time (UTC)</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Provider</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.payments
+                  .slice(0, 50)
+                  .map(
+                    (p: any) => `
+                  <tr>
+                    <td>${reportPdfEngine.formatReportDate(p.createdAt)}</td>
+                    <td>${reportPdfEngine.truncate(p.user?.fullName || p.phoneNumber, 25)}</td>
+                    <td>${p.amount.toLocaleString()} ${p.currency}</td>
+                    <td>${p.provider}</td>
+                    <td>${reportPdfEngine.statusBadge(p.status)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: `Financial Report #${reportId.slice(0, 8)}`,
+      ...meta,
+    });
+  }
+
+  async exportSecurityReportPdf(data: any, meta?: BrandingMetadata) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">SECURITY THREAT SUMMARY</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Threat Level</div>
+                <div class="stat-value" style="color: ${data.summary.threatLevel === "high" ? "var(--error-text)" : "var(--primary)"}">
+                  ${data.summary.threatLevel.toUpperCase()}
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Total Incidents</div>
+                <div class="stat-value">${data.summary.totalIncidents}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Blocked IPs</div>
+                <div class="stat-value">${data.summary.suspiciousIPsCount}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Failed Logins</div>
+                <div class="stat-value">${data.failedLogins.total}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">SUSPICIOUS IP ACTIVITY</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>IP Address</th>
+                  <th>Attempts</th>
+                  <th>First Seen (UTC)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.suspiciousIPs
+                  .map(
+                    (ip: any) => `
+                  <tr>
+                    <td>${ip.ip}</td>
+                    <td>${ip.attempts}</td>
+                    <td>${reportPdfEngine.formatReportDate(ip.firstSeen)}</td>
+                    <td>${reportPdfEngine.statusBadge(ip.status)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">RECENT PERMISSION CHANGES</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Time (UTC)</th>
+                  <th>Admin User</th>
+                  <th>Action Taken</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.permissionChanges
+                  .map(
+                    (p: any) => `
+                  <tr>
+                    <td>${reportPdfEngine.formatReportDate(p.timestamp)}</td>
+                    <td>${reportPdfEngine.truncate(p.userName, 30)}</td>
+                    <td>${p.action}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "Security & Threat Report",
+      ...meta,
+    });
+  }
+
+  async exportHealthReportPdf(data: any, meta?: BrandingMetadata) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">SYSTEM HEALTH SUMMARY</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Overall Status</div>
+                <div class="stat-value">${reportPdfEngine.statusBadge(data.summary.overallStatus)}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">API Uptime</div>
+                <div class="stat-value">${data.summary.uptime}%</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">DB Latency</div>
+                <div class="stat-value">${data.database.latency}ms</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Cache Hit Ratio</div>
+                <div class="stat-value">${data.database.cacheHitRatio}%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">API ENDPOINT PERFORMANCE</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Endpoint Path</th>
+                  <th>Total Calls (24h)</th>
+                  <th>Avg Response Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.api.endpoints
+                  .map(
+                    (e: any) => `
+                  <tr>
+                    <td>${e.path}</td>
+                    <td>${e.calls.toLocaleString()}</td>
+                    <td>${e.avgTime}ms</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "System Health Report",
+      ...meta,
+    });
+  }
+
+  async exportNationalPerformanceReportPdf(data: any, meta?: BrandingMetadata) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">NATIONAL SUMMARY</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Farmers</div>
+                <div class="stat-value">${data.summary.totalFarmers.toLocaleString()}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Farm Area</div>
+                <div class="stat-value">${data.summary.totalFarmArea.toLocaleString()} ha</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Avg Yield</div>
+                <div class="stat-value">${data.summary.averageYield.toFixed(0)} kg/ha</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Soil Health Index</div>
+                <div class="stat-value">${data.summary.averageSoilHealth.toFixed(1)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">PERFORMANCE BY DISTRICT</div>
+            <table>
+              <colgroup>
+                <col style="width: 25%">
+                <col style="width: 15%">
+                <col style="width: 20%">
+                <col style="width: 20%">
+                <col style="width: 20%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>District</th>
+                  <th>Farmers</th>
+                  <th>Area (ha)</th>
+                  <th>Yield (kg/ha)</th>
+                  <th>Soil Index</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.byDistrict
+                  .map(
+                    (d: any) => `
+                  <tr>
+                    <td>${d.district}</td>
+                    <td>${d.farmers.toLocaleString()}</td>
+                    <td>${d.farmArea.toFixed(1)}</td>
+                    <td>${d.averageYield.toFixed(0)}</td>
+                    <td>${d.soilHealthScore.toFixed(2)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "National Performance Report",
+      ...meta,
+    });
+  }
+
+  async exportSoilIrrigationReportPdf(
+    _farmerId: string,
+    soilData: any,
+    irrigationData: any,
+    meta?: BrandingMetadata,
+  ) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">CURRENT SOIL STATUS</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Latest Moisture</div>
+                <div class="stat-value">${soilData.sections[0].content[0].split(": ")[1]}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Temperature</div>
+                <div class="stat-value">${soilData.sections[0].content[1].split(": ")[1]}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">pH Level</div>
+                <div class="stat-value">${soilData.sections[0].content[2].split(": ")[1]}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">IRRIGATION SCHEDULES</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Schedule Type</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${irrigationData.sections[0].table
+                  .map(
+                    (s: any) => `
+                  <tr>
+                    <td>${s.label}</td>
+                    <td>${s.value}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">RECENT IRRIGATION LOGS</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Executed At</th>
+                  <th>Duration / Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${irrigationData.sections[1].table
+                  .map(
+                    (l: any) => `
+                  <tr>
+                    <td>${l.label}</td>
+                    <td>${l.value}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "Soil & Irrigation Analysis",
+      ...meta,
+    });
+  }
+
+  async exportCooperativeReportPdf(
+    coop: any,
+    stats: any,
+    meta?: BrandingMetadata,
+  ) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">COOPERATIVE SUMMARY: ${coop.name}</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Average Performance</div>
+                <div class="stat-value">${stats.averageScore}%</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Total Members</div>
+                <div class="stat-value">${stats.rankings.length}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Top Score</div>
+                <div class="stat-value">${stats.topPerformer?.overallScore || 0}%</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Bottom Score</div>
+                <div class="stat-value">${stats.bottomPerformer?.overallScore || 0}%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">MEMBER PERFORMANCE RANKINGS</div>
+            <table>
+              <colgroup>
+                <col style="width: 10%">
+                <col style="width: 40%">
+                <col style="width: 25%">
+                <col style="width: 25%">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Farmer Name</th>
+                  <th>Avg Moisture</th>
+                  <th>Performance Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${stats.rankings
+                  .map(
+                    (r: any, index: number) => `
+                  <tr>
+                    <td>#${index + 1}</td>
+                    <td>${r.fullName}</td>
+                    <td>${r.soilMoistureAvg !== null ? `${r.soilMoistureAvg}%` : "N/A"}</td>
+                    <td>${reportPdfEngine.statusBadge(`${r.overallScore}/100`)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "Cooperative Performance Analysis",
+      ...meta,
+    });
   }
 
   async signAndIssuePerformanceCertificate(
     farmerId: string,
     officerId: string,
+    meta?: BrandingMetadata,
   ): Promise<Buffer> {
     const farmer = await prisma.farmerProfile.findUnique({
       where: { id: farmerId },
@@ -162,10 +829,10 @@ export class ReportService {
       },
     });
 
-    if (!farmer) throw new Error("Farmer not found");
+    if (!farmer) throw new NotFoundError("Farmer");
 
     const officer = await prisma.user.findUnique({ where: { id: officerId } });
-    if (!officer) throw new Error("Officer not found");
+    if (!officer) throw new NotFoundError("Officer");
 
     const alerts = await prisma.alert.findMany({
       where: { farmerId },
@@ -178,15 +845,25 @@ export class ReportService {
       orderBy: { signedAt: "desc" },
     });
 
-    const certNumber = `AGK-${farmer.district.substring(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const districtCode = (farmer.district ?? "RNG")
+      .substring(0, 3)
+      .toUpperCase();
+    const certNumber = `AGK-${districtCode}-${crypto.randomInt(1000, 9999)}`;
     const now = new Date();
-    const season = now.getMonth() > 6 ? "Season B" : "Season A";
+    const month = now.getMonth() + 1;
+    const season =
+      month >= 3 && month <= 7
+        ? "Season B"
+        : month === 6 || month === 7 || month === 8
+          ? "Season C"
+          : month >= 9 || month <= 1
+            ? "Season A"
+            : "Off-season";
 
-    // Calculate performance metrics
-    const moistureStability = this.calculateMoistureStability(
+    const moistureStability = reportAnalytics.calculateMoistureStability(
       farmer.soilReadings,
     );
-    const irrigationCompliance = this.calculateIrrigationCompliance(
+    const irrigationCompliance = reportAnalytics.calculateIrrigationCompliance(
       farmer.irrigationLogs,
       farmer.irrigationSchedules,
     );
@@ -195,14 +872,12 @@ export class ReportService {
       moistureStability * 0.4 + irrigationCompliance * 0.4 + cropProgress * 0.2,
     );
 
-    // Security Rule: hash must include certNumber + farmerId + officerId + signedAt + performanceScore
     const hashPayload = `${certNumber}${farmerId}${officerId}${now.toISOString()}${overallScore}`;
     const signatureHash = crypto
       .createHash("sha256")
       .update(hashPayload)
       .digest("hex");
 
-    // Save to DB
     await prisma.certificate.create({
       data: {
         certNumber,
@@ -229,7 +904,7 @@ export class ReportService {
       true,
       officer,
       alerts,
-      certificates
+      certificates,
     );
     reportData.signingInfo = {
       officerName: officer.fullName || "Authorized Officer",
@@ -238,8 +913,13 @@ export class ReportService {
       fingerprint: signatureHash.slice(-16).toUpperCase(),
     };
 
-    const html = this.createHtml(reportData);
-    return this.convertHtmlToPdf(html);
+    const html = reportPdfEngine.createHtml(reportData);
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "AGUKA Performance Document",
+      displayHeaderFooter: false,
+      margin: { top: "0", bottom: "0", left: "0", right: "0" },
+      ...meta,
+    });
   }
 
   private async preparePerformanceReportData(
@@ -250,12 +930,12 @@ export class ReportService {
     isCertificate: boolean = false,
     officer?: any,
     alerts: any[] = [],
-    certificates: any[] = []
+    certificates: any[] = [],
   ): Promise<ReportData> {
-    const moistureStability = this.calculateMoistureStability(
+    const moistureStability = reportAnalytics.calculateMoistureStability(
       farmer.soilReadings,
     );
-    const irrigationCompliance = this.calculateIrrigationCompliance(
+    const irrigationCompliance = reportAnalytics.calculateIrrigationCompliance(
       farmer.irrigationLogs,
       farmer.irrigationSchedules,
     );
@@ -280,7 +960,7 @@ export class ReportService {
       date,
       certificateNo,
       season,
-      qrCodeData: `https://verify.aguka.rw/cert/${certificateNo}`,
+      qrCodeData: `https://verify.imbaraga.org/cert/${certificateNo}`,
       isCertificate,
       isPerformanceBox: true,
 
@@ -321,13 +1001,25 @@ export class ReportService {
         {
           heading: "CROPS & YIELD",
           icon: "🌱",
-          table: farmer.farmerCrops.length > 0 ? farmer.farmerCrops.map((fc: any) => {
-            const yieldVal = fc.actualYieldKg ? `${fc.actualYieldKg} kg` : (fc.estimatedYieldKg ? `Est. ${fc.estimatedYieldKg} kg` : "Pending Harvest");
-            return {
-              label: `${fc.crop?.nameEn || "Unknown"} (${fc.status})`,
-              value: `Planted: ${fc.plantedDate ? new Date(fc.plantedDate).toLocaleDateString() : "Unknown"} | Yield: ${yieldVal}`,
-            };
-          }) : [{ label: "No crops assigned", value: "No crops recorded for this season" }],
+          table:
+            farmer.farmerCrops.length > 0
+              ? farmer.farmerCrops.map((fc: any) => {
+                  const yieldVal = fc.actualYieldKg
+                    ? `${fc.actualYieldKg} kg`
+                    : fc.estimatedYieldKg
+                      ? `Est. ${fc.estimatedYieldKg} kg`
+                      : "Pending Harvest";
+                  return {
+                    label: `${fc.crop?.nameEn || "Unknown"} (${fc.status})`,
+                    value: `Planted: ${fc.plantedDate ? new Date(fc.plantedDate).toLocaleDateString() : "Unknown"} | Yield: ${yieldVal}`,
+                  };
+                })
+              : [
+                  {
+                    label: "No crops assigned",
+                    value: "No crops recorded for this season",
+                  },
+                ],
         },
         {
           heading: "IRRIGATION & WATER USAGE",
@@ -341,25 +1033,28 @@ export class ReportService {
         {
           heading: "SOIL & ENVIRONMENT",
           icon: "🌡️",
-          content: farmer.soilReadings.length > 0 ? [
-            `Avg. Seasonal Moisture: ${this.calculateAvgMoisture(farmer.soilReadings).toFixed(1)}%`,
-            `Current Soil Status: ${this.getSoilStatusString(this.calculateAvgMoisture(farmer.soilReadings))}`,
-            `Last Reading: ${new Date(farmer.soilReadings[0].readingAt).toLocaleString()}`,
-          ] : ["No sensor readings available for analysis"],
+          content:
+            farmer.soilReadings.length > 0
+              ? [
+                  `Avg. Seasonal Moisture: ${reportAnalytics.calculateAvgMoisture(farmer.soilReadings).toFixed(1)}%`,
+                  `Current Soil Status: ${reportAnalytics.getSoilStatusString(reportAnalytics.calculateAvgMoisture(farmer.soilReadings))}`,
+                  `Last Reading: ${new Date(farmer.soilReadings[0].readingAt).toLocaleString()}`,
+                ]
+              : ["No sensor readings available for analysis"],
         },
         {
           heading: "EXTENSION & ALERTS",
           icon: "🧑‍🌾",
           content: [
             `Assigned Officer: ${officer ? officer.fullName : "None assigned"}`,
-            `Recent Alerts: ${alerts.length > 0 ? `${alerts.filter((a: any) => a.severity === 'high').length} high severity alerts` : "No recent alerts recorded"}`,
+            `Recent Alerts: ${alerts.length > 0 ? `${alerts.filter((a: any) => a.severity === "high").length} high severity alerts` : "No recent alerts recorded"}`,
             `Previous Certifications: ${certificates.length > 0 ? certificates.length : "First time certification"}`,
           ],
         },
         {
           heading: "INTELLIGENT RECOMMENDATIONS",
           icon: "💡",
-          content: this.generateRecommendations(
+          content: reportAnalytics.generateRecommendations(
             overallScore,
             moistureStability,
             irrigationCompliance,
@@ -371,7 +1066,7 @@ export class ReportService {
                 heading: "CERTIFICATION & VERIFICATION",
                 icon: "✅",
                 content:
-                  "This document certifies that the above farmer is utilizing the Aguka Smart Farming Kit for precision agriculture monitoring. Data collected is verified by IoT sensors and compliant with national smart farming standards.",
+                  "This document certifies that the above farmer is utilizing the AGUKA SMART FARMING KIT for precision agriculture monitoring. Data collected is verified by IoT sensors and compliant with national smart farming standards.",
               },
             ]
           : []),
@@ -382,6 +1077,7 @@ export class ReportService {
   async generateSoilReport(
     farmerId: string,
     dateRange?: { start: Date; end: Date },
+    meta?: BrandingMetadata,
   ): Promise<Buffer> {
     const latestReading = await prisma.soilReading.findFirst({
       where: { farmerId },
@@ -404,42 +1100,79 @@ export class ReportService {
       include: { user: true, cooperative: true },
     });
 
-    const reportData: ReportData = {
-      title: "Soil Analysis Report",
-      subtitle: farmer?.fullName || "Farm Report",
-      date: new Date(),
-      certificateNo: `SOIL-${farmerId.substring(0, 4).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      season: "N/A",
-      qrCodeData: "", // Reports don't have QR
-      isCertificate: false,
-      sections: [
-        {
-          heading: "Current Soil Status",
-          icon: "🌡️",
-          content: latestReading
-            ? [
-                `Moisture: ${latestReading.moisturePercent}%`,
-                `Temperature: ${latestReading.temperatureCelsius || "N/A"}°C`,
-                `pH Level: ${latestReading.phLevel || "N/A"}`,
-              ]
-            : ["No readings available"],
-        },
-        {
-          heading: "Recent Readings",
-          icon: "📊",
-          table: readings.slice(0, 10).map((r) => ({
-            label: new Date(r.readingAt).toLocaleDateString(),
-            value: `${r.moisturePercent}% moisture`,
-          })),
-        },
-      ],
-    };
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">CURRENT SOIL STATUS</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Moisture</div>
+                <div class="stat-value">${latestReading ? `${latestReading.moisturePercent}%` : "N/A"}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Temperature</div>
+                <div class="stat-value">${latestReading?.temperatureCelsius ? `${latestReading.temperatureCelsius}°C` : "N/A"}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">pH Level</div>
+                <div class="stat-value">${latestReading?.phLevel || "N/A"}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Total Readings</div>
+                <div class="stat-value">${readings.length}</div>
+              </div>
+            </div>
+          </div>
 
-    const html = this.createHtml(reportData);
-    return this.convertHtmlToPdf(html);
+          <div class="section">
+            <div class="section-title">RECENT READINGS (LAST 30)</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Reading Time (UTC)</th>
+                  <th>Moisture Level</th>
+                  <th>Temperature</th>
+                  <th>pH</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${readings
+                  .map(
+                    (r) => `
+                  <tr>
+                    <td>${reportPdfEngine.formatReportDate(r.readingAt)}</td>
+                    <td>${r.moisturePercent}%</td>
+                    <td>${r.temperatureCelsius ? `${r.temperatureCelsius}°C` : "N/A"}</td>
+                    <td>${r.phLevel || "N/A"}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(reportHtml, {
+      reportTitle: `Soil Analysis: ${farmer?.fullName || "Farmer"}`,
+      ...meta,
+    });
   }
 
-  async generateIrrigationReport(farmerId: string): Promise<Buffer> {
+  async generateIrrigationReport(
+    farmerId: string,
+    dateRange?: { start: Date; end: Date },
+    meta?: BrandingMetadata,
+  ): Promise<Buffer> {
     const schedules = await prisma.irrigationSchedule.findMany({
       where: { farmerId },
       orderBy: { createdAt: "desc" },
@@ -447,7 +1180,12 @@ export class ReportService {
     });
 
     const logs = await prisma.irrigationLog.findMany({
-      where: { farmerId },
+      where: {
+        farmerId,
+        executedAt: dateRange
+          ? { gte: dateRange.start, lte: dateRange.end }
+          : undefined,
+      },
       orderBy: { executedAt: "desc" },
       take: 30,
     });
@@ -457,41 +1195,100 @@ export class ReportService {
       include: { user: true, cooperative: true },
     });
 
-    const reportData: ReportData = {
-      title: "Irrigation Report",
-      subtitle: farmer?.fullName || "Farm Report",
-      date: new Date(),
-      certificateNo: `IRR-${farmerId.substring(0, 4).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      season: "N/A",
-      qrCodeData: "",
-      isCertificate: false,
-      sections: [
-        {
-          heading: "Scheduled Irrigation",
-          icon: "📅",
-          table: schedules.map((s) => ({
-            label: s.scheduleType || "Schedule",
-            value: `${s.durationMinutes}min`,
-          })),
-        },
-        {
-          heading: "Irrigation History",
-          icon: "💧",
-          table: logs.slice(0, 15).map((l) => ({
-            label: l.executedAt
-              ? new Date(l.executedAt).toLocaleString()
-              : "N/A",
-            value: `${l.durationMinutes || "N/A"}min - ${l.status}`,
-          })),
-        },
-      ],
-    };
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">IRRIGATION OVERVIEW</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Active Schedules</div>
+                <div class="stat-value">${schedules.length}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Verified Sessions</div>
+                <div class="stat-value">${logs.length}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Last Session</div>
+                <div class="stat-value" style="font-size: 14px;">
+                  ${logs[0]?.executedAt ? reportPdfEngine.formatReportDate(logs[0].executedAt).split(",")[0] : "N/A"}
+                </div>
+              </div>
+            </div>
+          </div>
 
-    const html = this.createHtml(reportData);
-    return this.convertHtmlToPdf(html);
+          <div class="section">
+            <div class="section-title">SCHEDULED IRRIGATION</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Schedule Type</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${schedules
+                  .map(
+                    (s) => `
+                  <tr>
+                    <td>${s.scheduleType || "Manual"}</td>
+                    <td>${s.durationMinutes} min</td>
+                    <td>${reportPdfEngine.statusBadge(s.isActive ? "Active" : "Inactive")}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">IRRIGATION HISTORY</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Execution Time (UTC)</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${logs
+                  .map(
+                    (l) => `
+                  <tr>
+                    <td>${l.executedAt ? reportPdfEngine.formatReportDate(l.executedAt) : "N/A"}</td>
+                    <td>${l.durationMinutes || "N/A"} min</td>
+                    <td>${reportPdfEngine.statusBadge(l.status)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return reportPdfEngine.convertHtmlToPdf(reportHtml, {
+      reportTitle: `Irrigation Report: ${farmer?.fullName || "Farmer"}`,
+      ...meta,
+    });
   }
 
-  async generatePerformanceReport(farmerId: string): Promise<Buffer> {
+  async generatePerformanceReport(
+    farmerId: string,
+    meta?: BrandingMetadata,
+  ): Promise<Buffer> {
     const farmer = await prisma.farmerProfile.findUnique({
       where: { id: farmerId },
       include: {
@@ -507,7 +1304,7 @@ export class ReportService {
       },
     });
 
-    if (!farmer) throw new Error("Farmer not found");
+    if (!farmer) throw new NotFoundError("Farmer");
 
     const alerts = await prisma.alert.findMany({
       where: { farmerId },
@@ -520,7 +1317,10 @@ export class ReportService {
       orderBy: { signedAt: "desc" },
     });
 
-    const certificateNo = `DRAFT-${farmer.district.substring(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const districtCode = (farmer.district ?? "RNG")
+      .substring(0, 3)
+      .toUpperCase();
+    const certificateNo = `DRAFT-${districtCode}-${crypto.randomInt(1000, 9999)}`;
     const reportData = await this.preparePerformanceReportData(
       farmer,
       certificateNo,
@@ -529,16 +1329,30 @@ export class ReportService {
       false,
       null,
       alerts,
-      certificates
+      certificates,
     );
 
-    const html = this.createHtml(reportData);
-    return this.convertHtmlToPdf(html);
+    const html = reportPdfEngine.createHtml(reportData);
+    return reportPdfEngine.convertHtmlToPdf(html, {
+      reportTitle: "AGUKA Performance Document",
+      displayHeaderFooter: false,
+      margin: { top: "0", bottom: "0", left: "0", right: "0" },
+      ...meta,
+    });
   }
 
-  async generateCropReport(farmerId: string): Promise<Buffer> {
+  async generateCropReport(
+    farmerId: string,
+    dateRange?: { start: Date; end: Date },
+    meta?: BrandingMetadata,
+  ): Promise<Buffer> {
     const crops = await prisma.farmerCrop.findMany({
-      where: { farmerId },
+      where: {
+        farmerId,
+        plantedDate: dateRange
+          ? { gte: dateRange.start, lte: dateRange.end }
+          : undefined,
+      },
       include: { crop: true },
       orderBy: { createdAt: "desc" },
     });
@@ -548,533 +1362,66 @@ export class ReportService {
       include: { user: true, cooperative: true },
     });
 
-    if (!farmer) throw new Error("Farmer not found");
+    if (!farmer) throw new NotFoundError("Farmer");
 
-    const reportData: ReportData = {
-      title: "Crop Management Report",
-      subtitle: farmer.fullName,
-      date: new Date(),
-      certificateNo: `CROP-${farmerId.substring(0, 4).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      season: "N/A",
-      qrCodeData: "",
-      isCertificate: false,
-      sections: [
-        {
-          heading: "Current Crops",
-          icon: "🌱",
-          table: crops.map((c) => ({
-            label: c.crop?.nameEn || "Unknown Crop",
-            value: `Planted: ${c.plantedDate ? new Date(c.plantedDate).toLocaleDateString() : "N/A"} | Status: ${c.status}`,
-          })),
-        },
-      ],
-    };
-
-    const html = this.createHtml(reportData);
-    return this.convertHtmlToPdf(html);
-  }
-
-  private calculateMoistureStability(readings: any[]): number {
-    if (readings.length === 0) return 0;
-    const stableCount = readings.filter(
-      (r) => r.moisturePercent >= 35 && r.moisturePercent <= 75,
-    ).length;
-    return Math.round((stableCount / readings.length) * 100);
-  }
-
-  private calculateIrrigationCompliance(logs: any[], schedules: any[]): number {
-    if (schedules.length === 0) {
-      return logs.length > 0 ? 100 : 0;
-    }
-    // Assuming a standard 90-day season, and each active schedule implies ~2 sessions per week (24 total).
-    const expectedSessions = schedules.length * 24;
-    if (expectedSessions === 0) return 0;
-    
-    const complianceRate = Math.round((logs.length / expectedSessions) * 100);
-    return Math.min(100, complianceRate);
-  }
-
-  private calculateAvgMoisture(readings: any[]): number {
-    if (readings.length === 0) return 0;
-    return (
-      readings.reduce((acc, r) => acc + Number(r.moisturePercent), 0) /
-      readings.length
-    );
-  }
-
-  private generateRecommendations(
-    score: number,
-    moisture: number,
-    irrigation: number,
-  ): string[] {
-    const recs: string[] = [];
-    if (moisture < 70) recs.push("Increase sensor-based irrigation frequency.");
-    if (irrigation < 80)
-      recs.push("Review missed automated irrigation sessions.");
-    if (score < 60) recs.push("Consult extension officer.");
-    if (recs.length === 0) recs.push("Maintain current practices.");
-    return recs;
-  }
-
-  private getSoilStatusString(moisture: number): string {
-    if (moisture > 40) return "Optimal";
-    if (moisture > 30) return "Good";
-    return "Action Required";
-  }
-
-  private createHtml(data: ReportData): string {
-    const score = parseInt(
-      data.sections
-        .find((s) => s.isPerformanceBox)
-        ?.content?.[0].match(/\d+/)?.[0] || "0",
-    );
-    const compliance = parseInt(
-      data.sections
-        .find((s) => s.heading.includes("IRRIGATION"))
-        ?.content?.[0].match(/\d+/)?.[0] || "0",
-    );
-
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${data.title}</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        :root {
-            --primary: ${data.isCertificate ? "#1a6b2a" : "#555555"};
-            --primary-light: ${data.isCertificate ? "#e8f5e9" : "#f0f0f0"};
-            --text: #2c3e50;
-            --border: #e0e0e0;
-            --red: #d32f2f;
-            --amber: #ffa000;
-            --blue: #1976d2;
-        }
-
-        @page {
-            size: A4;
-            margin: 0;
-        }
-
-        html, body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: var(--text);
-            background: #f5f5f5;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            width: 210mm;
-            height: 297mm;
-            max-height: 297mm;
-            overflow: hidden;
-        }
-
-        .certificate {
-            width: 210mm;
-            height: 297mm;
-            max-height: 297mm;
-            margin: 0 auto;
-            background: white;
-            padding: 15mm;
-            box-sizing: border-box;
-            position: relative;
-            border: ${data.isCertificate ? "12px solid var(--primary-light)" : "1px solid #ddd"};
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 100px;
-            color: ${data.isCertificate ? "rgba(26, 107, 42, 0.05)" : "rgba(153, 153, 153, 0.05)"};
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 0;
-            white-space: nowrap;
-        }
-
-        .header {
-            display: flex;
-            justify-content: ${data.isCertificate ? "space-between" : "flex-start"};
-            align-items: center;
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            position: relative;
-            z-index: 1;
-            gap: 15px;
-        }
-
-        .logo-box { width: 80px; flex-shrink: 0; }
-        .logo-box img { 
-            width: 100%; 
-            height: auto; 
-            display: block; 
-            filter: ${data.isCertificate ? "none" : "grayscale(100%) opacity(60%)"};
-        }
-
-        .title-box {
-            text-align: ${data.isCertificate ? "center" : "left"};
-            flex-grow: 1;
-        }
-
-        .title-box h1 {
-            color: var(--primary);
-            font-size: 20px;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .title-box p {
-            color: #666;
-            font-size: 12px;
-            margin: 2px 0 0 0;
-            font-weight: 500;
-        }
-
-        .meta-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 15px;
-            padding: 10px;
-            background: #fdfdfd;
-            border: 1px solid #eee;
-            border-radius: 8px;
-        }
-
-        .meta-item {
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .meta-label {
-            font-size: 9px;
-            text-transform: uppercase;
-            color: #999;
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-
-        .meta-value {
-            font-size: 12px;
-            font-weight: 600;
-            color: #333;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            white-space: normal;
-        }
-
-        .section {
-            margin-top: 10px;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 2px solid var(--primary-light);
-            padding-bottom: 3px;
-            margin-bottom: 5px;
-            color: var(--primary);
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
-
-        .performance-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 10px;
-            background: var(--primary-light);
-            padding: 10px 15px;
-            border-radius: 8px;
-            position: relative;
-            z-index: 1;
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-
-        .gauge-box {
-            position: relative;
-            width: 100px;
-            height: 60px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .gauge-svg {
-            width: 100px;
-            height: 50px;
-        }
-
-        .gauge-text {
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: -20px;
-            color: var(--primary);
-        }
-
-        .compliance-box {
-            flex: 1;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 12px;
-            background: #ddd;
-            border-radius: 6px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            width: ${compliance}%;
-        }
-
-        .footer-signatures {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-top: 15px;
-            position: relative;
-            z-index: 1;
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-
-        .stamp-circle {
-            width: 80px;
-            height: 80px;
-            border: 2px double var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            color: var(--primary);
-            text-align: center;
-            padding: 5px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .certificate-footer {
-            position: absolute;
-            bottom: 5mm;
-            left: 15mm;
-            right: 15mm;
-            text-align: center;
-            font-size: 9px;
-            color: #999;
-            border-top: 1px solid var(--border);
-            padding-top: 10px;
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-
-        @media print {
-            body, html { 
-                background: white; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                width: 210mm !important;
-                height: 297mm !important;
-                max-height: 297mm !important;
-                overflow: hidden !important;
-            }
-            .certificate { 
-                box-shadow: none; 
-                margin: 0 !important; 
-                padding: 10mm !important;
-                border: ${data.isCertificate ? "10px solid var(--primary-light)" : "none"} !important; 
-                width: 100% !important;
-                height: 100% !important;
-                max-height: 297mm !important;
-                overflow: hidden !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                transform: scale(0.99);
-                transform-origin: top left;
-            }
-            * {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="certificate">
-        <div class="watermark">${data.isCertificate ? "CERTIFIED" : "REPORT ONLY"}</div>
-        
-        <div class="header">
-            <div class="logo-box">
-                <img src="${this.getLogoBase64()}" alt="AGUKA Logo" />
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>${this.getBaseReportStyles()}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="section">
+            <div class="section-title">CROP MANAGEMENT SUMMARY</div>
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Crops</div>
+                <div class="stat-value">${crops.length}</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Last Planted</div>
+                <div class="stat-value" style="font-size: 14px;">
+                  ${crops[0]?.plantedDate ? reportPdfEngine.formatReportDate(crops[0].plantedDate).split(",")[0] : "N/A"}
+                </div>
+              </div>
             </div>
-            <div class="title-box">
-                <h1>${data.title}</h1>
-                <p>${data.subtitle}</p>
-            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">CURRENT CROP LIST</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Crop Name</th>
+                  <th>Planted Date</th>
+                  <th>Current Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${crops
+                  .map(
+                    (c) => `
+                  <tr>
+                    <td>${c.crop?.nameEn || "Unknown"}</td>
+                    <td>${c.plantedDate ? reportPdfEngine.formatReportDate(c.plantedDate).split(",")[0] : "N/A"}</td>
+                    <td>${reportPdfEngine.statusBadge(c.status)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
         </div>
+      </body>
+      </html>
+    `;
 
-        <div class="meta-grid">
-            <div class="meta-item">
-                <span class="meta-label">Farmer Name</span>
-                <span class="meta-value">${data.subtitle}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Reference ID</span>
-                <span class="meta-value">${data.certificateNo}</span>
-            </div>
-            <div class="meta-item">
-                <span class="meta-label">Date Issued</span>
-                <span class="meta-value">${data.date.toLocaleDateString()}</span>
-            </div>
-        </div>
-
-        ${
-          data.isPerformanceBox
-            ? `
-        <div class="performance-container">
-            <div class="gauge-box">
-                <svg class="gauge-svg" viewBox="0 0 120 60">
-                    <path d="M 10 50 A 40 40 0 0 1 110 50" fill="none" stroke="#ddd" stroke-width="12" />
-                    <path d="M 10 50 A 40 40 0 0 1 110 50" fill="none" stroke="#1a6b2a" stroke-width="12" 
-                          stroke-dasharray="${(score / 100) * 126}, 126" />
-                </svg>
-                <div class="gauge-text">${score}%</div>
-                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-top: 5px;">Performance</div>
-            </div>
-            <div class="compliance-box">
-                <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: var(--primary);">Seasonal Compliance</div>
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                <div style="font-size: 11px; margin-top: 8px; color: #555;">
-                    This farmer achieved <strong>${compliance}%</strong> irrigation and monitoring compliance verified by IoT sensors.
-                </div>
-            </div>
-        </div>
-        `
-            : ""
-        }
-
-        ${data.sections
-          .filter((s) => !s.isPerformanceBox && !s.heading.includes("DETAILS"))
-          .map((section) => {
-            const hasContent = Array.isArray(section.content)
-              ? section.content.length > 0
-              : !!section.content;
-            const hasTable = section.table && section.table.length > 0;
-
-            if (!hasContent && !hasTable) return "";
-
-            return `
-            <div class="section">
-                <div class="section-header">
-                    <span>${section.icon || "•"}</span>
-                    <span>${section.heading}</span>
-                </div>
-                <div style="padding-left: 30px;">
-                    ${
-                      section.table
-                        ? `
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px;">
-                            ${section.table
-                              .map(
-                                (r) => `
-                                <div style="font-size: 11px; display: flex; flex-direction: column; border-bottom: 1px solid #f9f9f9; padding: 4px 0;">
-                                    <span style="color: #888; font-size: 9px; text-transform: uppercase; margin-bottom: 2px;">${r.label}</span>
-                                    <span style="font-weight: 500; font-size: 11px;">${r.value}</span>
-                                </div>
-                            `,
-                              )
-                              .join("")}
-                        </div>
-                    `
-                        : ""
-                    }
-                    ${
-                      section.content
-                        ? `
-                        <div style="font-size: 12px; color: #444; line-height: 1.6; margin-top: 10px;">
-                            ${Array.isArray(section.content) ? section.content.map((line) => `• ${line}`).join("<br>") : section.content}
-                        </div>
-                    `
-                        : ""
-                    }
-                </div>
-            </div>
-            `;
-          })
-          .join("")}
-
-        ${
-          data.isCertificate
-            ? `
-        <div class="footer-signatures">
-            <div>
-                <div id="qrcode"></div>
-                <div style="font-size: 8px; color: #888; margin-top: 4px; text-transform: uppercase;">Certificate Verification</div>
-            </div>
-            <div style="text-align: right;">
-                <div style="display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid #333; padding-bottom: 5px;">
-                    <img src="${this.getSignatureBase64()}" style="height: 35px; margin-bottom: 5px; filter: grayscale(100%); mix-blend-mode: multiply;" alt="Signature" onerror="this.style.display='none'" />
-                    <span style="font-size: 12px; font-weight: bold;">${data.signingInfo?.officerName || "Authorized Officer"}</span>
-                </div>
-                <div style="font-size: 11px; color: #666; margin-top: 5px;">
-                    Digital Verification Date: ${data.signingInfo ? data.signingInfo.signedAt.toLocaleDateString() : data.date.toLocaleDateString()}
-                </div>
-                ${
-                  data.signingInfo
-                    ? `
-                <div style="font-size: 9px; color: #999; margin-top: 5px; font-family: monospace; letter-spacing: 1px;">
-                    CERT FINGERPRINT: ${data.signingInfo.fingerprint}
-                </div>
-                `
-                    : ""
-                }
-            </div>
-            <div class="stamp-circle">
-                AGUKA PLATFORM<br>OFFICIAL STAMP
-            </div>
-        </div>
-        `
-            : ""
-        }
-    </div>
-
-    <script>
-        ${
-          data.isCertificate
-            ? `
-        new QRCode(document.getElementById("qrcode"), {
-            text: "https://verify.aguka.rw/cert/${data.certificateNo}",
-            width: 80,
-            height: 80,
-            colorDark : "#004D40",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-        `
-            : ""
-        }
-    </script>
-</body>
-</html>`;
+    return reportPdfEngine.convertHtmlToPdf(reportHtml, {
+      reportTitle: `Crop Management: ${farmer.fullName}`,
+      ...meta,
+    });
   }
 
   async getFarmReports(filters: {
@@ -1140,6 +1487,21 @@ export class ReportService {
       paymentWhere.user = {
         farmerProfile: { cooperativeId: filters.cooperativeId },
       };
+    }
+
+    if (filters.cooperativeId) {
+      const totalPayments = await prisma.payment.count({
+        where: { createdAt: { gte: filters.startDate, lte: filters.endDate } },
+      });
+      const linkedPayments = await prisma.payment.count({
+        where: paymentWhere,
+      });
+      const unlinkedCount = totalPayments - linkedPayments;
+      if (unlinkedCount > 0) {
+        logger.warn(
+          `[FinancialReport] ${unlinkedCount} of ${totalPayments} payments excluded because they lack a farmerProfile with cooperativeId ${filters.cooperativeId}`,
+        );
+      }
     }
 
     const [payments, refunds] = await Promise.all([
@@ -1218,28 +1580,15 @@ export class ReportService {
       })),
     };
 
-    const reportOwner = await prisma.farmerProfile.findFirst({
-      where: filters.cooperativeId
-        ? { cooperativeId: filters.cooperativeId }
-        : {},
-      select: { id: true, cooperativeId: true },
-    });
-
-    if (!reportOwner) {
-      throw new Error(
-        "At least one farmer profile is required to store a financial report",
-      );
-    }
-
     const report = await prisma.report.create({
       data: {
-        farmerId: reportOwner.id,
-        cooperativeId: filters.cooperativeId || reportOwner.cooperativeId,
+        cooperativeId: filters.cooperativeId || null,
         reportType: "financial",
         periodStart: filters.startDate,
         periodEnd: filters.endDate,
         content,
         status: "completed",
+        generatedById: generatedBy,
         approvedBy: generatedBy,
         approvedAt: new Date(),
       },
@@ -1257,71 +1606,31 @@ export class ReportService {
     });
   }
 
-  async exportFinancialReport(reportId: string, format: "csv" | "pdf") {
+  async exportFinancialReport(
+    reportId: string,
+    format: "csv" | "pdf",
+    meta?: BrandingMetadata,
+  ) {
     const report = await prisma.report.findUnique({ where: { id: reportId } });
     if (!report || report.reportType !== "financial") {
-      throw new Error("Financial report not found");
+      throw new NotFoundError("Financial report");
     }
 
     const content = report.content as unknown as FinancialReportContent;
 
     if (format === "csv") {
-      const lines = [
-        "id,type,amount,currency,status,provider,phone,createdAt",
-        ...content.payments.map((payment) =>
-          [
-            payment.id,
-            "payment",
-            payment.amount,
-            payment.currency,
-            payment.status,
-            payment.provider,
-            payment.phoneNumber,
-            payment.createdAt,
-          ].join(","),
-        ),
-        ...content.refunds.map((refund) =>
-          [
-            refund.id,
-            "refund",
-            refund.amount,
-            "RWF",
-            refund.status,
-            "",
-            "",
-            refund.createdAt,
-          ].join(","),
-        ),
-      ];
-      return {
-        buffer: Buffer.from(lines.join("\n"), "utf-8"),
-        contentType: "text/csv",
-        filename: `financial-report-${report.id.slice(0, 8)}.csv`,
-      };
+      return reportCsvEngine.exportFinancialReportCSV(content, reportId);
     }
 
-    const pdf = await this.convertHtmlToPdf(`
-      <html>
-        <body style="font-family: Arial; padding: 32px;">
-          <h1>Financial Report</h1>
-          <p>${report.periodStart?.toISOString().slice(0, 10)} to ${report.periodEnd?.toISOString().slice(0, 10)}</p>
-          <h2>Summary</h2>
-          <ul>
-            <li>Total revenue: ${content.summary.totalRevenue.toLocaleString()} RWF</li>
-            <li>Total refunds: ${content.summary.totalRefunds.toLocaleString()} RWF</li>
-            <li>Net revenue: ${content.summary.netRevenue.toLocaleString()} RWF</li>
-            <li>Transactions: ${content.summary.transactionCount}</li>
-          </ul>
-        </body>
-      </html>
-    `);
+    const pdf = await this.exportFinancialReportPdf(content, reportId, meta);
 
     return {
       buffer: pdf,
       contentType: "application/pdf",
-      filename: `financial-report-${report.id.slice(0, 8)}.pdf`,
+      filename: `financial-report-${reportId.slice(0, 8)}.pdf`,
     };
   }
+
   async getFarmerAnalytics(farmerId: string) {
     const farmer = await prisma.farmerProfile.findUnique({
       where: { id: farmerId },
@@ -1335,26 +1644,28 @@ export class ReportService {
 
     if (!farmer) throw new Error("Farmer not found");
 
-    const moistureStability = this.calculateMoistureStability(
+    const moistureStability = reportAnalytics.calculateMoistureStability(
       farmer.soilReadings,
     );
-    const irrigationCompliance = this.calculateIrrigationCompliance(
+    const irrigationCompliance = reportAnalytics.calculateIrrigationCompliance(
       farmer.irrigationLogs,
       farmer.irrigationSchedules,
     );
     const cropProgress = farmer.farmerCrops.length > 0 ? 90 : 0;
-    const avgMoisture = this.calculateAvgMoisture(farmer.soilReadings);
+    const avgMoisture = reportAnalytics.calculateAvgMoisture(
+      farmer.soilReadings,
+    );
 
-    // Calculate weekly trends
-    const weeklyMoisture = this.calculateWeeklyTrends(farmer.soilReadings);
+    const weeklyMoisture = reportAnalytics.calculateWeeklyTrends(
+      farmer.soilReadings,
+    );
+    const overallScore = Math.round(
+      moistureStability * 0.4 + irrigationCompliance * 0.4 + cropProgress * 0.2,
+    );
 
     return {
       overview: {
-        score: Math.round(
-          moistureStability * 0.4 +
-            irrigationCompliance * 0.4 +
-            cropProgress * 0.2,
-        ),
+        score: overallScore,
         moistureStability,
         irrigationCompliance,
         avgMoisture: parseFloat(avgMoisture.toFixed(1)),
@@ -1362,32 +1673,12 @@ export class ReportService {
       trends: {
         soilMoisture: weeklyMoisture,
       },
-      recommendations: this.generateRecommendations(
-        moistureStability,
-        moistureStability,
+      recommendations: reportAnalytics.generateRecommendations(
+        overallScore,
+        avgMoisture,
         irrigationCompliance,
       ),
     };
-  }
-
-  private calculateWeeklyTrends(readings: any[]) {
-    // Basic aggregation for demonstration
-    const groups: { [key: string]: number[] } = {};
-    readings.forEach((r) => {
-      const week = new Date(r.readingAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-      if (!groups[week]) groups[week] = [];
-      groups[week].push(Number(r.moisturePercent));
-    });
-
-    return Object.keys(groups)
-      .map((key) => ({
-        label: key,
-        value: groups[key].reduce((a, b) => a + b, 0) / groups[key].length,
-      }))
-      .reverse();
   }
 }
 

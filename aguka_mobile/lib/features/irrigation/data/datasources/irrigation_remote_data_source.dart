@@ -20,17 +20,12 @@ class IrrigationRemoteDataSourceImpl implements IrrigationRemoteDataSource {
       if (response.statusCode == 200) {
         return IrrigationStatusModel.fromJson(response.data['data'] ?? response.data);
       } else {
-        throw ServerException();
+        throw ServerException('Failed to fetch irrigation status');
       }
+    } on ServerException {
+      rethrow;
     } catch (e) {
-      // In a real application, if the endpoint doesn't exist yet, we might want to return mock data
-      // For now, let's mock it if it fails so the UI works
-      return const IrrigationStatusModel(
-        isPumpActive: false,
-        waterUsed: 145.0,
-        percentageSaved: 20.0,
-      );
-      // throw ServerException();
+      throw ServerException('Failed to fetch irrigation status: $e');
     }
   }
 
@@ -41,22 +36,17 @@ class IrrigationRemoteDataSourceImpl implements IrrigationRemoteDataSource {
         '/irrigation/control',
         data: jsonEncode({'farmId': farmId, 'action': isActive ? 'start' : 'stop'}),
       );
-      
+
       if (response.statusCode == 200) {
         // Return updated status
-         return IrrigationStatusModel.fromJson(response.data['data'] ?? response.data);
+        return IrrigationStatusModel.fromJson(response.data['data'] ?? response.data);
       } else {
-        throw ServerException();
+        throw ServerException('Failed to control pump');
       }
+    } on ServerException {
+      rethrow;
     } catch (e) {
-      // Mocking response for now to ensure UI reactivity
-      return IrrigationStatusModel(
-        isPumpActive: isActive,
-        lastTapTime: DateTime.now(),
-        waterUsed: 145.0,
-        percentageSaved: 20.0,
-      );
-      // throw ServerException();
+      throw ServerException('Failed to control pump: $e');
     }
   }
 }

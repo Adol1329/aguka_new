@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:aguka_mobile/core/utils/validators.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_bloc.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_event.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_state.dart';
@@ -80,11 +81,8 @@ class _LoginPageState extends State<LoginPage> {
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
                                 keyboardType: TextInputType.phone,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) return 'auth.validation.phone_required'.tr();
-                                  if (!value.startsWith('+') && value.length < 10) return 'auth.validation.phone_invalid'.tr();
-                                  return null;
-                                },
+                                textInputAction: TextInputAction.next,
+                                validator: Validators.validatePhone,
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
@@ -99,11 +97,10 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) return 'auth.validation.password_required'.tr();
-                                  if (value.length < 6) return 'auth.validation.password_short'.tr();
-                                  return null;
-                                },
+                                textInputAction: TextInputAction.done,
+                                onFieldSubmitted: (_) => _handleLogin(),
+                                validator: (value) =>
+                                    value == null || value.isEmpty ? 'Password is required' : null,
                               ),
                               const SizedBox(height: 24),
                               SizedBox(

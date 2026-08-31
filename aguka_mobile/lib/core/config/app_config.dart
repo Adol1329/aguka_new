@@ -8,7 +8,7 @@ class AppConfig {
   // Change this to your local machine IP for physical device testing
   // For Android Emulator, use 10.0.2.2
   // For physical devices, use your machine's actual IP address
-  static const String _localIp = '10.24.0.91';
+  static const String _localIp = '10.0.2.2';
 
   static String get baseUrl {
     if (environment == Environment.prod) {

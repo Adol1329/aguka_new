@@ -127,6 +127,14 @@ export const triggerIrrigation = async (
   try {
     const farmerId = req.user!.sub;
     const { zoneId } = req.body;
+
+    if (!zoneId) {
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "zoneId is required" },
+      });
+    }
+
     const result = await irrigationService.triggerIrrigation(farmerId, zoneId);
     return res.json({ success: true, data: result });
   } catch (error) {
@@ -142,6 +150,14 @@ export const stopIrrigation = async (
   try {
     const farmerId = req.user!.sub;
     const { zoneId } = req.body;
+
+    if (!zoneId) {
+      return res.status(400).json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "zoneId is required" },
+      });
+    }
+
     const result = await irrigationService.stopIrrigation(farmerId, zoneId);
     return res.json({ success: true, data: result });
   } catch (error) {

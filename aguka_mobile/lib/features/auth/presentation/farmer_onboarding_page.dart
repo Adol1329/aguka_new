@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:aguka_mobile/core/utils/validators.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_bloc.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_event.dart';
 import 'package:aguka_mobile/features/auth/bloc/auth_state.dart';
 import 'package:aguka_mobile/injection_container.dart';
+import 'package:aguka_mobile/main.dart' show scaffoldMessengerKey;
 import 'package:dio/dio.dart';
 
 class FarmerOnboardingPage extends StatefulWidget {
@@ -82,25 +83,42 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
+      if (_selectedCrops.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Select at least one crop')),
+        );
+        return;
+      }
+
+      final state = context.read<AuthBloc>().state;
+      final fullName = (state is AuthAuthenticated)
+          ? state.user.fullName
+          : (state is AuthRegistered)
+              ? state.user.fullName
+              : null;
       final data = {
+        'fullName': fullName,
         'provinceCode': _selectedProvinceCode,
         'districtCode': _selectedDistrictCode,
         'sectorCode': _selectedSectorCode,
         'cellCode': _selectedCellCode,
         'villageCode': _selectedVillageCode,
-        'farmSizeHectares': double.tryParse(_farmSizeController.text),
+        'farmSizeHectares': double.tryParse(_farmSizeController.text.trim()),
         'crops': _selectedCrops,
-        'waterSource': _selectedWaterSource ?? 'RAIN_FED',
-        'irrigationType': _selectedIrrigationType ?? 'NONE',
-        // Also include the name values if backend needs them
-        'district': _districts.firstWhere(
-            (d) => d['code'].toString() == _selectedDistrictCode)['name'],
-        'sector': _sectors.firstWhere(
-            (s) => s['code'].toString() == _selectedSectorCode)['name'],
-        'cell': _cells.firstWhere(
-            (c) => c['code'].toString() == _selectedCellCode)['name'],
-        'village': _villages.firstWhere(
-            (v) => v['code'].toString() == _selectedVillageCode)['name'],
+        'waterSource': _selectedWaterSource ?? 'rainwater',
+        'irrigationType': _selectedIrrigationType ?? 'none',
+        'district': (_districts.firstWhere(
+            (d) => d['code'].toString() == _selectedDistrictCode,
+            orElse: () => {'name': ''}) as Map)['name'],
+        'sector': (_sectors.firstWhere(
+            (s) => s['code'].toString() == _selectedSectorCode,
+            orElse: () => {'name': ''}) as Map)['name'],
+        'cell': (_cells.firstWhere(
+            (c) => c['code'].toString() == _selectedCellCode,
+            orElse: () => {'name': ''}) as Map)['name'],
+        'village': (_villages.firstWhere(
+            (v) => v['code'].toString() == _selectedVillageCode,
+            orElse: () => {'name': ''}) as Map)['name'],
       };
 
       context.read<AuthBloc>().add(AuthOnboardingRequested(
@@ -123,6 +141,14 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
           if (state is AuthError) {
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(state.message)));
+          } else if (state is AuthAuthenticated && state.user.cooperativeId != null) {
+            scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                content: const Text('You\'ve been automatically assigned to a cooperative in your area!'),
+                backgroundColor: Colors.green.shade700,
+                duration: const Duration(seconds: 5),
+              ),
+            );
           }
         },
         builder: (context, state) {
@@ -152,7 +178,17 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
                         items: _provinces,
                         hint: 'Province',
                         onChanged: (v) {
-                          setState(() => _selectedProvinceCode = v);
+                          setState(() {
+                            _selectedProvinceCode = v;
+                            _selectedDistrictCode = null;
+                            _selectedSectorCode = null;
+                            _selectedCellCode = null;
+                            _selectedVillageCode = null;
+                            _districts = [];
+                            _sectors = [];
+                            _cells = [];
+                            _villages = [];
+                          });
                           if (v != null) _loadDistricts(v);
                         },
                       ),
@@ -163,7 +199,15 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
                         hint: 'District',
                         enabled: _selectedProvinceCode != null,
                         onChanged: (v) {
-                          setState(() => _selectedDistrictCode = v);
+                          setState(() {
+                            _selectedDistrictCode = v;
+                            _selectedSectorCode = null;
+                            _selectedCellCode = null;
+                            _selectedVillageCode = null;
+                            _sectors = [];
+                            _cells = [];
+                            _villages = [];
+                          });
                           if (v != null) _loadSectors(v);
                         },
                       ),
@@ -174,7 +218,13 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
                         hint: 'Sector',
                         enabled: _selectedDistrictCode != null,
                         onChanged: (v) {
-                          setState(() => _selectedSectorCode = v);
+                          setState(() {
+                            _selectedSectorCode = v;
+                            _selectedCellCode = null;
+                            _selectedVillageCode = null;
+                            _cells = [];
+                            _villages = [];
+                          });
                           if (v != null) _loadCells(v);
                         },
                       ),
@@ -185,7 +235,11 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
                         hint: 'Cell',
                         enabled: _selectedSectorCode != null,
                         onChanged: (v) {
-                          setState(() => _selectedCellCode = v);
+                          setState(() {
+                            _selectedCellCode = v;
+                            _selectedVillageCode = null;
+                            _villages = [];
+                          });
                           if (v != null) _loadVillages(v);
                         },
                       ),
@@ -213,6 +267,11 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.number,
+                        validator: (value) => Validators.validatePositiveNumber(
+                          value,
+                          'Farm size',
+                          max: 100000,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       const Text('What do you grow?',
@@ -220,18 +279,24 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
-                        children: ['Maize', 'Beans', 'Potato', 'Coffee', 'Rice']
-                            .map((crop) {
-                          final isSelected = _selectedCrops.contains(crop);
+                        children: [
+                          ('Maize', 'maize'),
+                          ('Beans', 'beans'),
+                          ('Irish Potato', 'potato'),
+                          ('Coffee', 'coffee'),
+                          ('Rice', 'rice'),
+                          ('Cassava', 'cassava'),
+                        ].map(((String label, String id) crop) {
+                          final isSelected = _selectedCrops.contains(crop.$2);
                           return FilterChip(
-                            label: Text(crop),
+                            label: Text(crop.$1),
                             selected: isSelected,
                             onSelected: (selected) {
                               setState(() {
                                 if (selected)
-                                  _selectedCrops.add(crop);
+                                  _selectedCrops.add(crop.$2);
                                 else
-                                  _selectedCrops.remove(crop);
+                                  _selectedCrops.remove(crop.$2);
                               });
                             },
                           );
@@ -256,7 +321,7 @@ class _FarmerOnboardingPageState extends State<FarmerOnboardingPage> {
     bool enabled = true,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items.map<DropdownMenuItem<T>>((item) {
         return DropdownMenuItem<T>(
           value: item['code'].toString() as T,

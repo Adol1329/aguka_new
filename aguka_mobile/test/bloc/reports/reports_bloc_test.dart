@@ -6,70 +6,75 @@ import 'package:mockito/mockito.dart';
 import 'package:aguka_mobile/core/error/failures.dart';
 import 'package:aguka_mobile/core/usecases/usecase.dart';
 import 'package:aguka_mobile/features/reports/bloc/reports_cubit.dart';
-import 'package:aguka_mobile/features/reports/bloc/reports_event.dart';
 import 'package:aguka_mobile/features/reports/bloc/reports_state.dart';
+import 'package:aguka_mobile/features/reports/domain/repositories/reports_repository.dart';
 import 'package:aguka_mobile/features/reports/domain/usecases/get_report_analytics_usecase.dart';
 import 'package:aguka_mobile/features/reports/data/models/report_analytics_model.dart';
+
+class MockReportsRepository extends Mock implements ReportsRepository {}
 
 @GenerateMocks([GetReportAnalyticsUseCase])
 import 'reports_bloc_test.mocks.dart';
 
 void main() {
   late MockGetReportAnalyticsUseCase mockUseCase;
+  late MockReportsRepository mockRepo;
 
   setUp(() {
     mockUseCase = MockGetReportAnalyticsUseCase();
+    mockRepo = MockReportsRepository();
   });
 
-  ReportsBloc buildBloc() => ReportsBloc(
+  ReportsCubit buildCubit() => ReportsCubit(
         getAnalyticsUseCase: mockUseCase,
+        repository: mockRepo,
       );
 
   test('initial state has status == initial', () {
-    expect(buildBloc().state.status, equals(ReportsStatus.initial));
+    expect(buildCubit().state.status, equals(ReportsStatus.initial));
   });
 
   group('FetchReportAnalytics', () {
-    blocTest<ReportsBloc, ReportsState>(
+    blocTest<ReportsCubit, ReportsState>(
       'emits loading then loaded state with analytics data',
-      build: buildBloc,
+      build: buildCubit,
       setUp: () {
         when(mockUseCase(NoParams()))
             .thenAnswer((_) async => Right(ReportAnalyticsModel.mock()));
       },
-      act: (bloc) => bloc.add(FetchReportAnalytics()),
+      act: (cubit) => cubit.fetchAnalytics(),
       expect: () => [
         predicate<ReportsState>((s) => s.status == ReportsStatus.loading),
         predicate<ReportsState>((s) => s.status == ReportsStatus.loaded),
       ],
-      verify: (bloc) {
-        expect(bloc.state.analytics, isNotNull);
-        expect(bloc.state.analytics!.overview.score, greaterThan(0));
-        expect(bloc.state.analytics!.recommendations, isNotEmpty);
+      verify: (cubit) {
+        expect(cubit.state.analytics, isNotNull);
+        expect(cubit.state.analytics!.overview.score, greaterThan(0));
+        expect(cubit.state.analytics!.recommendations, isNotEmpty);
       },
     );
 
-    blocTest<ReportsBloc, ReportsState>(
+    blocTest<ReportsCubit, ReportsState>(
       'emits loading then error state on failure',
-      build: buildBloc,
+      build: buildCubit,
       setUp: () {
         when(mockUseCase(NoParams()))
             .thenAnswer((_) async => Left(ServerFailure('Analytics unavailable')));
       },
-      act: (bloc) => bloc.add(FetchReportAnalytics()),
+      act: (cubit) => cubit.fetchAnalytics(),
       expect: () => [
         predicate<ReportsState>((s) => s.status == ReportsStatus.loading),
         predicate<ReportsState>((s) => s.status == ReportsStatus.error),
       ],
-      verify: (bloc) {
-        expect(bloc.state.errorMessage, equals('Analytics unavailable'));
-        expect(bloc.state.analytics, isNull);
+      verify: (cubit) {
+        expect(cubit.state.errorMessage, equals('Analytics unavailable'));
+        expect(cubit.state.analytics, isNull);
       },
     );
 
-    blocTest<ReportsBloc, ReportsState>(
+    blocTest<ReportsCubit, ReportsState>(
       'reloads successfully after a previous error',
-      build: buildBloc,
+      build: buildCubit,
       seed: () => const ReportsState(
         status: ReportsStatus.error,
         errorMessage: 'Previous error',
@@ -78,7 +83,7 @@ void main() {
         when(mockUseCase(NoParams()))
             .thenAnswer((_) async => Right(ReportAnalyticsModel.mock()));
       },
-      act: (bloc) => bloc.add(FetchReportAnalytics()),
+      act: (cubit) => cubit.fetchAnalytics(),
       expect: () => [
         predicate<ReportsState>((s) => s.status == ReportsStatus.loading),
         predicate<ReportsState>((s) => s.status == ReportsStatus.loaded),

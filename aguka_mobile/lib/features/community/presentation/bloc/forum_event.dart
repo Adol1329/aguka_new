@@ -11,7 +11,6 @@ class FetchForumPosts extends ForumEvent {}
 
 class FetchForumPostDetail extends ForumEvent {
   final String postId;
-
   const FetchForumPostDetail(this.postId);
 
   @override
@@ -44,4 +43,25 @@ class AddForumCommentRequested extends ForumEvent {
 
   @override
   List<Object?> get props => [postId, content];
+}
+
+class LikeForumPostRequested extends ForumEvent {
+  final String postId;
+  const LikeForumPostRequested(this.postId);
+
+  @override
+  List<Object?> get props => [postId];
+}
+
+class CommunityUpdateReceived extends ForumEvent {
+  final String type;
+  final Map<String, dynamic> data;
+
+  const CommunityUpdateReceived({
+    required this.type,
+    required this.data,
+  });
+
+  @override
+  List<Object?> get props => [type, data];
 }

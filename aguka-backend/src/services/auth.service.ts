@@ -18,6 +18,8 @@ import { firebaseAdmin } from "../utils/firebase.js";
 import { smsService } from "./sms.service.js";
 import { logger } from "../utils/logger.js";
 import { mailService } from "../mail/mail.service.js";
+import { auditService } from "./audit.service.js";
+import { normalizePhone } from "../utils/phone.js";
 
 export class AuthService {
   async verifyFirebaseToken(idToken: string) {
@@ -94,7 +96,7 @@ export class AuthService {
   }
 
   async register(data: RegisterInput) {
-    const phone = this.normalizePhone(data.phone);
+    const phone = normalizePhone(data.phone);
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ phone }, ...(data.email ? [{ email: data.email }] : [])],
@@ -110,15 +112,23 @@ export class AuthService {
       : null;
 
     const requestedRole = data.role as UserRole;
-    
+
     // STRICT SECURITY FIX: Prevent privilege escalation
-    if (requestedRole === UserRole.super_admin || requestedRole === UserRole.admin) {
+    if (
+      requestedRole === UserRole.super_admin ||
+      requestedRole === UserRole.admin
+    ) {
       throw new ValidationError("Cannot self-register as an administrator.");
     }
 
     // Determine initial status based on role and password
-    let initialStatus = data.password ? UserStatus.ACTIVE : UserStatus.PENDING_VERIFICATION;
-    if (requestedRole === UserRole.officer || requestedRole === UserRole.cooperative) {
+    let initialStatus = data.password
+      ? UserStatus.ACTIVE
+      : UserStatus.PENDING_VERIFICATION;
+    if (
+      requestedRole === UserRole.officer ||
+      requestedRole === UserRole.cooperative
+    ) {
       initialStatus = UserStatus.PENDING_VERIFICATION;
     }
 
@@ -172,7 +182,7 @@ export class AuthService {
   }
 
   async login(data: LoginInput) {
-    const phone = this.normalizePhone(data.phone);
+    const phone = normalizePhone(data.phone);
     const user = await prisma.user.findFirst({
       where: { phone },
       include: {
@@ -185,6 +195,22 @@ export class AuthService {
     if (!user) {
       logger.debug(`Login failed: User not found for phone ${data.phone}`);
       throw new UnauthorizedError("Invalid credentials");
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedError(
+        "Account has been deactivated. Please contact an administrator.",
+      );
+    }
+
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new UnauthorizedError("Account suspended");
+    }
+
+    if (user.status === UserStatus.INACTIVE) {
+      throw new UnauthorizedError(
+        "Account inactive. Please contact an administrator.",
+      );
     }
 
     logger.debug(
@@ -203,17 +229,6 @@ export class AuthService {
     } else {
       logger.debug(`Login failed: No password hash for user ${user.phone}`);
       throw new UnauthorizedError("Password not set. Please use OTP login.");
-    }
-
-    if (user.status === UserStatus.SUSPENDED) {
-      throw new UnauthorizedError("Account suspended");
-    }
-
-    if (user.status === UserStatus.INACTIVE) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { status: UserStatus.ACTIVE },
-      });
     }
 
     const accessToken = this.generateAccessToken(user);
@@ -240,6 +255,15 @@ export class AuthService {
         extensionAssignments: true,
       },
     });
+
+    auditService
+      .logAction({
+        userId: user.id,
+        action: "LOGIN",
+        module: "AUTH",
+        resourceId: user.id,
+      })
+      .catch(() => {});
 
     return {
       user: this.sanitizeUser(fullUser || user),
@@ -308,7 +332,11 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string, accessToken?: string, accessTokenExpiresAt?: number) {
+  async logout(
+    userId: string,
+    accessToken?: string,
+    accessTokenExpiresAt?: number,
+  ) {
     if (accessToken && accessTokenExpiresAt) {
       await prisma.revokedToken.upsert({
         where: { token: accessToken },
@@ -328,6 +356,15 @@ export class AuthService {
     await prisma.session.deleteMany({
       where: { userId },
     });
+
+    auditService
+      .logAction({
+        userId,
+        action: "LOGOUT",
+        module: "AUTH",
+        resourceId: userId,
+      })
+      .catch(() => {});
 
     return { message: "Logged out successfully" };
   }
@@ -411,7 +448,7 @@ export class AuthService {
 
     // Send OTP via Africa's Talking SMS
     if (smsService.isConfigured()) {
-      const message = `Your Aguka verification code is: ${otp}. Valid for 10 minutes.`;
+      const message = `Your AGUKA verification code is: ${otp}. Valid for 10 minutes.`;
       const result = await smsService.sendSms(phone, message);
       if (!result.success) {
         logger.error(`Failed to send OTP SMS to ${phone}:`, result.error);
@@ -445,7 +482,7 @@ export class AuthService {
 
     // Send OTP via Africa's Talking SMS
     if (smsService.isConfigured()) {
-      const message = `Your Aguka password reset code is: ${otp}. Valid for 10 minutes.`;
+      const message = `Your AGUKA password reset code is: ${otp}. Valid for 10 minutes.`;
       const result = await smsService.sendSms(phone, message);
       if (!result.success) {
         logger.error(
@@ -462,7 +499,10 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string) {
     try {
-      const decoded = jwt.verify(token, config.jwt.refreshSecret) as JwtPayload;
+      const decoded = jwt.verify(
+        token,
+        config.jwt.passwordResetSecret,
+      ) as JwtPayload;
 
       const user = await prisma.user.findFirst({
         where: { id: decoded.sub },
@@ -490,7 +530,7 @@ export class AuthService {
   }
 
   async checkForgotPassword(phone: string) {
-    const normalizedPhone = this.normalizePhone(phone);
+    const normalizedPhone = normalizePhone(phone);
 
     const user = await prisma.user.findFirst({
       where: { phone: normalizedPhone },
@@ -545,7 +585,7 @@ export class AuthService {
   }
 
   async verifyResetOtp(phone: string, otp: string) {
-    const normalizedPhone = this.normalizePhone(phone);
+    const normalizedPhone = normalizePhone(phone);
 
     const token = await prisma.passwordResetToken.findFirst({
       where: { phone: normalizedPhone },
@@ -597,12 +637,8 @@ export class AuthService {
     return { success: true };
   }
 
-  async resetPasswordWithOtp(
-    phone: string,
-    otp: string,
-    newPassword: string,
-  ) {
-    const normalizedPhone = this.normalizePhone(phone);
+  async resetPasswordWithOtp(phone: string, otp: string, newPassword: string) {
+    const normalizedPhone = normalizePhone(phone);
 
     // Re-validate OTP as final security check
     const token = await prisma.passwordResetToken.findFirst({
@@ -671,9 +707,8 @@ export class AuthService {
   private maskEmail(email: string): string {
     const [localPart, domain] = email.split("@");
     if (!domain) return "***";
-    if (localPart.length <= 2)
-      return `${localPart[0]}***@${domain}`;
-    return `${localPart[0]}${'*'.repeat(Math.min(localPart.length - 2, 3))}@${domain}`;
+    if (localPart.length <= 2) return `${localPart[0]}***@${domain}`;
+    return `${localPart[0]}${"*".repeat(Math.min(localPart.length - 2, 3))}@${domain}`;
   }
 
   private generateAccessToken(user: any) {
@@ -681,12 +716,14 @@ export class AuthService {
       user.farmerProfile?.cooperativeId ||
       user.cooperativeMember?.cooperativeId;
     const officerId = user.extensionAssignments?.[0]?.extensionOfficerId;
+    const farmerId = user.farmerProfile?.id;
 
     return jwt.sign(
       {
         sub: user.id,
         phone: user.phone,
         role: user.role,
+        farmerId,
         cooperativeId,
         officerId,
       },
@@ -725,17 +762,6 @@ export class AuthService {
         farmerProfile?.cooperativeId || cooperativeMember?.cooperativeId,
       officerId: extensionAssignments?.[0]?.extensionOfficerId,
     };
-  }
-
-  private normalizePhone(phone: string): string {
-    if (!phone) return "";
-    // Strip + if present
-    let normalized = phone.trim();
-    if (normalized.startsWith("+")) {
-      normalized = normalized.substring(1);
-    }
-    // Remove any spaces or non-digit characters
-    return normalized.replace(/\D/g, "");
   }
 }
 

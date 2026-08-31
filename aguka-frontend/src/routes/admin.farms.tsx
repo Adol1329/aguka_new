@@ -3,8 +3,16 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFarmers, useVerifyFarmer, useBulkVerifyFarmers } from "@/hooks/use-data";
 import {
-  Sprout, MapPin, Loader2, CheckCircle2, ShieldCheck, AlertCircle,
-  Eye, Search, Filter, AlertTriangle,
+  Sprout,
+  MapPin,
+  Loader2,
+  CheckCircle2,
+  ShieldCheck,
+  AlertCircle,
+  Eye,
+  Search,
+  Filter,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,8 +45,27 @@ export const Route = createFileRoute("/admin/farms")({
   component: AdminFarms,
 });
 
-const CROP_OPTIONS = ["All Crops", "Beans", "Maize", "Banana", "Wheat", "Cassava", "Sweet Potato", "Sorghum"];
-const DISTRICT_OPTIONS = ["All Districts", "Kigali", "Rulindo", "Ruhango", "Musanze", "Huye", "Nyagatare", "Rubavu", "Kayonza"];
+const CROP_OPTIONS = [
+  "All Crops",
+  "Beans",
+  "Maize",
+  "Banana",
+  "Wheat",
+  "Cassava",
+  "Sweet Potato",
+  "Sorghum",
+];
+const DISTRICT_OPTIONS = [
+  "All Districts",
+  "Kigali",
+  "Rulindo",
+  "Ruhango",
+  "Musanze",
+  "Huye",
+  "Nyagatare",
+  "Rubavu",
+  "Kayonza",
+];
 
 function FarmCardSkeleton() {
   return (
@@ -88,9 +115,7 @@ function AdminFarms() {
 
       const matchCrop =
         cropFilter === "All Crops" ||
-        f.crops?.some((c: any) =>
-          c.crop?.nameEn?.toLowerCase().includes(cropFilter.toLowerCase())
-        );
+        f.crops?.some((c: any) => c.crop?.nameEn?.toLowerCase().includes(cropFilter.toLowerCase()));
 
       const matchDistrict =
         districtFilter === "All Districts" ||
@@ -108,7 +133,7 @@ function AdminFarms() {
   const totalPages = Math.max(1, Math.ceil(filteredFarmers.length / itemsPerPage));
   const currentFarmers = filteredFarmers.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   /** Verify a single farmer */
@@ -117,15 +142,11 @@ function AdminFarms() {
       toast.error("Cannot verify: missing farmer ID.");
       return;
     }
-    verifyFarmer.mutate(
-      farmerId,
-      {
-        onSuccess: () =>
-          toast.success(`${farmerName ? `"${farmerName}"` : "Farm"} verified successfully ✓`),
-        onError: (err: any) =>
-          toast.error(err?.message || "Failed to verify farm"),
-      }
-    );
+    verifyFarmer.mutate(farmerId, {
+      onSuccess: () =>
+        toast.success(`${farmerName ? `"${farmerName}"` : "Farm"} verified successfully ✓`),
+      onError: (err: any) => toast.error(err?.message || "Failed to verify farm"),
+    });
   };
 
   /** Bulk-verify selected farmers */
@@ -137,9 +158,9 @@ function AdminFarms() {
       return;
     }
 
-    const farmerIds = targets.map(f => f.id);
+    const farmerIds = targets.map((f) => f.id);
     setBulkProgress({ done: 0, total: farmerIds.length });
-    
+
     try {
       await bulkVerifyFarmers.mutateAsync(farmerIds);
       setBulkProgress(null);
@@ -187,13 +208,13 @@ function AdminFarms() {
               setCurrentPage(1);
             }}
             className={
-              unverifiedOnly
-                ? "bg-warning text-warning-foreground hover:bg-warning/90"
-                : ""
+              unverifiedOnly ? "bg-warning text-warning-foreground hover:bg-warning/90" : ""
             }
           >
             <Filter className="h-4 w-4 mr-2" />
-            {unverifiedOnly ? `Showing: Unverified (${unverifiedFarmers.length})` : "Unverified Only"}
+            {unverifiedOnly
+              ? `Showing: Unverified (${unverifiedFarmers.length})`
+              : "Unverified Only"}
           </Button>
 
           {/* Bulk Verify */}
@@ -269,9 +290,7 @@ function AdminFarms() {
       <div className="flex flex-col gap-3">
         {currentFarmers.map((f: any) => {
           const verified = isVerified(f);
-          const isPending =
-            verifyFarmer.isPending &&
-            verifyFarmer.variables === f.id;
+          const isPending = verifyFarmer.isPending && verifyFarmer.variables === f.id;
 
           return (
             <Card
@@ -284,9 +303,7 @@ function AdminFarms() {
                   {f.avatarUrl ? (
                     <img
                       src={
-                        f.avatarUrl.startsWith("http")
-                          ? f.avatarUrl
-                          : `${BASE_URL}${f.avatarUrl}`
+                        f.avatarUrl.startsWith("http") ? f.avatarUrl : `${BASE_URL}${f.avatarUrl}`
                       }
                       alt={f.fullName}
                       className="h-12 w-12 shrink-0 rounded-xl object-cover border border-border/50"
@@ -340,11 +357,7 @@ function AdminFarms() {
                   <div className="flex flex-wrap gap-1 mt-0.5">
                     {f.crops?.length > 0 ? (
                       f.crops.slice(0, 3).map((c: any) => (
-                        <Badge
-                          key={c.id}
-                          variant="secondary"
-                          className="text-[10px] px-1.5 py-0.5"
-                        >
+                        <Badge key={c.id} variant="secondary" className="text-[10px] px-1.5 py-0.5">
                           {c.crop?.nameEn || c.cropName || "—"}
                         </Badge>
                       ))
@@ -372,10 +385,16 @@ function AdminFarms() {
                           : f.verificationStatus === "rejected"
                             ? "bg-destructive"
                             : "bg-warning animate-pulse"
-                      }`} />
+                      }`}
+                    />
                     <span
-                      className={`text-xs font-bold ${verified ? "text-success" : f.verificationStatus === "rejected" ? "text-destructive" : "text-warning"}`}>
-                      {verified ? "Verified" : f.verificationStatus === "rejected" ? "Rejected" : "Pending Validation"}
+                      className={`text-xs font-bold ${verified ? "text-success" : f.verificationStatus === "rejected" ? "text-destructive" : "text-warning"}`}
+                    >
+                      {verified
+                        ? "Verified"
+                        : f.verificationStatus === "rejected"
+                          ? "Rejected"
+                          : "Pending Validation"}
                     </span>
                   </div>
                 </div>
@@ -394,9 +413,21 @@ function AdminFarms() {
                   <Button
                     size="sm"
                     className={`h-9 px-4 text-xs font-semibold flex-1 md:flex-none transition-all ${verified ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50" : "bg-primary text-white hover:bg-primary/90"}`}
-                    disabled={verified || f.verificationStatus === "rejected" || isPending || isBulkRunning}
-                    onClick={() => !verified && f.verificationStatus !== "rejected" && handleVerify(f.id, f.fullName)}
-                    title={verified ? "Already verified — no action needed" : f.verificationStatus === "rejected" ? "Cannot verify rejected farm" : "Verify this farm's data"}
+                    disabled={
+                      verified || f.verificationStatus === "rejected" || isPending || isBulkRunning
+                    }
+                    onClick={() =>
+                      !verified &&
+                      f.verificationStatus !== "rejected" &&
+                      handleVerify(f.id, f.fullName)
+                    }
+                    title={
+                      verified
+                        ? "Already verified — no action needed"
+                        : f.verificationStatus === "rejected"
+                          ? "Cannot verify rejected farm"
+                          : "Verify this farm's data"
+                    }
                   >
                     {isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
@@ -476,10 +507,7 @@ function AdminFarms() {
       </AlertDialog>
 
       {/* Farmer Details Dialog */}
-      <Dialog
-        open={!!selectedFarmer}
-        onOpenChange={(open) => !open && setSelectedFarmer(null)}
-      >
+      <Dialog open={!!selectedFarmer} onOpenChange={(open) => !open && setSelectedFarmer(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl font-display">
@@ -515,10 +543,7 @@ function AdminFarms() {
                     label="Emergency Contact"
                     value={selectedFarmer?.emergencyContact || "None provided"}
                   />
-                  <DetailItem
-                    label="Family Members"
-                    value={selectedFarmer?.familyMembers || "0"}
-                  />
+                  <DetailItem label="Family Members" value={selectedFarmer?.familyMembers || "0"} />
                 </div>
               </section>
               <Separator />
@@ -589,19 +614,21 @@ function AdminFarms() {
                 : "Never"}
             </div>
             <div className="flex gap-2">
-              {selectedFarmer && !isVerified(selectedFarmer) && selectedFarmer.verificationStatus !== "rejected" && (
-                <Button
-                  className="bg-primary text-white hover:bg-primary/90"
-                  disabled={verifyFarmer.isPending}
-                  onClick={() => {
-                    handleVerify(selectedFarmer.id, selectedFarmer.fullName);
-                    setSelectedFarmer(null);
-                  }}
-                >
-                  <ShieldCheck className="mr-2 h-4 w-4" />
-                  Verify Now
-                </Button>
-              )}
+              {selectedFarmer &&
+                !isVerified(selectedFarmer) &&
+                selectedFarmer.verificationStatus !== "rejected" && (
+                  <Button
+                    className="bg-primary text-white hover:bg-primary/90"
+                    disabled={verifyFarmer.isPending}
+                    onClick={() => {
+                      handleVerify(selectedFarmer.id, selectedFarmer.fullName);
+                      setSelectedFarmer(null);
+                    }}
+                  >
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Verify Now
+                  </Button>
+                )}
               <Button variant="outline" onClick={() => setSelectedFarmer(null)}>
                 Close Details
               </Button>

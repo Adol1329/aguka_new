@@ -85,13 +85,20 @@
     "status_optimal": "Optimal",
     "status_low": "Low",
     "status_high": "High",
+    "status_moderate": "Moderate",
+    "status_normal": "Normal",
+    "status_extreme": "Extreme",
+    "status_healthy": "Healthy",
+    "status_needs_attention": "Needs Attention",
     "optimal": "Optimal",
     "low": "Low",
     "high": "High",
     "nitrogen": "Nitrogen",
     "phosphorus": "Phosphorus",
     "potassium": "Potassium",
-    "trend_7day": "7-Day Trend"
+    "trend_7day": "7-Day Trend",
+    "temp": "Soil Temp",
+    "ph": "Soil pH"
   },
   "weather": {
     "title": "Local Weather",
@@ -131,7 +138,10 @@
     "saved": "Saved",
     "manual_override": "Manual Override",
     "smart_schedule": "Smart Schedule",
-    "command_queued": "Pump command queued successfully."
+    "command_queued": "Pump command queued successfully.",
+    "pump_started": "Pump started.",
+    "pump_stopped": "Pump stopped.",
+    "command_failed": "Pump command failed. Please try again."
   },
   "profile": {
     "title": "Profile",
@@ -177,8 +187,17 @@
     "how_can_we_help": "How can we help?",
     "guides": "User Guides",
     "guides_subtitle": "Learn how to use Aguka features",
-    "live_chat": "Live Chat",
-    "live_chat_subtitle": "Talk to us now",
+    "guides_title": "User Guides",
+    "guide1_title": "Checking market prices",
+    "guide1_desc": "Open the Market tab to see current crop prices by market, and tap the alert icon to set a price alert for a crop you sell.",
+    "guide2_title": "Controlling irrigation",
+    "guide2_desc": "Open the Irrigation tab to see pump status and water usage, then tap Start/Stop Pump to control your irrigation manually.",
+    "guide3_title": "Joining a cooperative",
+    "guide3_desc": "Open the Cooperatives tab to browse cooperatives near you and request to join, or manage members if you're a cooperative manager.",
+    "guide4_title": "Viewing your reports",
+    "guide4_desc": "Open the Reports tab to see your farm performance analytics and download official PDF reports.",
+    "live_chat": "Community Help",
+    "live_chat_subtitle": "Ask fellow farmers and experts",
     "call_support": "Call Support",
     "email_support": "Email Support",
     "faq1_q": "How do I start irrigation?",
@@ -209,6 +228,8 @@
   },
   "community": {
     "title": "Cooperative",
+    "section_title": "Community",
+    "farmer_community": "Farmer Community",
     "announcements": "Announcements",
     "market_prices": "Market Prices",
     "urgent": "URGENT",
@@ -223,7 +244,64 @@
     "add": "Add",
     "success": "Success",
     "error": "Error",
-    "basic_info": "Basic Information"
+    "basic_info": "Basic Information",
+    "save": "Save",
+    "view_all": "View all",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "days_ago": "{n} days ago"
+  },
+  "farmer": {
+    "title": "Farmer"
+  },
+  "crops": {
+    "title": "My Crops",
+    "empty": "No crops registered yet.",
+    "planted_days_ago": "Planted {n}d ago",
+    "of_id": "Crop #{id}"
+  },
+  "monitoring": {
+    "title": "Monitoring",
+    "soil_trend": "Soil Moisture Trend",
+    "forecast": "7-Day Forecast"
+  },
+  "quick_actions": {
+    "title": "Quick Actions",
+    "my_crops": "My Crops",
+    "expert_guides": "Expert Guides"
+  },
+  "recent_activities": {
+    "title": "Recent Activities",
+    "empty": "No recent activities."
+  },
+  "onboarding": {
+    "slide1": {
+      "title": "Smart Soil Monitoring",
+      "desc": "Track Nitrogen, Phosphorus, and Potassium levels in real-time to optimize your crop yield."
+    },
+    "slide2": {
+      "title": "Precision Irrigation",
+      "desc": "Control your water pump remotely and save up to 40% of water using smart sensors."
+    },
+    "slide3": {
+      "title": "Local Market Prices",
+      "desc": "Get the latest prices from Kigali, Musanze, and beyond to sell your harvest at the best price."
+    },
+    "next": "NEXT",
+    "get_started": "GET STARTED",
+    "skip": "SKIP"
+  },
+  "activities": {
+    "title": "Activities"
+  },
+  "guidance": {
+    "title": "Guidance"
+  },
+  "cooperatives": {
+    "title": "Cooperative"
+  },
+  "reports": {
+    "title": "Reports"
   },
   "auth": {
     "validation": {

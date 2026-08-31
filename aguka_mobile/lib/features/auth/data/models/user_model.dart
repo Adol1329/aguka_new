@@ -32,6 +32,17 @@ class UserModel extends UserEntity {
     super.createdAt,
   });
 
+  static String _normalizeRole(String? raw) {
+    switch (raw?.toLowerCase()) {
+      case 'officer':
+        return 'extension_officer';
+      case 'cooperative':
+        return 'cooperative_manager';
+      default:
+        return raw ?? 'farmer';
+    }
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final farmer = json['farmerProfile'];
     final officer = json['officerProfile'];
@@ -42,7 +53,7 @@ class UserModel extends UserEntity {
       phone: json['phone'] ?? '',
       email: json['email'],
       fullName: json['fullName'],
-      role: json['role'] ?? 'farmer',
+      role: _normalizeRole(json['role']),
       language: json['language'] ?? 'en',
       isActive: json['isActive'] ?? true,
       isOnboarded: json['isOnboarded'] ?? false,

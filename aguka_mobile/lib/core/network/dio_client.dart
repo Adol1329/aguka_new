@@ -35,11 +35,7 @@ class DioClient {
         options.headers['Accept-Language'] = prefs.language;
         handler.next(options);
       },
-      onError: (DioException error, handler) async {
-        // Handle token expiry: clear local session so AuthBloc re-checks on next action
-        if (error.response?.statusCode == 401) {
-          await prefs.clearAuth();
-        }
+      onError: (DioException error, handler) {
         handler.next(error);
       },
     ));

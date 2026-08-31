@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import 'package:aguka_mobile/core/bloc/navigation/navigation_cubit.dart';
+
+import 'package:aguka_mobile/core/navigation/nav_registry.dart';
 import 'package:aguka_mobile/features/telemetry/bloc/telemetry_bloc.dart';
 import 'package:aguka_mobile/features/telemetry/bloc/telemetry_event.dart';
 import 'package:aguka_mobile/widgets/app_drawer.dart';
@@ -17,12 +19,10 @@ class MainNavigator extends StatefulWidget {
 }
 
 class _MainNavigatorState extends State<MainNavigator> {
-  final Set<int> _loadedPages = {0};
-
   @override
   void initState() {
     super.initState();
-    // Start telemetry subscription when navigator initializes
+    context.read<NavigationCubit>().refreshNavigation();
     context.read<TelemetryBloc>().add(StartTelemetrySubscription());
   }
 
@@ -30,11 +30,6 @@ class _MainNavigatorState extends State<MainNavigator> {
   Widget build(BuildContext context) {
     return BlocBuilder<NavigationCubit, NavigationState>(
       builder: (context, state) {
-        // Track loaded pages for lazy loading within IndexedStack
-        if (!_loadedPages.contains(state.index)) {
-          _loadedPages.add(state.index);
-        }
-
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: const SystemUiOverlayStyle(
             systemNavigationBarColor: Colors.white,
@@ -46,13 +41,7 @@ class _MainNavigatorState extends State<MainNavigator> {
             endDrawer: const FilterDrawer(),
             body: IndexedStack(
               index: state.index,
-              children: List.generate(state.availableTabs.length, (index) {
-                final tab = state.availableTabs[index];
-                // Only render the page if it has been visited at least once
-                return _loadedPages.contains(index) 
-                  ? tab.page 
-                  : const SizedBox.shrink();
-              }),
+              children: state.availableTabs.map((tab) => tab.page).toList(),
             ),
             bottomNavigationBar: _buildBottomBar(context, state),
           ),
@@ -62,6 +51,17 @@ class _MainNavigatorState extends State<MainNavigator> {
   }
 
   Widget _buildBottomBar(BuildContext context, NavigationState state) {
+    final role = context.read<NavigationCubit>().getCurrentRole();
+    final bottomNavItems = NavRegistry.getBottomNavItems(role);
+
+    final visibleTabs = state.availableTabs
+        .where((tab) => bottomNavItems.contains(tab.item))
+        .toList();
+
+    final activeItem = state.index < state.availableTabs.length
+        ? state.availableTabs[state.index].item
+        : null;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -80,10 +80,13 @@ class _MainNavigatorState extends State<MainNavigator> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: BottomNavigationBar(
-            currentIndex: state.index,
+            currentIndex: visibleTabs.indexWhere(
+                (t) => t.item == activeItem).clamp(0, visibleTabs.length - 1),
             onTap: (index) {
-              HapticFeedback.selectionClick();
-              context.read<NavigationCubit>().navigateTo(state.availableTabs[index].item);
+              if (index < visibleTabs.length) {
+                HapticFeedback.selectionClick();
+                context.read<NavigationCubit>().navigateTo(visibleTabs[index].item);
+              }
             },
             type: BottomNavigationBarType.fixed,
             elevation: 0,
@@ -99,17 +102,24 @@ class _MainNavigatorState extends State<MainNavigator> {
               fontSize: 11,
             ),
             showUnselectedLabels: true,
-            items: state.availableTabs.map((tab) {
+            items: visibleTabs.map((tab) {
+              final label = tab.labelKey.tr();
               return BottomNavigationBarItem(
-                icon: Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Icon(tab.icon),
+                icon: Semantics(
+                  label: label,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Icon(tab.icon),
+                  ),
                 ),
-                activeIcon: Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Icon(tab.activeIcon),
+                activeIcon: Semantics(
+                  label: label,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Icon(tab.activeIcon),
+                  ),
                 ),
-                label: tab.labelKey.tr(),
+                label: label,
               );
             }).toList(),
           ),

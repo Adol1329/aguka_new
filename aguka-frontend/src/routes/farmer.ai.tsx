@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/dashboard-ui";
 import { Badge } from "@/components/ui/badge";
-import { BrainCircuit, Droplets, ThermometerSun, CloudRain, Sprout, Loader2, Info, AlertTriangle, ShieldAlert } from "lucide-react";
+import {
+  BrainCircuit,
+  Droplets,
+  ThermometerSun,
+  CloudRain,
+  Sprout,
+  Loader2,
+  Info,
+  AlertTriangle,
+  ShieldAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAIAnalyzeFarm, useAIAnalyzePayload, useAIHistory } from "@/hooks/use-data";
 import { AIRecommendation } from "@/api/ai";
@@ -20,7 +30,7 @@ function FarmerAIDashboard() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Aguka AI Advisory"
+        title="AGUKA AI Advisory"
         subtitle="Intelligent rule-based recommendations for your farm"
       />
 
@@ -55,7 +65,7 @@ function FarmerAIDashboard() {
 function LiveAnalysisTab() {
   const analyzeMutation = useAIAnalyzeFarm();
   const { data: historyData, isLoading: historyLoading } = useAIHistory(5);
-  
+
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
@@ -80,20 +90,24 @@ function LiveAnalysisTab() {
           <div className="space-y-1">
             <h3 className="text-xl font-bold">Smart Farming Engine</h3>
             <p className="text-muted-foreground max-w-lg">
-              Click below to run a real-time analysis on your farm's latest soil and weather data. 
+              Click below to run a real-time analysis on your farm's latest soil and weather data.
               Our rule-based engine will generate intelligent recommendations instantly.
             </p>
           </div>
-          <Button 
-            size="lg" 
-            onClick={handleAnalyze} 
+          <Button
+            size="lg"
+            onClick={handleAnalyze}
             disabled={analyzeMutation.isPending}
             className="w-full sm:w-auto"
           >
             {analyzeMutation.isPending ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing...</>
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing...
+              </>
             ) : (
-              <><BrainCircuit className="mr-2 h-5 w-5" /> Run AI Analysis Now</>
+              <>
+                <BrainCircuit className="mr-2 h-5 w-5" /> Run AI Analysis Now
+              </>
             )}
           </Button>
         </CardContent>
@@ -105,7 +119,7 @@ function LiveAnalysisTab() {
             Analysis Results
             <Badge variant="outline">{recommendations.length} items</Badge>
           </h3>
-          
+
           {recommendations.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="p-8 text-center text-muted-foreground">
@@ -186,11 +200,11 @@ function SimulationTab() {
               <label className="text-xs font-semibold">Soil Moisture (%)</label>
               <div className="relative">
                 <Droplets className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  className="pl-9" 
-                  type="number" 
-                  value={formData.soilMoisture} 
-                  onChange={(e) => setFormData({...formData, soilMoisture: e.target.value})} 
+                <Input
+                  className="pl-9"
+                  type="number"
+                  value={formData.soilMoisture}
+                  onChange={(e) => setFormData({ ...formData, soilMoisture: e.target.value })}
                 />
               </div>
             </div>
@@ -198,31 +212,33 @@ function SimulationTab() {
               <label className="text-xs font-semibold">Temperature (°C)</label>
               <div className="relative">
                 <ThermometerSun className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  className="pl-9" 
-                  type="number" 
-                  value={formData.temperature} 
-                  onChange={(e) => setFormData({...formData, temperature: e.target.value})} 
+                <Input
+                  className="pl-9"
+                  type="number"
+                  value={formData.temperature}
+                  onChange={(e) => setFormData({ ...formData, temperature: e.target.value })}
                 />
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold">Humidity (%)</label>
-              <Input 
-                type="number" 
-                value={formData.humidity} 
-                onChange={(e) => setFormData({...formData, humidity: e.target.value})} 
+              <Input
+                type="number"
+                value={formData.humidity}
+                onChange={(e) => setFormData({ ...formData, humidity: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-semibold">Rain Probability (%)</label>
               <div className="relative">
                 <CloudRain className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  className="pl-9" 
-                  type="number" 
-                  value={formData.rainfallProbability} 
-                  onChange={(e) => setFormData({...formData, rainfallProbability: e.target.value})} 
+                <Input
+                  className="pl-9"
+                  type="number"
+                  value={formData.rainfallProbability}
+                  onChange={(e) =>
+                    setFormData({ ...formData, rainfallProbability: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -230,10 +246,10 @@ function SimulationTab() {
               <label className="text-xs font-semibold">Crop Type</label>
               <div className="relative">
                 <Sprout className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <select 
+                <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm pl-9"
                   value={formData.cropType}
-                  onChange={(e) => setFormData({...formData, cropType: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, cropType: e.target.value })}
                 >
                   <option value="maize">Maize</option>
                   <option value="beans">Beans</option>
@@ -268,9 +284,7 @@ function SimulationTab() {
                 </CardContent>
               </Card>
             ) : (
-              results.map((rec, i) => (
-                <RecommendationCard key={i} recommendation={rec} />
-              ))
+              results.map((rec, i) => <RecommendationCard key={i} recommendation={rec} />)
             )}
           </div>
         )}
@@ -280,8 +294,9 @@ function SimulationTab() {
 }
 
 function RecommendationCard({ recommendation: r }: { recommendation: AIRecommendation }) {
-  const Icon = r.severity === "critical" ? ShieldAlert : r.severity === "high" ? AlertTriangle : Info;
-  
+  const Icon =
+    r.severity === "critical" ? ShieldAlert : r.severity === "high" ? AlertTriangle : Info;
+
   const colors = {
     critical: "border-destructive/50 bg-destructive/5",
     high: "border-warning/50 bg-warning/5",
@@ -304,9 +319,12 @@ function RecommendationCard({ recommendation: r }: { recommendation: AIRecommend
         <div className="flex-1 space-y-2">
           <div className="flex items-start justify-between gap-4">
             <h4 className="font-bold text-lg leading-tight">{r.title}</h4>
-            <Badge variant="outline" className={`shrink-0 capitalize font-bold ${
-              r.severity === "critical" ? "bg-destructive text-white border-destructive" : ""
-            }`}>
+            <Badge
+              variant="outline"
+              className={`shrink-0 capitalize font-bold ${
+                r.severity === "critical" ? "bg-destructive text-white border-destructive" : ""
+              }`}
+            >
               {r.severity} Priority
             </Badge>
           </div>

@@ -1,5 +1,5 @@
 /**
- * Aguka Smart Farming Kit — Rule-Based AI Recommendation Engine
+ * AGUKA SMART FARMING KIT — Rule-Based AI Recommendation Engine
  *
  * Implements intelligent agricultural advisory logic using threshold analysis
  * and rule-based inference. No machine learning or neural networks.
@@ -14,6 +14,7 @@
 
 import { prisma } from "../prisma.js";
 import { logger } from "../utils/logger.js";
+import { weatherService } from "./weather.service.js";
 
 // ─── Shared Types ─────────────────────────────────────────────────────────────
 
@@ -42,15 +43,15 @@ export interface AIRecommendation {
 }
 
 export interface SensorSnapshot {
-  soilMoisture: number;        // %
-  temperature: number;         // °C
-  humidity: number;            // %
+  soilMoisture: number; // %
+  temperature: number; // °C
+  humidity: number; // %
   rainfallProbability: number; // %
-  rainfall3DayMm: number;      // mm expected over 3 days
+  rainfall3DayMm: number; // mm expected over 3 days
   cropType: string;
-  farmSize: number;            // ha
+  farmSize: number; // ha
   soilPh?: number;
-  soilNitrogen?: number;       // ppm
+  soilNitrogen?: number; // ppm
 }
 
 // ─── Helper Utilities ─────────────────────────────────────────────────────────
@@ -66,8 +67,13 @@ function hoursAgo(date: Date): number {
 // ─── Module A: Irrigation Recommendation ─────────────────────────────────────
 
 function analyzeIrrigation(snap: SensorSnapshot): AIRecommendation | null {
-  const { soilMoisture, rainfallProbability, rainfall3DayMm, cropType, farmerId } =
-    snap as SensorSnapshot & { farmerId: string };
+  const {
+    soilMoisture,
+    rainfallProbability,
+    rainfall3DayMm,
+    cropType,
+    farmerId,
+  } = snap as SensorSnapshot & { farmerId: string };
 
   // Rule A-1: Critically dry soil + no rain coming
   if (soilMoisture < 20 && rainfallProbability < 30) {
@@ -80,7 +86,13 @@ function analyzeIrrigation(snap: SensorSnapshot): AIRecommendation | null {
       recommendation: `Irrigate immediately for at least ${irrigationDuration(soilMoisture, cropType)} minutes. Schedule for early morning (05:00–07:00) to minimise evaporation.`,
       actionRequired: true,
       confidence: 95,
-      details: { soilMoisture, rainfallProbability, rainfall3DayMm, cropType, threshold: 20 },
+      details: {
+        soilMoisture,
+        rainfallProbability,
+        rainfall3DayMm,
+        cropType,
+        threshold: 20,
+      },
       generatedAt: new Date(),
       expiresAt: expireIn(6),
     };
@@ -111,7 +123,8 @@ function analyzeIrrigation(snap: SensorSnapshot): AIRecommendation | null {
       severity: "low",
       title: "🌧️ Skip Irrigation — Rain Expected",
       message: `Heavy rainfall (${rainfall3DayMm.toFixed(1)}mm) is expected with ${rainfallProbability}% probability. Irrigation at this time would waste water and may cause waterlogging.`,
-      recommendation: "Postpone all irrigation for 48–72 hours. Check soil drainage to prevent waterlogging.",
+      recommendation:
+        "Postpone all irrigation for 48–72 hours. Check soil drainage to prevent waterlogging.",
       actionRequired: false,
       confidence: 90,
       details: { soilMoisture, rainfallProbability, rainfall3DayMm },
@@ -128,7 +141,8 @@ function analyzeIrrigation(snap: SensorSnapshot): AIRecommendation | null {
       severity: "low",
       title: "✅ Soil Moisture Optimal — No Irrigation Needed",
       message: `Soil moisture is at ${soilMoisture.toFixed(1)}%, which is within the optimal range for most crops. Continue monitoring.`,
-      recommendation: "No irrigation needed at this time. Schedule your next soil moisture check in 48 hours.",
+      recommendation:
+        "No irrigation needed at this time. Schedule your next soil moisture check in 48 hours.",
       actionRequired: false,
       confidence: 85,
       details: { soilMoisture, rainfallProbability },
@@ -158,8 +172,13 @@ function irrigationDuration(moisture: number, crop: string): number {
 // ─── Module B: Weather Advisory Engine ───────────────────────────────────────
 
 function analyzeWeather(snap: SensorSnapshot): AIRecommendation | null {
-  const { temperature, humidity, rainfallProbability, rainfall3DayMm, farmerId } =
-    snap as SensorSnapshot & { farmerId: string };
+  const {
+    temperature,
+    humidity,
+    rainfallProbability,
+    rainfall3DayMm,
+    farmerId,
+  } = snap as SensorSnapshot & { farmerId: string };
 
   // Rule B-1: Heavy rainfall warning
   if (rainfallProbability > 80 && rainfall3DayMm > 25) {
@@ -169,7 +188,8 @@ function analyzeWeather(snap: SensorSnapshot): AIRecommendation | null {
       severity: "high",
       title: "⛈️ Heavy Rainfall Warning",
       message: `Heavy rainfall is expected (${rainfall3DayMm.toFixed(0)}mm over 3 days, ${rainfallProbability}% probability). Risk of crop damage and soil erosion.`,
-      recommendation: "Reduce or halt irrigation immediately. Ensure drainage channels are clear. Protect vulnerable crops with appropriate cover. Postpone any fertilizer application.",
+      recommendation:
+        "Reduce or halt irrigation immediately. Ensure drainage channels are clear. Protect vulnerable crops with appropriate cover. Postpone any fertilizer application.",
       actionRequired: true,
       confidence: 92,
       details: { rainfallProbability, rainfall3DayMm, temperature },
@@ -186,7 +206,8 @@ function analyzeWeather(snap: SensorSnapshot): AIRecommendation | null {
       severity: "high",
       title: "☀️ Drought Risk Detected",
       message: `Rain probability is only ${rainfallProbability}% with high temperature (${temperature.toFixed(1)}°C). Drought conditions are developing that could severely impact crop productivity.`,
-      recommendation: "Activate water conservation measures. Irrigate in early morning only. Apply mulching to reduce evaporation. Consider drought-tolerant varieties for the next season.",
+      recommendation:
+        "Activate water conservation measures. Irrigate in early morning only. Apply mulching to reduce evaporation. Consider drought-tolerant varieties for the next season.",
       actionRequired: true,
       confidence: 87,
       details: { rainfallProbability, temperature, rainfall3DayMm },
@@ -203,7 +224,8 @@ function analyzeWeather(snap: SensorSnapshot): AIRecommendation | null {
       severity: "high",
       title: "🌡️ Extreme Heat Stress Alert",
       message: `Temperature is critically high at ${temperature.toFixed(1)}°C. Most crops experience severe heat stress above 35°C, leading to wilting and yield loss.`,
-      recommendation: "Increase irrigation frequency. Apply shade nets to sensitive crops. Avoid field work during peak heat (10:00–16:00). Monitor crop health daily.",
+      recommendation:
+        "Increase irrigation frequency. Apply shade nets to sensitive crops. Avoid field work during peak heat (10:00–16:00). Monitor crop health daily.",
       actionRequired: true,
       confidence: 94,
       details: { temperature, humidity },
@@ -220,7 +242,8 @@ function analyzeWeather(snap: SensorSnapshot): AIRecommendation | null {
       severity: "medium",
       title: "🌤️ Heat Advisory — Monitor Crop Conditions",
       message: `Temperature is elevated at ${temperature.toFixed(1)}°C. Heat-sensitive crops may begin to show stress symptoms.`,
-      recommendation: "Monitor crops for wilting. Consider additional irrigation if soil moisture drops below 40%.",
+      recommendation:
+        "Monitor crops for wilting. Consider additional irrigation if soil moisture drops below 40%.",
       actionRequired: false,
       confidence: 78,
       details: { temperature, humidity },
@@ -246,10 +269,16 @@ function analyzePestRisk(snap: SensorSnapshot): AIRecommendation | null {
       severity: "high",
       title: "🦠 High Risk of Fungal Disease Outbreak",
       message: `Humidity is ${humidity.toFixed(1)}% and temperature is ${temperature.toFixed(1)}°C — ideal conditions for fungal disease spread in ${cropType} crops. Common threats include blight, rust, and powdery mildew.`,
-      recommendation: "Inspect crops immediately for disease symptoms. Apply appropriate fungicide preventively. Improve field ventilation by reducing canopy density. Avoid overhead irrigation.",
+      recommendation:
+        "Inspect crops immediately for disease symptoms. Apply appropriate fungicide preventively. Improve field ventilation by reducing canopy density. Avoid overhead irrigation.",
       actionRequired: true,
       confidence: 91,
-      details: { humidity, temperature, cropType, riskFactors: ["high humidity", "warm temperature"] },
+      details: {
+        humidity,
+        temperature,
+        cropType,
+        riskFactors: ["high humidity", "warm temperature"],
+      },
       generatedAt: new Date(),
       expiresAt: expireIn(12),
     };
@@ -263,24 +292,35 @@ function analyzePestRisk(snap: SensorSnapshot): AIRecommendation | null {
       severity: "medium",
       title: "🐛 Pest Outbreak Risk — Dry & Warm Conditions",
       message: `Low humidity (${humidity.toFixed(1)}%) and high temperature (${temperature.toFixed(1)}°C) favor aphid and spider mite outbreaks in ${cropType}.`,
-      recommendation: "Scout crops for pest signs (leaf curling, yellowing). Apply neem oil or insecticidal soap as preventive treatment. Introduce natural predators if organically farming.",
+      recommendation:
+        "Scout crops for pest signs (leaf curling, yellowing). Apply neem oil or insecticidal soap as preventive treatment. Introduce natural predators if organically farming.",
       actionRequired: true,
       confidence: 82,
-      details: { humidity, temperature, cropType, riskFactors: ["low humidity", "heat"] },
+      details: {
+        humidity,
+        temperature,
+        cropType,
+        riskFactors: ["low humidity", "heat"],
+      },
       generatedAt: new Date(),
       expiresAt: expireIn(24),
     };
   }
 
   // Rule C-3: Crop-specific maize borer risk
-  if (cropType?.toLowerCase().includes("maize") && temperature > 22 && humidity > 60) {
+  if (
+    cropType?.toLowerCase().includes("maize") &&
+    temperature > 22 &&
+    humidity > 60
+  ) {
     return {
       farmerId,
       category: "pest_disease",
       severity: "medium",
       title: "🌽 Maize Stalk Borer Risk",
       message: `Warm nights (${temperature.toFixed(1)}°C) and moderate humidity (${humidity.toFixed(1)}%) create favourable conditions for Busseola fusca (maize stalk borer) activity.`,
-      recommendation: "Monitor for dead-heart symptoms in young plants and frass on older plants. Apply biological control (Bt) or targeted insecticide at the base of plants.",
+      recommendation:
+        "Monitor for dead-heart symptoms in young plants and frass on older plants. Apply biological control (Bt) or targeted insecticide at the base of plants.",
       actionRequired: false,
       confidence: 75,
       details: { humidity, temperature, cropType },
@@ -295,8 +335,15 @@ function analyzePestRisk(snap: SensorSnapshot): AIRecommendation | null {
 // ─── Module D: Crop Health Analysis ─────────────────────────────────────────
 
 function analyzeCropHealth(snap: SensorSnapshot): AIRecommendation | null {
-  const { cropType, soilMoisture, temperature, humidity, soilPh, soilNitrogen, farmerId } =
-    snap as SensorSnapshot & { farmerId: string };
+  const {
+    cropType,
+    soilMoisture,
+    temperature,
+    humidity,
+    soilPh,
+    soilNitrogen,
+    farmerId,
+  } = snap as SensorSnapshot & { farmerId: string };
 
   const issues: string[] = [];
   const recommendations: string[] = [];
@@ -305,17 +352,23 @@ function analyzeCropHealth(snap: SensorSnapshot): AIRecommendation | null {
   if (soilPh !== undefined) {
     if (soilPh < 5.5) {
       issues.push(`soil is too acidic (pH ${soilPh.toFixed(1)})`);
-      recommendations.push("Apply agricultural lime (2–3 t/ha) to raise soil pH above 6.0.");
+      recommendations.push(
+        "Apply agricultural lime (2–3 t/ha) to raise soil pH above 6.0.",
+      );
     } else if (soilPh > 7.5) {
       issues.push(`soil is too alkaline (pH ${soilPh.toFixed(1)})`);
-      recommendations.push("Apply sulfur or acidifying fertilizer to lower pH.");
+      recommendations.push(
+        "Apply sulfur or acidifying fertilizer to lower pH.",
+      );
     }
   }
 
   // Nitrogen deficiency
   if (soilNitrogen !== undefined && soilNitrogen < 15) {
     issues.push(`low nitrogen (${soilNitrogen.toFixed(0)} ppm)`);
-    recommendations.push("Apply nitrogen-rich fertilizer (urea/CAN) at 50–75 kg/ha.");
+    recommendations.push(
+      "Apply nitrogen-rich fertilizer (urea/CAN) at 50–75 kg/ha.",
+    );
   }
 
   // Crop-specific temperature stress
@@ -329,16 +382,25 @@ function analyzeCropHealth(snap: SensorSnapshot): AIRecommendation | null {
   };
   const limits = cropTempLimits[cropType?.toLowerCase() ?? ""] ?? [10, 32];
   if (temperature > limits[1]) {
-    issues.push(`heat stress for ${cropType} (${temperature.toFixed(1)}°C > ${limits[1]}°C limit)`);
-    recommendations.push(`Apply shade netting and increase irrigation frequency for ${cropType}.`);
+    issues.push(
+      `heat stress for ${cropType} (${temperature.toFixed(1)}°C > ${limits[1]}°C limit)`,
+    );
+    recommendations.push(
+      `Apply shade netting and increase irrigation frequency for ${cropType}.`,
+    );
   } else if (temperature < limits[0]) {
-    issues.push(`cold stress risk for ${cropType} (${temperature.toFixed(1)}°C < ${limits[0]}°C minimum)`);
-    recommendations.push(`Consider mulching to retain soil heat for ${cropType}.`);
+    issues.push(
+      `cold stress risk for ${cropType} (${temperature.toFixed(1)}°C < ${limits[0]}°C minimum)`,
+    );
+    recommendations.push(
+      `Consider mulching to retain soil heat for ${cropType}.`,
+    );
   }
 
   if (issues.length === 0) return null;
 
-  const severity: Severity = issues.length >= 3 ? "high" : issues.length >= 2 ? "medium" : "low";
+  const severity: Severity =
+    issues.length >= 3 ? "high" : issues.length >= 2 ? "medium" : "low";
 
   return {
     farmerId,
@@ -349,7 +411,15 @@ function analyzeCropHealth(snap: SensorSnapshot): AIRecommendation | null {
     recommendation: recommendations.join(" "),
     actionRequired: severity !== "low",
     confidence: 80,
-    details: { cropType, soilMoisture, temperature, humidity, soilPh, soilNitrogen, issues },
+    details: {
+      cropType,
+      soilMoisture,
+      temperature,
+      humidity,
+      soilPh,
+      soilNitrogen,
+      issues,
+    },
     generatedAt: new Date(),
     expiresAt: expireIn(36),
   };
@@ -360,18 +430,21 @@ function analyzeCropHealth(snap: SensorSnapshot): AIRecommendation | null {
 export interface FarmerPerformanceData {
   farmerId: string;
   farmerName: string;
-  productivity: number;       // 0–100 score
+  productivity: number; // 0–100 score
   irrigationFrequency: number; // days per week
   farmSize: number;
-  lastActivityDays: number;   // days since last system activity
+  lastActivityDays: number; // days since last system activity
   cropCount: number;
 }
 
-function analyzeCooperativePerformance(farmers: FarmerPerformanceData[]): AIRecommendation[] {
+function analyzeCooperativePerformance(
+  farmers: FarmerPerformanceData[],
+): AIRecommendation[] {
   if (farmers.length === 0) return [];
 
   const results: AIRecommendation[] = [];
-  const avgProductivity = farmers.reduce((s, f) => s + f.productivity, 0) / farmers.length;
+  const avgProductivity =
+    farmers.reduce((s, f) => s + f.productivity, 0) / farmers.length;
   const threshold = avgProductivity * 0.6; // 40% below average = underperforming
 
   for (const farmer of farmers) {
@@ -383,10 +456,16 @@ function analyzeCooperativePerformance(farmers: FarmerPerformanceData[]): AIReco
         severity: "high",
         title: `📉 Underperforming Farm — ${farmer.farmerName}`,
         message: `${farmer.farmerName}'s productivity score (${farmer.productivity.toFixed(0)}) is significantly below the cooperative average (${avgProductivity.toFixed(0)}). Immediate intervention is recommended.`,
-        recommendation: "Schedule an extension officer visit within 7 days. Review irrigation practices, crop selection, and soil health. Provide targeted training resources.",
+        recommendation:
+          "Schedule an extension officer visit within 7 days. Review irrigation practices, crop selection, and soil health. Provide targeted training resources.",
         actionRequired: true,
         confidence: 88,
-        details: { productivity: farmer.productivity, avg: avgProductivity, threshold, farmerId: farmer.farmerId },
+        details: {
+          productivity: farmer.productivity,
+          avg: avgProductivity,
+          threshold,
+          farmerId: farmer.farmerId,
+        },
         generatedAt: new Date(),
         expiresAt: expireIn(72),
       });
@@ -400,7 +479,8 @@ function analyzeCooperativePerformance(farmers: FarmerPerformanceData[]): AIReco
         severity: "medium",
         title: `⏰ Inactive Farmer Alert — ${farmer.farmerName}`,
         message: `${farmer.farmerName} has not logged any activity for ${farmer.lastActivityDays} days. Data-driven decisions require regular sensor submissions.`,
-        recommendation: "Contact farmer via SMS or extension officer visit. Verify sensor connectivity and provide refresher training on platform usage.",
+        recommendation:
+          "Contact farmer via SMS or extension officer visit. Verify sensor connectivity and provide refresher training on platform usage.",
         actionRequired: false,
         confidence: 85,
         details: { lastActivityDays: farmer.lastActivityDays },
@@ -417,10 +497,14 @@ function analyzeCooperativePerformance(farmers: FarmerPerformanceData[]): AIReco
         severity: "medium",
         title: `💧 Insufficient Irrigation — ${farmer.farmerName}`,
         message: `${farmer.farmerName} is irrigating only ${farmer.irrigationFrequency} time(s) per week, which may be insufficient for active crops.`,
-        recommendation: "Recommend adopting a structured irrigation schedule (3–4 times/week during dry season). Link farmer to irrigation recommendation module.",
+        recommendation:
+          "Recommend adopting a structured irrigation schedule (3–4 times/week during dry season). Link farmer to irrigation recommendation module.",
         actionRequired: false,
         confidence: 72,
-        details: { irrigationFrequency: farmer.irrigationFrequency, cropCount: farmer.cropCount },
+        details: {
+          irrigationFrequency: farmer.irrigationFrequency,
+          cropCount: farmer.cropCount,
+        },
         generatedAt: new Date(),
         expiresAt: expireIn(48),
       });
@@ -456,12 +540,12 @@ export class AIEngineService {
       // Sort: critical → high → medium → low
       const order: Severity[] = ["critical", "high", "medium", "low"];
       const sorted = rawResults.sort(
-        (a, b) => order.indexOf(a.severity) - order.indexOf(b.severity)
+        (a, b) => order.indexOf(a.severity) - order.indexOf(b.severity),
       );
 
       // Persist to database asynchronously (fire and forget)
       this.persistRecommendations(sorted).catch((e) =>
-        logger.error("AI: failed to persist recommendations", e)
+        logger.error("AI: failed to persist recommendations", e),
       );
 
       return sorted;
@@ -482,12 +566,15 @@ export class AIEngineService {
       alertCount: number;
     };
     recommendations: AIRecommendation[];
-    farmerRankings: { farmerId: string; farmerName: string; productivity: number; rank: number }[];
+    farmerRankings: {
+      farmerId: string;
+      farmerName: string;
+      productivity: number;
+      rank: number;
+    }[];
   }> {
     try {
-      const where = cooperativeId
-        ? { cooperativeId }
-        : undefined;
+      const where = cooperativeId ? { cooperativeId } : undefined;
 
       const farmers = await prisma.farmerProfile.findMany({
         where,
@@ -496,7 +583,11 @@ export class AIEngineService {
           farmerCrops: { where: { status: "planted" } },
           soilReadings: { orderBy: { readingAt: "desc" }, take: 1 },
           irrigationLogs: {
-            where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+            where: {
+              createdAt: {
+                gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+              },
+            },
           },
         },
         take: 100,
@@ -510,11 +601,19 @@ export class AIEngineService {
           : 0;
 
         // Composite productivity score (0-100)
-        const moistureScore = moisture >= 30 && moisture <= 70 ? 100 : Math.max(0, 70 - Math.abs(50 - moisture) * 1.5);
+        const moistureScore =
+          moisture >= 30 && moisture <= 70
+            ? 100
+            : Math.max(0, 70 - Math.abs(50 - moisture) * 1.5);
         const activityScore = dataFreshness;
         const cropScore = f.farmerCrops.length > 0 ? 80 : 0;
         const irrigScore = Math.min(100, (f.irrigationLogs.length / 4) * 100);
-        const productivity = Math.round((moistureScore * 0.3 + activityScore * 0.3 + cropScore * 0.2 + irrigScore * 0.2));
+        const productivity = Math.round(
+          moistureScore * 0.3 +
+            activityScore * 0.3 +
+            cropScore * 0.2 +
+            irrigScore * 0.2,
+        );
 
         const lastActivity = latestSoil
           ? Math.floor(hoursAgo(latestSoil.readingAt) / 24)
@@ -534,17 +633,24 @@ export class AIEngineService {
       const recommendations = analyzeCooperativePerformance(performanceData);
       const avgProductivity =
         performanceData.length > 0
-          ? performanceData.reduce((s, f) => s + f.productivity, 0) / performanceData.length
+          ? performanceData.reduce((s, f) => s + f.productivity, 0) /
+            performanceData.length
           : 0;
 
       const rankings = [...performanceData]
         .sort((a, b) => b.productivity - a.productivity)
-        .map((f, i) => ({ farmerId: f.farmerId, farmerName: f.farmerName, productivity: f.productivity, rank: i + 1 }));
+        .map((f, i) => ({
+          farmerId: f.farmerId,
+          farmerName: f.farmerName,
+          productivity: f.productivity,
+          rank: i + 1,
+        }));
 
       return {
         summary: {
           totalFarmers: farmers.length,
-          underperforming: recommendations.filter((r) => r.severity === "high").length,
+          underperforming: recommendations.filter((r) => r.severity === "high")
+            .length,
           avgProductivity: Math.round(avgProductivity),
           alertCount: recommendations.length,
         },
@@ -554,7 +660,12 @@ export class AIEngineService {
     } catch (err) {
       logger.error("AIEngine.analyzeCooperative error:", err);
       return {
-        summary: { totalFarmers: 0, underperforming: 0, avgProductivity: 0, alertCount: 0 },
+        summary: {
+          totalFarmers: 0,
+          underperforming: 0,
+          avgProductivity: 0,
+          alertCount: 0,
+        },
         recommendations: [],
         farmerRankings: [],
       };
@@ -564,7 +675,10 @@ export class AIEngineService {
   /**
    * Analyze from user-submitted IoT sensor payload (no database lookup needed).
    */
-  analyzePayload(farmerId: string, payload: SensorSnapshot): AIRecommendation[] {
+  analyzePayload(
+    farmerId: string,
+    payload: SensorSnapshot,
+  ): AIRecommendation[] {
     const snapWithId = { ...payload, farmerId };
     const results = [
       analyzeIrrigation(snapWithId as any),
@@ -574,18 +688,26 @@ export class AIEngineService {
     ].filter((r): r is AIRecommendation => r !== null);
 
     const order: Severity[] = ["critical", "high", "medium", "low"];
-    return results.sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity));
+    return results.sort(
+      (a, b) => order.indexOf(a.severity) - order.indexOf(b.severity),
+    );
   }
 
   /**
    * Build a SensorSnapshot from the latest database records for a farmer.
    */
-  private async buildSensorSnapshot(farmerId: string): Promise<SensorSnapshot | null> {
+  private async buildSensorSnapshot(
+    farmerId: string,
+  ): Promise<SensorSnapshot | null> {
     const profile = await prisma.farmerProfile.findUnique({
       where: { userId: farmerId },
       include: {
         soilReadings: { orderBy: { readingAt: "desc" }, take: 1 },
-        farmerCrops: { where: { status: "planted" }, include: { crop: true }, take: 1 },
+        farmerCrops: {
+          where: { status: "planted" },
+          include: { crop: true },
+          take: 1,
+        },
       },
     });
 
@@ -594,25 +716,41 @@ export class AIEngineService {
     const soil = profile.soilReadings[0];
     const crop = profile.farmerCrops[0]?.crop;
 
-    // Attempt to get latest weather data
+    // Current conditions (temperature/humidity) and near-term forecast
+    // (rain probability, expected rainfall) come from different sources —
+    // weatherService.getCurrentWeather() has no probability field (current
+    // conditions aren't a forecast), so probability/rainfall must come from
+    // getForecast() instead. Previously this used a hardcoded 30% constant,
+    // which silently made every irrigation/weather rule gated on rain
+    // probability blind to actual conditions.
     let temperature = 22;
     let humidity = 60;
     let rainfallProbability = 30;
     let rainfall3DayMm = 5;
 
     try {
-      const weather = await prisma.weatherReading.findFirst({
-        where: { farmerId },
-        orderBy: { readingAt: "desc" },
-      });
-      if (weather) {
-        temperature = Number(weather.temperatureCelsius ?? 22);
-        humidity = Number(weather.humidityPercent ?? 60);
-        rainfallProbability = 30; // Not available in WeatherReading model
-        rainfall3DayMm = Number(weather.rainfallMm ?? 5) * 3;
+      const current = await weatherService.getCurrentWeather(farmerId);
+      temperature = current.temperatureCelsius;
+      humidity = current.humidityPercent;
+    } catch (err) {
+      logger.error("AIEngine: failed to fetch current weather", err);
+    }
+
+    try {
+      const forecast = await weatherService.getForecast(farmerId);
+      const next3Days = forecast.slice(0, 3);
+      if (next3Days.length > 0) {
+        rainfallProbability = Math.round(
+          next3Days.reduce((sum, d) => sum + d.precipitationProbability, 0) /
+            next3Days.length,
+        );
+        rainfall3DayMm =
+          Math.round(
+            next3Days.reduce((sum, d) => sum + d.rainfallMm, 0) * 10,
+          ) / 10;
       }
-    } catch {
-      // WeatherData table may not have all fields, use defaults
+    } catch (err) {
+      logger.error("AIEngine: failed to fetch weather forecast", err);
     }
 
     return {
@@ -631,7 +769,9 @@ export class AIEngineService {
   /**
    * Save recommendations to the Recommendation table.
    */
-  private async persistRecommendations(recs: AIRecommendation[]): Promise<void> {
+  private async persistRecommendations(
+    recs: AIRecommendation[],
+  ): Promise<void> {
     for (const rec of recs) {
       try {
         await prisma.recommendation.create({
@@ -641,7 +781,12 @@ export class AIEngineService {
             title: rec.title,
             message: rec.message,
             recommendation: rec.recommendation,
-            confidence: rec.confidence >= 80 ? "high" : rec.confidence >= 50 ? "medium" : "low",
+            confidence:
+              rec.confidence >= 80
+                ? "high"
+                : rec.confidence >= 50
+                  ? "medium"
+                  : "low",
             priority: severityToPriority(rec.severity),
             actionRequired: rec.actionRequired,
             details: rec.details as any,
@@ -660,8 +805,10 @@ export class AIEngineService {
       category: "crop_health",
       severity: "low",
       title: "📊 Insufficient Sensor Data",
-      message: "No sensor readings are available for analysis. The AI engine requires recent soil and weather data.",
-      recommendation: "Ensure your IoT sensors are connected and submitting data. You can also manually submit readings via the dashboard.",
+      message:
+        "No sensor readings are available for analysis. The AI engine requires recent soil and weather data.",
+      recommendation:
+        "Ensure your IoT sensors are connected and submitting data. You can also manually submit readings via the dashboard.",
       actionRequired: false,
       confidence: 0,
       details: {},

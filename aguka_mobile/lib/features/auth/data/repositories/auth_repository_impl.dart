@@ -58,7 +58,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? language,
   }) async {
     try {
-      final userModel = await remoteDataSource.register(
+      final loginResponse = await remoteDataSource.register(
         phone: phone,
         password: password,
         fullName: fullName,
@@ -66,7 +66,15 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         language: language,
       );
-      return Right(userModel);
+      // Save tokens so the user is auto-authenticated without re-login
+      await preferencesHelper.setAuthToken(loginResponse.token);
+      if (loginResponse.refreshToken != null) {
+        await preferencesHelper.setRefreshToken(loginResponse.refreshToken!);
+      }
+      await preferencesHelper.setUserId(loginResponse.user.id);
+      await preferencesHelper.setUserRole(loginResponse.user.role);
+      socketClient.connect(forceReconnect: true);
+      return Right(loginResponse.user);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
@@ -167,18 +175,74 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      await remoteDataSource.logout();
+      final token = preferencesHelper.authToken;
+      if (token != null && token.isNotEmpty) {
+        // We attempt a graceful logout, but we don't block on its failure
+        await remoteDataSource.logout().catchError((_) {
+            // Silently ignore logout errors (like 401) to ensure local clear happens
+        });
+      }
+    } finally {
+      // Always clear local session
       await preferencesHelper.clearAuth();
       socketClient.disconnect();
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
     }
+    return const Right(null);
   }
 
   @override
   Future<bool> isAuthenticated() async {
     final token = preferencesHelper.authToken;
     return token != null && token.isNotEmpty;
+  }
+
+  @override
+  Future<Either<Failure, void>> refreshToken() async {
+    try {
+      final storedRefreshToken = preferencesHelper.refreshToken;
+      if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
+        return Left(ServerFailure('No refresh token available'));
+      }
+      final loginResponse = await remoteDataSource.refreshToken(storedRefreshToken);
+      await preferencesHelper.setAuthToken(loginResponse.token);
+      if (loginResponse.refreshToken != null) {
+        await preferencesHelper.setRefreshToken(loginResponse.refreshToken!);
+      }
+      socketClient.connect(forceReconnect: true);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await remoteDataSource.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> clearLocalSession() async {
+    try {
+      await preferencesHelper.clearAuth();
+      socketClient.disconnect();
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 }

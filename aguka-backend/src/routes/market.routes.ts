@@ -5,6 +5,7 @@ import {
   getPriceHistory,
   getPriceAlerts,
   createPriceAlert,
+  deletePriceAlert,
   getMarketInsights,
   getRecommendedMarkets,
 } from "../controllers/market.controller.js";
@@ -25,6 +26,9 @@ router.get("/alerts", getPriceAlerts);
 
 // Create a new price alert
 router.post("/alerts", createPriceAlert);
+
+// Delete a price alert
+router.delete("/alerts/:id", deletePriceAlert);
 
 // Get market insights and recommendations
 router.get("/insights", getMarketInsights);

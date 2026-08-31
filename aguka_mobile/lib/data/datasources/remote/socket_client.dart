@@ -9,13 +9,17 @@ class SocketClient {
   final Logger _logger = Logger();
   io.Socket? _socket;
   
-  // Streams for telemetry and alerts
+  // Streams for telemetry, alerts, and notifications
   final _telemetryController = StreamController<Map<String, dynamic>>.broadcast();
   final _alertController = StreamController<Map<String, dynamic>>.broadcast();
+  final _notificationController = StreamController<Map<String, dynamic>>.broadcast();
+  final _communityController = StreamController<Map<String, dynamic>>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
 
   Stream<Map<String, dynamic>> get telemetryStream => _telemetryController.stream;
   Stream<Map<String, dynamic>> get alertStream => _alertController.stream;
+  Stream<Map<String, dynamic>> get notificationStream => _notificationController.stream;
+  Stream<Map<String, dynamic>> get communityStream => _communityController.stream;
   Stream<bool> get connectionStream => _connectionController.stream;
 
   SocketClient(this._prefs);
@@ -36,23 +40,23 @@ class SocketClient {
     }
 
     final baseUrl = AppConfig.baseUrl.replaceAll('/api/v1', '');
-    final token = _prefs.authToken;
 
     _logger.i('Connecting to Socket IO: $baseUrl');
 
     _socket = io.io(baseUrl, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
-      'extraHeaders': token != null ? {'Authorization': 'Bearer $token'} : null,
+      'extraHeaders': {'Authorization': 'Bearer ${_prefs.authToken ?? ''}'},
     });
 
     _socket!.onConnect((_) {
       _logger.i('Socket connected: ${_socket!.id}');
       _connectionController.add(true);
-      
-      // Authenticate with the token
-      if (token != null) {
-        _socket!.emit('authenticate', {'token': token});
+
+      // Read the latest token from prefs (may have been refreshed)
+      final latestToken = _prefs.authToken;
+      if (latestToken != null) {
+        _socket!.emit('authenticate', {'token': latestToken});
       }
     });
 
@@ -64,12 +68,18 @@ class SocketClient {
     _socket!.onConnectError((err) => _logger.e('Socket Connect Error: $err'));
     _socket!.onError((err) => _logger.e('Socket Error: $err'));
 
-    // Authentication response
+    // Authentication response — retry with fresh token if it failed
     _socket!.on('authenticated', (data) {
       if (data['success'] == true) {
         _logger.i('Socket authenticated successfully');
       } else {
         _logger.e('Socket authentication failed: ${data['error']}');
+        // Read the latest token (may have been refreshed since connect())
+        final retryToken = _prefs.authToken;
+        if (retryToken != null) {
+          _logger.i('Retrying socket authentication with fresh token...');
+          _socket!.emit('authenticate', {'token': retryToken});
+        }
       }
     });
 
@@ -85,6 +95,33 @@ class SocketClient {
       _alertController.add(Map<String, dynamic>.from(data));
     });
 
+    // Listen for new notifications (Production hardening)
+    _socket!.on('notification:new', (data) {
+      _logger.i('New notification received via socket: $data');
+      _notificationController.add(Map<String, dynamic>.from(data));
+    });
+
+    // Community standardized events
+    _socket!.on('community:post:new', (data) {
+      _logger.i('New community post received: $data');
+      _communityController.add({'event': 'post:new', 'data': data});
+    });
+
+    _socket!.on('community:comment:new', (data) {
+      _logger.i('New community comment received: $data');
+      _communityController.add({'event': 'comment:new', 'data': data});
+    });
+
+    _socket!.on('community:reaction:new', (data) {
+      _logger.d('Community reaction received: $data');
+      _communityController.add({'event': 'reaction:new', 'data': data});
+    });
+
+    _socket!.on('community:post:deleted', (data) {
+      _logger.i('Community post deleted: $data');
+      _communityController.add({'event': 'post:deleted', 'data': data});
+    });
+
     _socket!.connect();
   }
 
@@ -97,6 +134,8 @@ class SocketClient {
     disconnect();
     _telemetryController.close();
     _alertController.close();
+    _notificationController.close();
+    _communityController.close();
     _connectionController.close();
   }
 
